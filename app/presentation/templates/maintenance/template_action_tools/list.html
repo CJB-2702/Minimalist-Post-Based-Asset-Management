@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Template Action Tools - Asset Management System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Template Action Tools</h1>
+            <a href="{{ url_for('template_action_tools.create') }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Create Template Action Tool
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Template Action Tools ({{ template_action_tools.total }} total)</h5>
+            </div>
+            <div class="card-body">
+                {% if template_action_tools.items %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Tool</th>
+                                <th>Template Action Item</th>
+                                <th>Quantity Required</th>
+                                <th>Required</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for tool_demand in template_action_tools.items %}
+                            <tr>
+                                <td>{{ tool_demand.id }}</td>
+                                <td>
+                                    {% if tool_demand.tool %}
+                                    {{ tool_demand.tool.tool_name }}
+                                    {% else %}
+                                    N/A
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if tool_demand.template_action_item %}
+                                    <a href="{{ url_for('proto_action_items.detail', template_action_item_id=tool_demand.template_action_item.id) }}">
+                                        {{ tool_demand.template_action_item.action_name }}
+                                    </a>
+                                    {% else %}
+                                    N/A
+                                    {% endif %}
+                                </td>
+                                <td>{{ tool_demand.quantity_required }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if tool_demand.is_required else 'secondary' }}">
+                                        {{ 'Required' if tool_demand.is_required else 'Optional' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('template_action_tools.detail', template_action_tool_id=tool_demand.id) }}" 
+                                       class="btn btn-sm btn-info">View</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">No template action tools found.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block title %}Search - Asset Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="h3 mb-4">Global Search</h1>
+            
+            <!-- Search Form -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form method="GET" action="{{ url_for('main.search') }}">
+                        <div class="input-group">
+                            <input type="text" class="form-control form-control-lg" name="q" 
+                                   value="{{ query or '' }}" placeholder="Search assets, locations, users, make/models...">
+                            <button class="btn btn-primary" type="submit">
+                                <i class="bi bi-search"></i> Search
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            {% if query %}
+                <!-- Search Results -->
+                <div class="row">
+                    <!-- Assets -->
+                    {% if results and results.assets %}
+                    <div class="col-md-6 mb-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="bi bi-box"></i> Assets ({{ results.assets|length }})
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="list-group list-group-flush">
+                                    {% for asset in results.assets %}
+                                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1">{{ asset.name }}</h6>
+                                            <small class="text-muted">{{ asset.serial_number }}</small>
+                                        </div>
+                                        <a href="{{ url_for('core_assets.detail', asset_id=asset.id) }}" 
+                                           class="btn btn-sm btn-outline-primary">View</a>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Locations -->
+                    {% if results and results.locations %}
+                    <div class="col-md-6 mb-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="bi bi-geo-alt"></i> Locations ({{ results.locations|length }})
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="list-group list-group-flush">
+                                    {% for location in results.locations %}
+                                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1">{{ location.name }}</h6>
+                                            <small class="text-muted">{{ location.description }}</small>
+                                        </div>
+                                        <a href="{{ url_for('locations.detail', location_id=location.id) }}" 
+                                           class="btn btn-sm btn-outline-secondary">View</a>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Make/Models -->
+                    {% if results and results.make_models %}
+                    <div class="col-md-6 mb-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="bi bi-gear"></i> Make/Models ({{ results.make_models|length }})
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="list-group list-group-flush">
+                                    {% for make_model in results.make_models %}
+                                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1">{{ make_model.make }} {{ make_model.model }}</h6>
+                                            <small class="text-muted">{{ make_model.asset_type.name if make_model.asset_type else 'No type' }}</small>
+                                        </div>
+                                        <a href="{{ url_for('make_models.detail', make_model_id=make_model.id) }}" 
+                                           class="btn btn-sm btn-outline-info">View</a>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Users -->
+                    {% if results and results.users %}
+                    <div class="col-md-6 mb-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="bi bi-people"></i> Users ({{ results.users|length }})
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="list-group list-group-flush">
+                                    {% for user in results.users %}
+                                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1">{{ user.username }}</h6>
+                                            <small class="text-muted">{{ user.email }}</small>
+                                        </div>
+                                        <a href="{{ url_for('users.detail', user_id=user.id) }}" 
+                                           class="btn btn-sm btn-outline-warning">View</a>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% if not results or (not results.assets and not results.locations and not results.make_models and not results.users) %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> No results found for "{{ query }}"
+                </div>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

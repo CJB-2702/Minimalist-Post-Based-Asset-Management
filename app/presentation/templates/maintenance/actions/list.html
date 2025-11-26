@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Actions - Asset Management System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Actions</h1>
+            <a href="{{ url_for('actions.create') }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Create Action
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Actions ({{ actions.total }} total)</h5>
+            </div>
+            <div class="card-body">
+                {% if actions.items %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Action Name</th>
+                                <th>Status</th>
+                                <th>Maintenance Action Set</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for action in actions.items %}
+                            <tr>
+                                <td>{{ action.id }}</td>
+                                <td>
+                                    <a href="{{ url_for('actions.detail', action_id=action.id) }}">
+                                        {{ action.action_name }}
+                                    </a>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if action.status == 'Completed' else 'secondary' }}">
+                                        {{ action.status }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if action.maintenance_action_set %}
+                                    <a href="{{ url_for('maintenance_action_sets.detail', action_set_id=action.maintenance_action_set.id) }}">
+                                        {{ action.maintenance_action_set.task_name }}
+                                    </a>
+                                    {% else %}
+                                    N/A
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('actions.detail', action_id=action.id) }}" 
+                                       class="btn btn-sm btn-info">View</a>
+                                    <a href="{{ url_for('actions.edit', action_id=action.id) }}" 
+                                       class="btn btn-sm btn-warning">Edit</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">No actions found.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

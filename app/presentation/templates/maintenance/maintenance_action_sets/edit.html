@@ -1,0 +1,326 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Maintenance Action Set - {{ action_set.task_name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Edit Maintenance Action Set</h1>
+            <div>
+                <a href="{{ url_for('maintenance_action_sets.detail', action_set_id=action_set.id) }}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Details
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Header form -->
+    <div class="col-lg-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Action Set Details</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('maintenance_action_sets.edit', action_set_id=action_set.id) }}">
+                    <div class="mb-3">
+                        <label for="task_name" class="form-label">Task Name</label>
+                        <input type="text"
+                               class="form-control"
+                               id="task_name"
+                               name="task_name"
+                               value="{{ action_set.task_name }}"
+                               required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="task_description" class="form-label">Description</label>
+                        <textarea class="form-control"
+                                  id="task_description"
+                                  name="task_description"
+                                  rows="3"
+                                  placeholder="Describe this maintenance task...">{{ action_set.task_description or '' }}</textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="asset_id" class="form-label">Asset</label>
+                        <select id="asset_id" name="asset_id" class="form-select">
+                            <option value="">-- None --</option>
+                            {% for asset in assets %}
+                                <option value="{{ asset.id }}" {% if action_set.asset_id == asset.id %}selected{% endif %}>
+                                    {{ asset.name }} (ID {{ asset.id }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="maintenance_plan_id" class="form-label">Maintenance Plan</label>
+                        <select id="maintenance_plan_id" name="maintenance_plan_id" class="form-select">
+                            <option value="">-- None --</option>
+                            {% for plan in maintenance_plans %}
+                                <option value="{{ plan.id }}" {% if action_set.maintenance_plan_id == plan.id %}selected{% endif %}>
+                                    {{ plan.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="status" class="form-label">Status</label>
+                                <select id="status" name="status" class="form-select">
+                                    {% set statuses = ['Planned', 'In Progress', 'Completed', 'Cancelled'] %}
+                                    {% for s in statuses %}
+                                        <option value="{{ s }}" {% if action_set.status == s %}selected{% endif %}>{{ s }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="priority" class="form-label">Priority</label>
+                                <select id="priority" name="priority" class="form-select">
+                                    {% set priorities = ['Low', 'Medium', 'High', 'Critical'] %}
+                                    {% for p in priorities %}
+                                        <option value="{{ p }}" {% if action_set.priority == p %}selected{% endif %}>{{ p }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="scheduled_date" class="form-label">Scheduled Date</label>
+                        <input type="datetime-local"
+                               class="form-control"
+                               id="scheduled_date"
+                               name="scheduled_date"
+                               value="{% if action_set.scheduled_date %}{{ action_set.scheduled_date.strftime('%Y-%m-%dT%H:%M') }}{% endif %}">
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions editor -->
+    <div class="col-lg-6">
+        <div class="card mb-4" id="actions-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Actions in this Set ({{ actions|length }})</h5>
+                <button class="btn btn-sm btn-outline-primary"
+                        data-bs-toggle="modal"
+                        data-bs-target="#addActionFromTemplateModal">
+                    <i class="bi bi-plus-circle"></i> Add Action
+                </button>
+            </div>
+            <div class="card-body">
+                {% if maintenance_event and maintenance_event.has_non_template_actions %}
+                <div class="alert alert-warning mb-3">
+                    <strong>Warning:</strong> This maintenance action set currently includes
+                    <strong>nonstandard actions</strong> that are not linked to any template action.
+                    Where possible, prefer using template-based actions so work instructions and
+                    reporting stay consistent.
+                    <br>
+                    <small>
+                        Nonstandard actions:
+                        {% for a in maintenance_event.non_template_actions %}
+                            <span class="badge bg-light text-dark">
+                                #{{ a.sequence_order }} &mdash; {{ a.action_name or 'Unnamed Action' }}
+                            </span>
+                        {% endfor %}
+                    </small>
+                </div>
+                {% endif %}
+                {% if actions %}
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle">
+                        <thead>
+                            <tr>
+                                <th style="width: 80px;">Order</th>
+                                <th>Action Name</th>
+                                <th style="width: 120px;">Status</th>
+                                <th style="width: 180px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for action in actions %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center gap-1">
+                                        <span class="badge bg-light text-dark me-1">{{ action.sequence_order }}</span>
+                                        <form method="POST"
+                                              action="{{ url_for('maintenance_action_sets.move_action', action_set_id=action_set.id, action_id=action.id) }}"
+                                              class="d-inline"
+                                              hx-post="{{ url_for('maintenance_action_sets.move_action', action_set_id=action_set.id, action_id=action.id) }}"
+                                              hx-target="#actions-card"
+                                              hx-select="#actions-card"
+                                              hx-swap="outerHTML">
+                                            <input type="hidden" name="direction" value="up">
+                                            <button type="submit"
+                                                    class="btn btn-sm btn-outline-secondary"
+                                                    title="Move up">
+                                                <i class="bi bi-arrow-up"></i>
+                                            </button>
+                                        </form>
+                                        <form method="POST"
+                                              action="{{ url_for('maintenance_action_sets.move_action', action_set_id=action_set.id, action_id=action.id) }}"
+                                              class="d-inline"
+                                              hx-post="{{ url_for('maintenance_action_sets.move_action', action_set_id=action_set.id, action_id=action.id) }}"
+                                              hx-target="#actions-card"
+                                              hx-select="#actions-card"
+                                              hx-swap="outerHTML">
+                                            <input type="hidden" name="direction" value="down">
+                                            <button type="submit"
+                                                    class="btn btn-sm btn-outline-secondary"
+                                                    title="Move down">
+                                                <i class="bi bi-arrow-down"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('actions.detail', action_id=action.id) }}">
+                                        {{ action.action_name }}
+                                    </a>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if action.status == 'Completed' else 'secondary' }}">
+                                        {{ action.status }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="d-flex gap-1">
+                                        <a href="{{ url_for('actions.edit', action_id=action.id) }}"
+                                           class="btn btn-sm btn-outline-secondary">
+                                            Edit
+                                        </a>
+                                        <form method="POST"
+                                              action="{{ url_for('maintenance_action_sets.delete_action', action_set_id=action_set.id, action_id=action.id) }}"
+                                              onsubmit="return confirm('Delete this action from the set?');"
+                                              hx-post="{{ url_for('maintenance_action_sets.delete_action', action_set_id=action_set.id, action_id=action.id) }}"
+                                              hx-target="#actions-card"
+                                              hx-select="#actions-card"
+                                              hx-swap="outerHTML">
+                                            <button type="submit"
+                                                    class="btn btn-sm btn-outline-danger">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted mb-0">No actions have been added to this set yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if action_set.event_id %}
+<div class="row mt-3">
+    <div class="col-lg-12">
+        <div id="event-widget-container-edit"
+             hx-get="{{ url_for('comments.event_widget', event_id=action_set.event_id) }}"
+             hx-trigger="load"
+             hx-target="#event-widget-container-edit"
+             hx-swap="outerHTML">
+            <div class="card mb-4">
+                <div class="card-body text-center text-muted">
+                    Loading event activity...
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Modal: Add Action from Template -->
+<div class="modal fade" id="addActionFromTemplateModal" tabindex="-1" aria-labelledby="addActionFromTemplateLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addActionFromTemplateLabel">Add Maintenance Action</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3 d-flex justify-content-between align-items-center">
+                    <div class="flex-grow-1 me-2">
+                        <label for="templateSearch" class="form-label">Search Templates</label>
+                        <input type="text"
+                               class="form-control"
+                               id="templateSearch"
+                               name="q"
+                               placeholder="Type to filter by action name or description..."
+                               hx-get="{{ url_for('maintenance_action_sets.template_actions_search', action_set_id=action_set.id) }}"
+                               hx-trigger="keyup changed delay:300ms"
+                               hx-target="#template-actions-body"
+                               hx-swap="innerHTML">
+                    </div>
+                    <div class="mt-4">
+                        <a href="{{ url_for('proto_action_items.list') }}"
+                           target="_blank"
+                           class="btn btn-outline-secondary btn-sm">
+                            View All Template Actions
+                        </a>
+                    </div>
+                </div>
+
+                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                    <table class="table table-sm table-hover" id="templateActionsTable">
+                        <thead>
+                            <tr>
+                                <th style="width: 60px;">ID</th>
+                                <th>Action Name</th>
+                                <th>Description</th>
+                                <th style="width: 120px;">Add</th>
+                            </tr>
+                        </thead>
+                        <tbody id="template-actions-body"
+                               hx-get="{{ url_for('maintenance_action_sets.template_actions_search', action_set_id=action_set.id) }}"
+                               hx-trigger="load"
+                               hx-target="#template-actions-body"
+                               hx-swap="innerHTML">
+                            <tr>
+                                <td colspan="4" class="text-center text-muted">
+                                    Loading templates...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer d-flex justify-content-between">
+                <form method="POST"
+                      action="{{ url_for('maintenance_action_sets.add_nonstandard_action', action_set_id=action_set.id) }}"
+                      hx-post="{{ url_for('maintenance_action_sets.add_nonstandard_action', action_set_id=action_set.id) }}"
+                      hx-target="#actions-card"
+                      hx-select="#actions-card"
+                      hx-swap="outerHTML"
+                      onsubmit="return confirm('You are about to add a nonstandard action that is not defined in any template. This is not recommended unless you have a strong reason, as it may bypass standard work instructions and reporting.\n\nDo you want to continue?');">
+                    <button type="submit" class="btn btn-outline-warning btn-sm">
+                        Add Nonstandard Action
+                    </button>
+                </form>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+

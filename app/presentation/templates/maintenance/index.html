@@ -1,0 +1,442 @@
+{% extends "base.html" %}
+
+{% block title %}Maintenance Management - Dashboard{% endblock %}
+
+{% block head %}
+<style>
+    .stat-card {
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        border: none;
+        border-radius: 12px;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .stat-icon {
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .alert-card {
+        border-left: 4px solid;
+        border-radius: 8px;
+    }
+    
+    .alert-overdue { border-left-color: #dc3545; }
+    .alert-due-soon { border-left-color: #ffc107; }
+    .alert-in-progress { border-left-color: #17a2b8; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="bi bi-wrench text-info"></i>
+                        Maintenance Management Dashboard
+                    </h1>
+                    <p class="text-muted mb-0">Plan, schedule, and track maintenance activities</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('maintenance.create_maintenance_event') }}" class="btn btn-success">
+                        <i class="bi bi-play-circle"></i> New Maintenance Event
+                    </a>
+                    <a href="{{ url_for('maintenance_plans.create') }}" class="btn btn-info">
+                        <i class="bi bi-plus-circle"></i> New Plan
+                    </a>
+                    <a href="{{ url_for('actions.list') }}" class="btn btn-outline-info">
+                        <i class="bi bi-list"></i> View Actions
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Core Summaries -->
+    <div class="row mb-2">
+        <div class="col-12">
+            <h5 class="text-muted">
+                <i class="bi bi-database"></i> Core Summaries
+            </h5>
+        </div>
+    </div>
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card text-center">
+                <div class="card-body">
+                    <div class="stat-icon text-primary">
+                        <i class="bi bi-clipboard-check"></i>
+                    </div>
+                    <h3 class="card-title text-primary">{{ total_maintenance_plans or 0 }}</h3>
+                    <p class="card-text small">Maintenance Plans</p>
+                    <a href="{{ url_for('maintenance_plans.list') }}" class="btn btn-sm btn-outline-primary mt-2">View</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card text-center">
+                <div class="card-body">
+                    <div class="stat-icon text-success">
+                        <i class="bi bi-calendar-event"></i>
+                    </div>
+                    <h3 class="card-title text-success">{{ total_maintenance_action_sets or 0 }}</h3>
+                    <p class="card-text small">Maintenance Action Sets</p>
+                    <a href="{{ url_for('maintenance_action_sets.list') }}" class="btn btn-sm btn-outline-success mt-2">View</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card text-center">
+                <div class="card-body">
+                    <div class="stat-icon text-warning">
+                        <i class="bi bi-tools"></i>
+                    </div>
+                    <h3 class="card-title text-warning">{{ total_actions or 0 }}</h3>
+                    <p class="card-text small">Actions</p>
+                    <a href="{{ url_for('actions.list') }}" class="btn btn-sm btn-outline-warning mt-2">View</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card text-center">
+                <div class="card-body">
+                    <div class="stat-icon text-info">
+                        <i class="bi bi-box-seam"></i>
+                    </div>
+                    <h3 class="card-title text-info">{{ total_part_demands or 0 }}</h3>
+                    <p class="card-text small">Part Demands</p>
+                    <a href="{{ url_for('part_demands.list') }}" class="btn btn-sm btn-outline-info mt-2">View</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Template Summaries -->
+    <div class="row mb-2">
+        <div class="col-12">
+            <h5 class="text-muted">
+                <i class="bi bi-file-earmark-text"></i> Template Summaries
+            </h5>
+        </div>
+    </div>
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card text-center">
+                <div class="card-body">
+                    <div class="stat-icon text-primary">
+                        <i class="bi bi-file-earmark-check"></i>
+                    </div>
+                    <h3 class="card-title text-primary">{{ total_template_actions or 0 }}</h3>
+                    <p class="card-text small">Template Action Sets</p>
+                    <a href="{{ url_for('template_actions.list') }}" class="btn btn-sm btn-outline-primary mt-2">View</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card text-center">
+                <div class="card-body">
+                    <div class="stat-icon text-success">
+                        <i class="bi bi-file-earmark-text"></i>
+                    </div>
+                    <h3 class="card-title text-success">{{ total_proto_action_items or 0 }}</h3>
+                    <p class="card-text small">Template Action Items</p>
+                    <a href="{{ url_for('proto_action_items.list') }}" class="btn btn-sm btn-outline-success mt-2">View</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card text-center">
+                <div class="card-body">
+                    <div class="stat-icon text-warning">
+                        <i class="bi bi-box"></i>
+                    </div>
+                    <h3 class="card-title text-warning">{{ total_template_part_demands or 0 }}</h3>
+                    <p class="card-text small">Template Part Demands</p>
+                    <a href="{{ url_for('template_part_demands.list') }}" class="btn btn-sm btn-outline-warning mt-2">View</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card text-center">
+                <div class="card-body">
+                    <div class="stat-icon text-info">
+                        <i class="bi bi-wrench"></i>
+                    </div>
+                    <h3 class="card-title text-info">{{ total_template_action_tools or 0 }}</h3>
+                    <p class="card-text small">Template Action Tools</p>
+                    <a href="{{ url_for('template_action_tools.list') }}" class="btn btn-sm btn-outline-info mt-2">View</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alerts and Quick Actions -->
+    <div class="row g-4">
+        <!-- Overdue Actions -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-exclamation-triangle text-danger"></i>
+                        Overdue Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if overdue_actions %}
+                        {% for action in overdue_actions %}
+                        <div class="alert alert-danger alert-card alert-overdue mb-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ action.action_name }}</strong>
+                                    <br>
+                                    <small class="text-muted">
+                                        Due: {{ action.scheduled_start_time.strftime('%Y-%m-%d %H:%M') if action.scheduled_start_time else 'Not scheduled' }}
+                                        • Status: {{ action.status }}
+                                    </small>
+                                </div>
+                                <a href="{{ url_for('actions.detail', action_id=action.id) }}" class="btn btn-sm btn-outline-danger">
+                                    View
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted mb-0">No overdue actions</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions Due Soon -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-clock text-warning"></i>
+                        Actions Due Soon
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if due_soon_actions %}
+                        {% for action in due_soon_actions %}
+                        <div class="alert alert-warning alert-card alert-due-soon mb-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ action.action_name }}</strong>
+                                    <br>
+                                    <small class="text-muted">
+                                        Due: {{ action.scheduled_start_time.strftime('%Y-%m-%d %H:%M') if action.scheduled_start_time else 'Not scheduled' }}
+                                        • Status: {{ action.status }}
+                                    </small>
+                                </div>
+                                <a href="{{ url_for('actions.detail', action_id=action.id) }}" class="btn btn-sm btn-outline-warning">
+                                    View
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted mb-0">No actions due soon</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions In Progress -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-play-circle text-info"></i>
+                        Actions In Progress
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if in_progress_actions %}
+                        {% for action in in_progress_actions %}
+                        <div class="alert alert-info alert-card alert-in-progress mb-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ action.action_name }}</strong>
+                                    <br>
+                                    <small class="text-muted">
+                                        Started: {{ action.start_time.strftime('%Y-%m-%d %H:%M') if action.start_time else 'Not started' }}
+                                        • Status: {{ action.status }}
+                                    </small>
+                                </div>
+                                <a href="{{ url_for('actions.detail', action_id=action.id) }}" class="btn btn-sm btn-outline-info">
+                                    View
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted mb-0">No actions in progress</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-lightning"></i>
+                        Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('maintenance_plans.list') }}" class="btn btn-outline-primary">
+                            <i class="bi bi-list"></i> View All Plans
+                        </a>
+                        <a href="{{ url_for('actions.list') }}" class="btn btn-outline-success">
+                            <i class="bi bi-tools"></i> View All Actions
+                        </a>
+                        <a href="{{ url_for('core_supply_parts.list') }}" class="btn btn-outline-warning">
+                            <i class="bi bi-box"></i> View Parts Inventory
+                        </a>
+                        <a href="{{ url_for('core_supply_tools.list') }}" class="btn btn-outline-info">
+                            <i class="bi bi-tools"></i> View Tools
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="row g-4 mt-2">
+        <!-- Recent Maintenance Plans -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-clock-history"></i>
+                        Recent Maintenance Plans
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_maintenance_plans %}
+                        <div class="list-group list-group-flush">
+                            {% for plan in recent_maintenance_plans %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ plan.name }}</strong>
+                                    <br>
+                                    <small class="text-muted">
+                                        {{ plan.asset_type.name if plan.asset_type else 'No asset type' }} • {{ plan.status }}
+                                    </small>
+                                </div>
+                                <a href="{{ url_for('maintenance_plans.detail', plan_id=plan.id) }}" class="btn btn-sm btn-outline-primary">
+                                    View
+                                </a>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">No recent maintenance plans</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Actions -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-clock-history"></i>
+                        Recent Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_actions %}
+                        <div class="list-group list-group-flush">
+                            {% for action in recent_actions %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ action.action_name }}</strong>
+                                    <br>
+                                    <small class="text-muted">
+                                        {{ action.status }} • {{ action.maintenance_action_set.asset.asset_id if action.maintenance_action_set and action.maintenance_action_set.asset else 'No asset' }}
+                                    </small>
+                                </div>
+                                <a href="{{ url_for('actions.detail', action_id=action.id) }}" class="btn btn-sm btn-outline-success">
+                                    View
+                                </a>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">No recent actions</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="row g-4 mt-2">
+        <!-- Actions by Status -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-pie-chart"></i>
+                        Actions by Status
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if actions_by_status %}
+                        <div class="list-group list-group-flush">
+                            {% for status, count in actions_by_status.items() %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>{{ status }}</span>
+                                <span class="badge bg-primary rounded-pill">{{ count }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">No actions found</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Maintenance Plans by Status -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-pie-chart"></i>
+                        Plans by Status
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if plans_by_status %}
+                        <div class="list-group list-group-flush">
+                            {% for status, count in plans_by_status.items() %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>{{ status }}</span>
+                                <span class="badge bg-success rounded-pill">{{ count }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">No maintenance plans found</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

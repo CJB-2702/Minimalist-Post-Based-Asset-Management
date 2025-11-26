@@ -1,0 +1,8 @@
+"""
+Logger compatibility module
+Re-exports logger functions from app.utils.logger for backward compatibility
+"""
+from app.utils.logger import get_logger, setup_logging_from_config
+
+__all__ = ['get_logger', 'setup_logging_from_config']
+

@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+
+{% block title %}Make/Models - Asset Management System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Make/Models</h1>
+            <a href="{{ url_for('make_models.create') }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Create Make/Model
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Filters</h5>
+            </div>
+            <div class="card-body">
+                <form method="GET" action="{{ url_for('make_models.list') }}">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label for="make" class="form-label">Make</label>
+                            <input type="text" class="form-control" id="make" name="make" 
+                                   value="{{ request.args.get('make', '') }}" placeholder="Filter by make">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="asset_type" class="form-label">Asset Type</label>
+                            <select class="form-select" id="asset_type" name="asset_type">
+                                <option value="">All Asset Types</option>
+                                {% for asset_type in asset_types %}
+                                <option value="{{ asset_type.name }}" {% if request.args.get('asset_type') == asset_type.name %}selected{% endif %}>
+                                    {{ asset_type.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="active" class="form-label">Status</label>
+                            <select class="form-select" id="active" name="active">
+                                <option value="">All Status</option>
+                                <option value="true" {% if request.args.get('active') == 'true' %}selected{% endif %}>
+                                    Active
+                                </option>
+                                <option value="false" {% if request.args.get('active') == 'false' %}selected{% endif %}>
+                                    Inactive
+                                </option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">&nbsp;</label>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary">Apply Filters</button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Make/Models Table -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Make/Models ({{ make_models.total }} total)</h5>
+            </div>
+            <div class="card-body">
+                {% if make_models.items %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Make</th>
+                                <th>Model</th>
+                                <th>Year</th>
+                                <th>Asset Type</th>
+                                <th>Description</th>
+                                <th>Status</th>
+                                <th>Assets</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for make_model in make_models.items %}
+                            <tr>
+                                <td>
+                                    <small class="text-muted">
+                                        <code>{{ make_model.id }}</code>
+                                    </small>
+                                </td>
+                                <td>
+                                    <strong>{{ make_model.make }}</strong>
+                                </td>
+                                <td>
+                                    <strong>{{ make_model.model }}</strong>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ make_model.year or 'N/A' }}</span>
+                                </td>
+                                <td>
+                                    {% if make_model.asset_type %}
+                                        <span class="badge bg-info">{{ make_model.asset_type.name }}</span>
+                                    {% else %}
+                                        <span class="badge bg-light text-dark">No Type</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="text-truncate" style="max-width: 200px;" 
+                                         title="{{ make_model.description or 'No description' }}">
+                                        {{ make_model.description or 'No description' }}
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if make_model.is_active %}
+                                        <span class="badge bg-success">Active</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">Inactive</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-primary">{{ asset_counts.get(make_model.id, 0) }}</span>
+                                </td>
+                                <td>
+                                    <small class="text-muted">
+                                        {{ make_model.created_at.strftime('%Y-%m-%d %H:%M:%S') if make_model.created_at else 'N/A' }}
+                                    </small>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                                                        <a href="{{ url_for('make_models.detail', make_model_id=make_model.id) }}"
+                                   class="btn btn-outline-primary" title="View Details">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{{ url_for('make_models.edit', make_model_id=make_model.id) }}"
+                                   class="btn btn-outline-secondary" title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                        <button type="button" class="btn btn-outline-danger" 
+                                                title="Delete" onclick="confirmDelete({{ make_model.id }}, '{{ make_model.make }} {{ make_model.model }}')">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                {% if make_models.pages > 1 %}
+                <nav aria-label="Make/Models pagination">
+                    <ul class="pagination justify-content-center">
+                        {% if make_models.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('make_models.list', page=make_models.prev_num, **request.args) }}">Previous</a>
+                        </li>
+                        {% endif %}
+                        
+                        {% for page_num in make_models.iter_pages() %}
+                            {% if page_num %}
+                                {% if page_num != make_models.page %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('make_models.list', page=page_num, **request.args) }}">{{ page_num }}</a>
+                                </li>
+                                {% else %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ page_num }}</span>
+                                </li>
+                                {% endif %}
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if make_models.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('make_models.list', page=make_models.next_num, **request.args) }}">Next</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+                
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-car-front display-1 text-muted"></i>
+                    <h3 class="mt-3">No Make/Models Found</h3>
+                    <p class="text-muted">No make/models match the current filters.</p>
+                    <a href="{{ url_for('make_models.create') }}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Create First Make/Model
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete make/model <strong id="deleteMakeModelName"></strong>?</p>
+                <p class="text-danger"><small>This action cannot be undone.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">Delete Make/Model</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmDelete(makeModelId, makeModelName) {
+    document.getElementById('deleteMakeModelName').textContent = makeModelName;
+    document.getElementById('deleteForm').action = "{{ url_for('make_models.delete', make_model_id=0) }}".replace('0', makeModelId);
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+</script>
+{% endblock %} 

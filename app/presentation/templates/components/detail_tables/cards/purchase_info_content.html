@@ -1,0 +1,56 @@
+<div class="detail-content-full">
+    <div class="row">
+        <div class="col-md-6">
+            {% if detail.purchase_date %}
+            <div class="mb-3">
+                <label class="form-label fw-bold">Purchase Date</label>
+                <div class="form-control-plaintext">
+                    <span class="badge bg-info">{{ detail.purchase_date.strftime('%B %d, %Y') }}</span>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if detail.purchase_price %}
+            <div class="mb-3">
+                <label class="form-label fw-bold">Purchase Price</label>
+                <div class="form-control-plaintext">
+                    <span class="badge bg-success fs-6">${{ "{:,.2f}".format(detail.purchase_price) }}</span>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="col-md-6">
+            {% if detail.vendor %}
+            <div class="mb-3">
+                <label class="form-label fw-bold">Vendor</label>
+                <div class="form-control-plaintext">{{ detail.vendor }}</div>
+            </div>
+            {% endif %}
+            
+            {% if detail.warranty_expiry %}
+            <div class="mb-3">
+                <label class="form-label fw-bold">Warranty Expiry</label>
+                <div class="form-control-plaintext">
+                    <span class="badge bg-warning">{{ detail.warranty_expiry.strftime('%B %d, %Y') }}</span>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    {% if detail.event %}
+    <div class="row">
+        <div class="col-12">
+            <div class="mb-3">
+                <label class="form-label fw-bold">Related Event</label>
+                <div class="form-control-plaintext">
+                    <a href="{{ url_for('events.detail', id=detail.event.id) }}" class="text-decoration-none">
+                        {{ detail.event.title if detail.event.title else 'Event #' + detail.event.id|string }}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div> 

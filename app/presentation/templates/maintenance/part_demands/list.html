@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+
+{% block title %}Part Demands - Asset Management System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Part Demands</h1>
+            <a href="{{ url_for('part_demands.create') }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Create Part Demand
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Section -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-funnel"></i> Filters
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="GET" action="{{ url_for('part_demands.list') }}" id="filterForm">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label for="action_set_id" class="form-label">Action Set</label>
+                            <select name="action_set_id" id="action_set_id" class="form-select">
+                                <option value="">All Action Sets</option>
+                                {% for action_set in action_sets %}
+                                <option value="{{ action_set.id }}" 
+                                    {% if filters.action_set_id == action_set.id %}selected{% endif %}>
+                                    {{ action_set.task_name }} (ID: {{ action_set.id }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <label for="action_id" class="form-label">Action</label>
+                            <select name="action_id" id="action_id" class="form-select">
+                                <option value="">All Actions</option>
+                                {% for action in actions %}
+                                <option value="{{ action.id }}" 
+                                    {% if filters.action_id == action.id %}selected{% endif %}>
+                                    {{ action.action_name }} (ID: {{ action.id }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <label for="part_id" class="form-label">Part</label>
+                            <select name="part_id" id="part_id" class="form-select">
+                                <option value="">All Parts</option>
+                                {% for part in parts %}
+                                <option value="{{ part.id }}" 
+                                    {% if filters.part_id == part.id %}selected{% endif %}>
+                                    {{ part.part_name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <label for="status" class="form-label">Status</label>
+                            <select name="status" id="status" class="form-select">
+                                <option value="">All Statuses</option>
+                                {% for status_option in statuses %}
+                                <option value="{{ status_option }}" 
+                                    {% if filters.status == status_option %}selected{% endif %}>
+                                    {{ status_option }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-3">
+                        <div class="col-md-12">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-search"></i> Apply Filters
+                            </button>
+                            <a href="{{ url_for('part_demands.list') }}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Clear Filters
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Part Demands ({{ part_demands.total }} total)</h5>
+            </div>
+            <div class="card-body">
+                {% if part_demands.items %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Action Set</th>
+                                <th>Action</th>
+                                <th>Part</th>
+                                <th>Quantity Required</th>
+                                <th>Quantity Issued</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for part_demand in part_demands.items %}
+                            <tr>
+                                <td>{{ part_demand.id }}</td>
+                                <td>
+                                    {% if part_demand.action and part_demand.action.maintenance_action_set %}
+                                    <a href="{{ url_for('maintenance_action_sets.detail', action_set_id=part_demand.action.maintenance_action_set.id) }}">
+                                        {{ part_demand.action.maintenance_action_set.task_name }}
+                                    </a>
+                                    {% else %}
+                                    <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if part_demand.action %}
+                                    {{ part_demand.action.action_name }}
+                                    {% else %}
+                                    <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if part_demand.part %}
+                                    {{ part_demand.part.part_name }}
+                                    {% else %}
+                                    <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ part_demand.quantity_required }}</td>
+                                <td>{{ part_demand.quantity_issued or 0 }}</td>
+                                <td>
+                                    {% if part_demand.status == 'Issued' or part_demand.status == 'Used' %}
+                                        <span class="badge bg-success">{{ part_demand.status }}</span>
+                                    {% elif part_demand.status == 'Received' or part_demand.status == 'Partially Issued' %}
+                                        <span class="badge bg-info">{{ part_demand.status }}</span>
+                                    {% elif part_demand.status == 'Cancelled' %}
+                                        <span class="badge bg-danger">{{ part_demand.status }}</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">{{ part_demand.status or 'Pending' }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('part_demands.detail', part_demand_id=part_demand.id) }}" 
+                                       class="btn btn-sm btn-info">View</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                {% if part_demands.pages > 1 %}
+                <nav aria-label="Part demands pagination">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item {% if not part_demands.has_prev %}disabled{% endif %}">
+                            <a class="page-link" href="{{ url_for('part_demands.list', page=part_demands.prev_num, action_id=filters.action_id, action_set_id=filters.action_set_id, part_id=filters.part_id, status=filters.status) }}">Previous</a>
+                        </li>
+                        {% for page_num in range(1, part_demands.pages + 1) %}
+                            {% if page_num <= 3 or page_num > part_demands.pages - 3 or (page_num >= part_demands.page - 1 and page_num <= part_demands.page + 1) %}
+                            <li class="page-item {% if page_num == part_demands.page %}active{% endif %}">
+                                <a class="page-link" href="{{ url_for('part_demands.list', page=page_num, action_id=filters.action_id, action_set_id=filters.action_set_id, part_id=filters.part_id, status=filters.status) }}">{{ page_num }}</a>
+                            </li>
+                            {% elif page_num == 4 or page_num == part_demands.pages - 3 %}
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                            {% endif %}
+                        {% endfor %}
+                        <li class="page-item {% if not part_demands.has_next %}disabled{% endif %}">
+                            <a class="page-link" href="{{ url_for('part_demands.list', page=part_demands.next_num, action_id=filters.action_id, action_set_id=filters.action_set_id, part_id=filters.part_id, status=filters.status) }}">Next</a>
+                        </li>
+                    </ul>
+                </nav>
+                {% endif %}
+                {% else %}
+                <p class="text-muted">No part demands found.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

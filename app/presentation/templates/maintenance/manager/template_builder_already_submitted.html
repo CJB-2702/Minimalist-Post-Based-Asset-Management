@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Template Already Submitted - {{ builder.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .submitted-container {
+        max-width: 800px;
+        margin: 2rem auto;
+    }
+    .submitted-card {
+        border-left: 4px solid #198754;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .success-icon {
+        font-size: 4rem;
+        color: #198754;
+    }
+    .template-link-card {
+        border: 2px solid #0d6efd;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-top: 2rem;
+        transition: all 0.2s;
+    }
+    .template-link-card:hover {
+        background-color: #f8f9ff;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(13, 110, 253, 0.15);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="submitted-container">
+        <div class="card submitted-card">
+            <div class="card-body text-center p-5">
+                <div class="success-icon mb-4">
+                    <i class="bi bi-check-circle-fill"></i>
+                </div>
+                <h2 class="mb-3">Template Already Submitted</h2>
+                <p class="lead text-muted mb-4">
+                    This template builder has already been submitted and converted to a production template.
+                </p>
+                
+                <div class="row mb-4">
+                    <div class="col-md-6 mb-3 mb-md-0">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="text-muted mb-2">Builder Name</h6>
+                                <p class="mb-0 fw-bold">{{ builder.name }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="text-muted mb-2">Status</h6>
+                                <p class="mb-0">
+                                    <span class="badge bg-success">{{ builder.build_status }}</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if template %}
+                <div class="template-link-card">
+                    <h5 class="mb-3">
+                        <i class="bi bi-file-earmark-text text-primary"></i> Created Template
+                    </h5>
+                    <p class="mb-3">
+                        <strong>Template Name:</strong> {{ template.task_name }}
+                    </p>
+                    {% if template.description %}
+                    <p class="text-muted mb-3">{{ template.description }}</p>
+                    {% endif %}
+                    <a href="{{ url_for('maintenance.view_maintenance_template', template_set_id=template.id) }}" 
+                       class="btn btn-primary btn-lg">
+                        <i class="bi bi-eye"></i> View Template
+                    </a>
+                </div>
+                {% endif %}
+                
+                <div class="mt-4">
+                    <a href="{{ url_for('manager_portal.build_maintenance') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Build Maintenance
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

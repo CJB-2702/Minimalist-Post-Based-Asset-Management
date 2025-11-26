@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Action - {{ action.action_name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Edit Action</h1>
+            <div>
+                <a href="{{ url_for('actions.detail', action_id=action.id) }}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Details
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Action Information</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('actions.edit', action_id=action.id) }}">
+                    <div class="mb-3">
+                        <label for="action_name" class="form-label">Action Name</label>
+                        <input type="text"
+                               class="form-control"
+                               id="action_name"
+                               name="action_name"
+                               value="{{ action.action_name }}"
+                               required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control"
+                                  id="description"
+                                  name="description"
+                                  rows="3"
+                                  placeholder="Describe this maintenance action...">{{ action.description or '' }}</textarea>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="status" class="form-label">Status</label>
+                                <select class="form-select" id="status" name="status">
+                                    {% set statuses = ['Not Started', 'In Progress', 'Completed', 'Skipped'] %}
+                                    {% for s in statuses %}
+                                        <option value="{{ s }}" {% if action.status == s %}selected{% endif %}>
+                                            {{ s }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="scheduled_start_time" class="form-label">Scheduled Start Time</label>
+                                <input type="datetime-local"
+                                       class="form-control"
+                                       id="scheduled_start_time"
+                                       name="scheduled_start_time"
+                                       value="{% if action.scheduled_start_time %}{{ action.scheduled_start_time.strftime('%Y-%m-%dT%H:%M') }}{% endif %}">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="billable_hours" class="form-label">Billable Hours</label>
+                                <input type="number"
+                                       step="0.1"
+                                       min="0"
+                                       class="form-control"
+                                       id="billable_hours"
+                                       name="billable_hours"
+                                       value="{{ action.billable_hours if action.billable_hours is not none else '' }}">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Current Sequence</label>
+                                <p class="form-control-plaintext">
+                                    {{ action.sequence_order if action.sequence_order is not none else 'N/A' }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="completion_notes" class="form-label">Completion Notes</label>
+                        <textarea class="form-control"
+                                  id="completion_notes"
+                                  name="completion_notes"
+                                  rows="3"
+                                  placeholder="Notes about how this action was completed...">{{ action.completion_notes or '' }}</textarea>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Save Changes
+                        </button>
+                        <a href="{{ url_for('actions.detail', action_id=action.id) }}" class="btn btn-outline-secondary">
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Context</h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-2">
+                    <strong>Maintenance Action Set:</strong><br>
+                    {% if action.maintenance_action_set %}
+                        <a href="{{ url_for('maintenance_action_sets.detail', action_set_id=action.maintenance_action_set.id) }}">
+                            {{ action.maintenance_action_set.task_name }}
+                        </a>
+                    {% else %}
+                        <span class="text-muted">None</span>
+                    {% endif %}
+                </p>
+                <p class="mb-0">
+                    <strong>Current Status:</strong><br>
+                    <span class="badge bg-{{ 'success' if action.status == 'Completed' else 'secondary' }}">
+                        {{ action.status }}
+                    </span>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+

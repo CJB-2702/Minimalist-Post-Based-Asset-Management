@@ -1,0 +1,44 @@
+<div class="card detail-card large-card mb-4">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">
+                <i class="bi {{ detail_type_icon }}"></i>
+                {{ detail_type_name }} Details
+            </h5>
+            <div class="card-actions">
+                <a href="{{ url_for('assets.detail_tables.edit', detail_type=detail_type, id=detail.id) }}" 
+                   class="btn btn-primary">
+                    <i class="bi bi-pencil"></i> Edit
+                </a>
+                <button class="btn btn-danger" 
+                        data-bs-toggle="modal" 
+                        data-bs-target="#deleteModal{{ detail.id }}">
+                    <i class="bi bi-trash"></i> Delete
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="detail-content">
+                    {% include 'components/detail_tables/cards/' + detail_type + '_content.html' %}
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="detail-meta">
+                    <h6>Metadata</h6>
+                    <ul class="list-unstyled">
+                        <li><strong>ID:</strong> {{ detail.id }}</li>
+                        <li><strong>Created:</strong> {{ detail.created_at.strftime('%Y-%m-%d %H:%M') }}</li>
+                        <li><strong>Created By:</strong> {{ detail.created_by.name if detail.created_by else 'Unknown' }}</li>
+                        {% if detail.updated_at != detail.created_at %}
+                        <li><strong>Updated:</strong> {{ detail.updated_at.strftime('%Y-%m-%d %H:%M') }}</li>
+                        <li><strong>Updated By:</strong> {{ detail.updated_by.name if detail.updated_by else 'Unknown' }}</li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div> 

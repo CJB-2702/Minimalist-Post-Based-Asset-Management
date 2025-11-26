@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Assign & Monitor - Manager Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="bi bi-person-check text-warning"></i> Assign & Monitor
+                    </h1>
+                    <p class="text-muted mb-0">Assign work to technicians, monitor progress, and manage active maintenance</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('manager_portal.dashboard') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-tools display-1 text-muted"></i>
+                    <h4 class="mt-3 text-muted">Coming Soon</h4>
+                    <p class="text-muted">Assign & monitor functionality will be implemented here</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

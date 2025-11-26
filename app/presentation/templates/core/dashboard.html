@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}Core Management - Dashboard{% endblock %}
+
+{% block head %}
+<style>
+    .area-card {
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        border: none;
+        border-radius: 12px;
+        height: 100%;
+    }
+    
+    .area-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    
+    .area-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+    
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="bi bi-database text-primary"></i>
+                        Core Management Dashboard
+                    </h1>
+                    <p class="text-muted mb-0">Foundation data and core system management</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Home
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Core Area Navigation Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-12">
+            <h3 class="mb-3">Core Areas</h3>
+        </div>
+        
+        <!-- Asset Info -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card area-card">
+                <div class="card-body text-center p-4">
+                    <div class="area-icon text-success">
+                        <i class="bi bi-truck"></i>
+                    </div>
+                    <h5 class="card-title">Asset Info</h5>
+                    <p class="card-text text-muted small mb-3">
+                        Manage assets, asset types, and make/models
+                    </p>
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('core_assets.list') }}" class="btn btn-success btn-sm">
+                            <i class="bi bi-list"></i> Assets
+                        </a>
+                        <a href="{{ url_for('asset_types.list') }}" class="btn btn-outline-success btn-sm">
+                            <i class="bi bi-tags"></i> Asset Types
+                        </a>
+                        <a href="{{ url_for('make_models.list') }}" class="btn btn-outline-success btn-sm">
+                            <i class="bi bi-tag"></i> Make/Models
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Event Info -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card area-card">
+                <div class="card-body text-center p-4">
+                    <div class="area-icon text-warning">
+                        <i class="bi bi-calendar-event"></i>
+                    </div>
+                    <h5 class="card-title">Event Info</h5>
+                    <p class="card-text text-muted small mb-3">
+                        Track events, comments, and attachments
+                    </p>
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('events.list') }}" class="btn btn-warning btn-sm">
+                            <i class="bi bi-list"></i> Events
+                        </a>
+                        <a href="{{ url_for('events.list', condensed_view=True) }}" class="btn btn-outline-warning btn-sm">
+                            <i class="bi bi-clock-history"></i> Recent Events
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Supply -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card area-card">
+                <div class="card-body text-center p-4">
+                    <div class="area-icon text-danger">
+                        <i class="bi bi-box-seam"></i>
+                    </div>
+                    <h5 class="card-title">Supply</h5>
+                    <p class="card-text text-muted small mb-3">
+                        Manage parts, tools, and inventory
+                    </p>
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('core_supply_parts.list') }}" class="btn btn-danger btn-sm">
+                            <i class="bi bi-box"></i> Parts
+                        </a>
+                        <a href="{{ url_for('core_supply_tools.list') }}" class="btn btn-outline-danger btn-sm">
+                            <i class="bi bi-tools"></i> Tool Definitions
+                        </a>
+                        <a href="{{ url_for('core_supply_issuable_tools.list') }}" class="btn btn-outline-danger btn-sm">
+                            <i class="bi bi-wrench"></i> Issuable Tools
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Info -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card area-card">
+                <div class="card-body text-center p-4">
+                    <div class="area-icon text-info">
+                        <i class="bi bi-people"></i>
+                    </div>
+                    <h5 class="card-title">User Info</h5>
+                    <p class="card-text text-muted small mb-3">
+                        Manage users and permissions
+                    </p>
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('users.list') }}" class="btn btn-info btn-sm">
+                            <i class="bi bi-list"></i> Users
+                        </a>
+                        <a href="{{ url_for('locations.list') }}" class="btn btn-outline-info btn-sm">
+                            <i class="bi bi-geo-alt"></i> Locations
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+

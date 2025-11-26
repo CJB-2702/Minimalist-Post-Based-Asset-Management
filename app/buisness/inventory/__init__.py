@@ -1,0 +1,4 @@
+"""
+Inventory domain layer.
+"""
+

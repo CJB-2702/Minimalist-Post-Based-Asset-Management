@@ -1,0 +1,298 @@
+{% extends "base.html" %}
+
+{% block title %}Issuable Tools - Supply Management{% endblock %}
+
+{% block head %}
+<style>
+    .status-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 8px;
+    }
+    
+    .status-available { background-color: #28a745; }
+    .status-in-use { background-color: #ffc107; }
+    .status-out-for-repair { background-color: #dc3545; }
+    .status-retired { background-color: #6c757d; }
+    
+    .table-hover tbody tr:hover {
+        background-color: rgba(0,0,0,.075);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="bi bi-tools text-primary"></i>
+                        Issuable Tools
+                    </h1>
+                    <p class="text-muted mb-0">Manage issuable tools that can be issued to users</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('core_dashboard.dashboard') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Core Dashboard
+                    </a>
+                    <a href="{{ url_for('core_supply_issuable_tools.create') }}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Add Issuable Tool
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="GET" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="tool_id" class="form-label">Tool Definition</label>
+                            <select class="form-select" id="tool_id" name="tool_id">
+                                <option value="">All Tools</option>
+                                {% for tool in tools %}
+                                <option value="{{ tool.id }}" {% if request.args.get('tool_id')|int == tool.id %}selected{% endif %}>
+                                    {{ tool.tool_name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="status" class="form-label">Status</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="">All Statuses</option>
+                                {% for status in statuses %}
+                                <option value="{{ status }}" {% if request.args.get('status') == status %}selected{% endif %}>
+                                    {{ status }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="assigned_to_id" class="form-label">Assigned To</label>
+                            <select class="form-select" id="assigned_to_id" name="assigned_to_id">
+                                <option value="">All Users</option>
+                                {% for user in users %}
+                                <option value="{{ user.id }}" {% if request.args.get('assigned_to_id')|int == user.id %}selected{% endif %}>
+                                    {{ user.username }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="serial_number" class="form-label">Serial Number</label>
+                            <input type="text" class="form-control" id="serial_number" name="serial_number" 
+                                   value="{{ request.args.get('serial_number', '') }}" placeholder="Search by serial">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">&nbsp;</label>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-outline-primary">
+                                    <i class="bi bi-funnel"></i> Filter
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tools Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        Issuable Tools ({{ issuable_tools.total }} total)
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if issuable_tools.items %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Tool</th>
+                                    <th>Serial Number</th>
+                                    <th>Status</th>
+                                    <th>Location</th>
+                                    <th>Assigned To</th>
+                                    <th>Calibration</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for issuable_tool in issuable_tools.items %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ issuable_tool.tool.tool_name if issuable_tool.tool else 'Unknown' }}</strong>
+                                        {% if issuable_tool.tool and issuable_tool.tool.tool_type %}
+                                        <br><small class="text-muted">{{ issuable_tool.tool.tool_type }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ issuable_tool.serial_number or '-' }}</td>
+                                    <td>
+                                        {% if issuable_tool.status %}
+                                        <span class="status-indicator status-{{ issuable_tool.status.lower().replace(' ', '-') }}"></span>
+                                        {% if issuable_tool.status == 'Available' %}
+                                        <span class="badge bg-success">Available</span>
+                                        {% elif issuable_tool.status == 'In Use' %}
+                                        <span class="badge bg-warning">In Use</span>
+                                        {% elif issuable_tool.status == 'Out for Repair' %}
+                                        <span class="badge bg-danger">Out for Repair</span>
+                                        {% elif issuable_tool.status == 'Retired' %}
+                                        <span class="badge bg-secondary">Retired</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">{{ issuable_tool.status }}</span>
+                                        {% endif %}
+                                        {% else %}
+                                        <span class="text-muted">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ issuable_tool.location or '-' }}</td>
+                                    <td>
+                                        {% if issuable_tool.assigned_to %}
+                                        <span class="badge bg-info">{{ issuable_tool.assigned_to.username }}</span>
+                                        {% else %}
+                                        <span class="text-muted">Unassigned</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if issuable_tool.next_calibration_date %}
+                                        <div class="small">
+                                            {% if issuable_tool.needs_calibration %}
+                                                <span class="badge bg-warning">Due</span>
+                                            {% elif issuable_tool.calibration_overdue %}
+                                                <span class="badge bg-danger">Overdue</span>
+                                            {% else %}
+                                                <span class="badge bg-success">OK</span>
+                                            {% endif %}
+                                            <br>
+                                            <span class="text-muted">{{ issuable_tool.next_calibration_date.strftime('%Y-%m-%d') }}</span>
+                                        </div>
+                                        {% else %}
+                                        <span class="text-muted">Not set</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a href="{{ url_for('core_supply_issuable_tools.detail', issuable_tool_id=issuable_tool.id) }}" class="btn btn-outline-primary">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a href="{{ url_for('core_supply_issuable_tools.edit', issuable_tool_id=issuable_tool.id) }}" class="btn btn-outline-warning">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-outline-danger" 
+                                                    onclick="confirmDelete('{{ issuable_tool.tool.tool_name if issuable_tool.tool else 'Unknown' }}', {{ issuable_tool.id }})">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-tools text-muted" style="font-size: 3rem;"></i>
+                        <h5 class="text-muted mt-3">No issuable tools found</h5>
+                        <p class="text-muted">Get started by adding your first issuable tool.</p>
+                        <a href="{{ url_for('core_supply_issuable_tools.create') }}" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> Add Issuable Tool
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if issuable_tools.pages > 1 %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <nav aria-label="Issuable tools pagination">
+                <ul class="pagination justify-content-center">
+                    {% if issuable_tools.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('core_supply_issuable_tools.list', page=issuable_tools.prev_num, **request.args) }}">
+                            <i class="bi bi-chevron-left"></i> Previous
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for page_num in issuable_tools.iter_pages() %}
+                        {% if page_num %}
+                            {% if page_num != issuable_tools.page %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('core_supply_issuable_tools.list', page=page_num, **request.args) }}">
+                                    {{ page_num }}
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_num }}</span>
+                            </li>
+                            {% endif %}
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if issuable_tools.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('core_supply_issuable_tools.list', page=issuable_tools.next_num, **request.args) }}">
+                            Next <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this issuable tool "<span id="toolName"></span>"?</p>
+                <p class="text-danger"><small>This action cannot be undone.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmDelete(toolName, toolId) {
+    document.getElementById('toolName').textContent = toolName;
+    document.getElementById('deleteForm').action = `/core/supply/issuable-tools/${toolId}/delete`;
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+</script>
+{% endblock %}
+

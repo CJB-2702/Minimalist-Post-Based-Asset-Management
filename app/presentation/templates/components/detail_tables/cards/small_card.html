@@ -1,0 +1,32 @@
+<div class="card detail-card small-card mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="card-title mb-0">
+            <i class="bi {{ detail_type_icon }}"></i>
+            {{ detail_type_name }}
+        </h6>
+        <div class="card-actions">
+            <a href="{{ url_for('assets.detail_tables.edit', detail_type=detail_type, id=detail.id) }}" 
+               class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-pencil"></i>
+            </a>
+            <button class="btn btn-sm btn-outline-danger" 
+                    data-bs-toggle="modal" 
+                    data-bs-target="#deleteModal{{ detail.id }}">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="detail-summary">
+            {% include 'components/detail_tables/cards/' + detail_type + '_summary.html' %}
+        </div>
+    </div>
+    <div class="card-footer text-muted">
+        <small>
+            Created: {{ detail.created_at.strftime('%Y-%m-%d') }}
+            {% if detail.updated_at != detail.created_at %}
+            | Updated: {{ detail.updated_at.strftime('%Y-%m-%d') }}
+            {% endif %}
+        </small>
+    </div>
+</div> 

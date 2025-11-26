@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}{{ asset.name }} - Asset Management System{% endblock %}
+
+{% block content %}
+<div>
+    <h2>Asset Details: {{ asset.name }}</h2>
+    
+    <div>
+        <a href="{{ url_for('core_assets.list') }}">← Back to Asset List</a>
+    </div>
+    
+    <div>
+        <h3>Basic Information</h3>
+        <table border="1">
+            <tr>
+                <th>Asset ID</th>
+                <td>{{ asset.id }}</td>
+            </tr>
+            <tr>
+                <th>Name</th>
+                <td>{{ asset.name }}</td>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td>{{ asset.description or 'No description' }}</td>
+            </tr>
+            <tr>
+                <th>Asset Type</th>
+                <td>
+                    {% if asset_type %}
+                        {{ asset_type.name }}
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>Make/Model</th>
+                <td>
+                    {% if make_model %}
+                        {{ make_model.make }} {{ make_model.model }}
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>Location</th>
+                <td>
+                    {% if location %}
+                        {{ location.name }}
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>Status</th>
+                <td>{{ asset.status or 'N/A' }}</td>
+            </tr>
+            <tr>
+                <th>Created</th>
+                <td>{{ asset.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+            </tr>
+            <tr>
+                <th>Last Updated</th>
+                <td>{{ asset.updated_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+            </tr>
+        </table>
+    </div>
+    
+    {% if asset.asset_type_id %}
+        <div>
+            <h3>Asset Type Details</h3>
+            <p>Asset Type: {{ asset_type.name }}</p>
+            {% if asset_type.description %}
+                <p>Description: {{ asset_type.description }}</p>
+            {% endif %}
+        </div>
+    {% endif %}
+    
+    {% if asset.make_model_id %}
+        <div>
+            <h3>Make/Model Details</h3>
+            <p>Make: {{ make_model.make }}</p>
+            <p>Model: {{ make_model.model }}</p>
+            {% if make_model.year %}
+                <p>Year: {{ make_model.year }}</p>
+            {% endif %}
+        </div>
+    {% endif %}
+    
+    {% if asset.major_location_id %}
+        <div>
+            <h3>Location Details</h3>
+            <p>Location: {{ location.name }}</p>
+            {% if location.description %}
+                <p>Description: {{ location.description }}</p>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %} 

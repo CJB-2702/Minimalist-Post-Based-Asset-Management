@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}Maintenance - Under Development{% endblock %}
+
+{% block head %}
+<style>
+    .development-banner {
+        background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+        color: white;
+        padding: 2rem 0;
+        margin-bottom: 2rem;
+        border-radius: 8px;
+    }
+    
+    .feature-card {
+        transition: transform 0.2s ease-in-out;
+        border: 2px dashed #dee2e6;
+    }
+    
+    .feature-card:hover {
+        transform: translateY(-5px);
+        border-color: #0d6efd;
+    }
+    
+    .stat-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Development Banner -->
+    <div class="development-banner text-center">
+        <h1 class="display-5 fw-bold mb-2">
+            <i class="bi bi-tools"></i> Maintenance Module
+        </h1>
+        <p class="lead mb-0">Currently under development - Data layer foundation is complete</p>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="stat-card">
+                <h3 class="mb-0">{{ total_maintenance_events or 0 }}</h3>
+                <small>Maintenance Events</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <h3 class="mb-0">{{ in_progress_events or 0 }}</h3>
+                <small>In Progress</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <h3 class="mb-0">{{ total_actions or 0 }}</h3>
+                <small>Actions</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <h3 class="mb-0">{{ total_part_demands or 0 }}</h3>
+                <small>Part Demands</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Information Card -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">
+                <i class="bi bi-info-circle text-primary"></i> Development Status
+            </h5>
+            <p class="card-text">
+                The maintenance module is being rebuilt from the ground up with a focus on the data layer first.
+                The foundation is now complete with proper three-tier hierarchy (Base Items, Template Items, Proto Templates).
+            </p>
+            <ul class="list-unstyled">
+                <li><i class="bi bi-check-circle text-success"></i> Data layer models implemented</li>
+                <li><i class="bi bi-check-circle text-success"></i> Build system updated</li>
+                <li><i class="bi bi-check-circle text-success"></i> Sample maintenance events created</li>
+                <li><i class="bi bi-clock text-warning"></i> Business layer - In progress</li>
+                <li><i class="bi bi-clock text-warning"></i> Presentation layer - In progress</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Feature Cards -->
+    <div class="row g-4">
+        <div class="col-md-6">
+            <div class="card feature-card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-wrench text-primary"></i> Technician Portal
+                    </h5>
+                    <p class="card-text text-muted">
+                        View assigned work, update action status, request parts, and report delays.
+                    </p>
+                    <div class="badge bg-secondary">Coming Soon</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card feature-card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-clipboard-check text-primary"></i> Manager Portal
+                    </h5>
+                    <p class="card-text text-muted">
+                        Create maintenance plans, assign work, approve part requests, and track progress.
+                    </p>
+                    <div class="badge bg-secondary">Coming Soon</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card feature-card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-diagram-3 text-primary"></i> Template Management
+                    </h5>
+                    <p class="card-text text-muted">
+                        Create and manage reusable maintenance templates with versioning support.
+                    </p>
+                    <div class="badge bg-secondary">Coming Soon</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card feature-card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-truck text-primary"></i> Fleet Portal
+                    </h5>
+                    <p class="card-text text-muted">
+                        Fleet-wide maintenance overview, scheduling, and reporting.
+                    </p>
+                    <div class="badge bg-secondary">Coming Soon</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Back to Home -->
+    <div class="text-center mt-4">
+        <a href="{{ url_for('main.index') }}" class="btn btn-primary btn-lg">
+            <i class="bi bi-house"></i> Back to Home
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+
+

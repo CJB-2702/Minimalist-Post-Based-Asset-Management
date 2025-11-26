@@ -1,0 +1,308 @@
+{% extends "base.html" %}
+
+{% block title %}Build Maintenance - Manager Portal{% endblock %}
+
+{% block extra_css %}
+<style>
+    .floating-create-btn {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        z-index: 1000;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        border-radius: 50px;
+        padding: 1rem 2rem;
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+    .template-card {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+    .template-card:hover {
+        border-color: #0d6efd;
+        background-color: #f8f9fa;
+    }
+    .template-card.selected {
+        border-color: #0d6efd;
+        background-color: #e7f1ff;
+    }
+    .action-summary {
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+    .action-details {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease-out;
+    }
+    .action-details.expanded {
+        max-height: 1000px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="bi bi-tools text-info"></i> Build Maintenance
+                    </h1>
+                    <p class="text-muted mb-0">Create and manage maintenance templates, action sets, and prototype actions</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('template_builder.view_drafts', search_user_id=current_user.id) }}" class="btn btn-outline-info">
+                        <i class="bi bi-file-earmark-text"></i> View Drafts
+                    </a>
+                    <a href="{{ url_for('manager_portal.dashboard') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Action Buttons at Top -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <a href="{{ url_for('template_builder.new_builder') }}" class="btn btn-primary btn-lg">
+                        <i class="bi bi-plus-circle"></i> Create New Template from Scratch
+                    </a>
+                </div>
+                <div class="d-flex gap-2">
+                    <button id="btn-copy-template" 
+                            class="btn btn-primary" 
+                            onclick="createFromTemplate(false)"
+                            disabled>
+                        <i class="bi bi-copy"></i> Create Independent Template from Example
+                    </button>
+                    <button id="btn-create-revision" 
+                            class="btn btn-outline-primary" 
+                            onclick="createFromTemplate(true)"
+                            disabled>
+                        <i class="bi bi-arrow-repeat"></i> Create New Revision of Existing Template
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Search Form -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-search"></i> Search Templates</h5>
+                </div>
+                <div class="card-body">
+                    <form method="GET" action="{{ url_for('manager_portal.build_maintenance') }}">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label for="search_id" class="form-label">Template ID</label>
+                                <input type="number" 
+                                       class="form-control" 
+                                       id="search_id" 
+                                       name="search_id" 
+                                       value="{{ search_id or '' }}"
+                                       placeholder="Enter ID">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="search_name" class="form-label">Task Name</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="search_name" 
+                                       name="search_name" 
+                                       value="{{ search_name }}"
+                                       placeholder="Search by name">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="asset_type_id" class="form-label">Asset Type</label>
+                                <select class="form-select" id="asset_type_id" name="asset_type_id">
+                                    <option value="">All Asset Types</option>
+                                    {% for asset_type in asset_types %}
+                                    <option value="{{ asset_type.id }}" {% if selected_asset_type_id == asset_type.id %}selected{% endif %}>
+                                        {{ asset_type.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="make_model_id" class="form-label">Make/Model</label>
+                                <select class="form-select" id="make_model_id" name="make_model_id">
+                                    <option value="">All Make/Models</option>
+                                    {% for make_model in make_models %}
+                                    <option value="{{ make_model.id }}" {% if selected_make_model_id == make_model.id %}selected{% endif %}>
+                                        {{ make_model.make }} {{ make_model.model }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-search"></i> Search
+                                </button>
+                                <a href="{{ url_for('manager_portal.build_maintenance') }}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-x-circle"></i> Clear
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Template Selection Card -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-file-earmark-plus"></i> Available Templates</h5>
+                </div>
+                <div class="card-body">
+                    {% if available_templates %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Select a Template:</label>
+                        <div id="template-list" class="mt-2">
+                            {% for template in available_templates %}
+                            <div class="template-card" data-template-id="{{ template.id }}" onclick="selectTemplate({{ template.id }})">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">
+                                            {{ template.task_name }}
+                                            {% if template.revision %}
+                                            <span class="badge bg-secondary ms-2">Rev: {{ template.revision }}</span>
+                                            {% endif %}
+                                        </h6>
+                                        {% if template.description %}
+                                        <p class="text-muted small mb-2">{{ template.description }}</p>
+                                        {% endif %}
+                                        <div class="action-summary">
+                                            <small>
+                                                <i class="bi bi-list-ol"></i> {{ template.total_actions }} action{{ 's' if template.total_actions != 1 else '' }}
+                                            </small>
+                                        </div>
+                                        
+                                        <!-- Expandable Action Details -->
+                                        <div class="action-details mt-2" id="actions-{{ template.id }}">
+                                            <div class="border-top pt-2 mt-2">
+                                                <small class="fw-bold text-muted">Actions:</small>
+                                                <ul class="list-unstyled ms-3 mt-2">
+                                                    {% for action in template.actions %}
+                                                    <li class="small mb-2">
+                                                        <div class="d-flex align-items-start">
+                                                            <span class="badge bg-primary me-2">{{ action.sequence_order }}</span>
+                                                            <div class="flex-grow-1">
+                                                                <strong>{{ action.action_name }}</strong>
+                                                                {% if action.description %}
+                                                                <div class="text-muted">{{ action.description[:100] }}{% if action.description|length > 100 %}...{% endif %}</div>
+                                                                {% endif %}
+                                                                <div class="mt-1">
+                                                                    {% if action.estimated_duration %}
+                                                                    <span class="badge bg-info me-1"><i class="bi bi-clock"></i> {{ action.estimated_duration }}h</span>
+                                                                    {% endif %}
+                                                                    {% if action.part_count > 0 %}
+                                                                    <span class="badge bg-secondary me-1"><i class="bi bi-box"></i> {{ action.part_count }} part{{ 's' if action.part_count != 1 else '' }}</span>
+                                                                    {% endif %}
+                                                                    {% if action.tool_count > 0 %}
+                                                                    <span class="badge bg-secondary me-1"><i class="bi bi-wrench"></i> {{ action.tool_count }} tool{{ 's' if action.tool_count != 1 else '' }}</span>
+                                                                    {% endif %}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </li>
+                                                    {% endfor %}
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="ms-3">
+                                        <button class="btn btn-sm btn-outline-primary" 
+                                                onclick="event.stopPropagation(); toggleActions({{ template.id }})"
+                                                type="button">
+                                            <i class="bi bi-chevron-down" id="chevron-{{ template.id }}"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No templates found matching your search criteria.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Floating Create New Template Button -->
+<a href="{{ url_for('template_builder.new_builder') }}" class="btn btn-primary btn-lg floating-create-btn">
+    <i class="bi bi-plus-circle"></i> Create New Template from Scratch
+</a>
+
+<script>
+let selectedTemplateId = null;
+
+function selectTemplate(templateId) {
+    // Remove selected class from all cards
+    document.querySelectorAll('.template-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+    
+    // Add selected class to clicked card
+    const card = document.querySelector(`[data-template-id="${templateId}"]`);
+    if (card) {
+        card.classList.add('selected');
+    }
+    
+    selectedTemplateId = templateId;
+    
+    // Enable buttons
+    document.getElementById('btn-copy-template').disabled = false;
+    document.getElementById('btn-create-revision').disabled = false;
+}
+
+function toggleActions(templateId) {
+    const details = document.getElementById(`actions-${templateId}`);
+    const chevron = document.getElementById(`chevron-${templateId}`);
+    
+    if (details.classList.contains('expanded')) {
+        details.classList.remove('expanded');
+        chevron.classList.remove('bi-chevron-up');
+        chevron.classList.add('bi-chevron-down');
+    } else {
+        details.classList.add('expanded');
+        chevron.classList.remove('bi-chevron-down');
+        chevron.classList.add('bi-chevron-up');
+    }
+}
+
+function createFromTemplate(isRevision) {
+    if (!selectedTemplateId) {
+        alert('Please select a template first');
+        return;
+    }
+    
+    const url = new URL('{{ url_for("template_builder.new_builder") }}', window.location.origin);
+    url.searchParams.set('from_template', selectedTemplateId);
+    if (isRevision) {
+        url.searchParams.set('is_revision', 'true');
+    }
+    
+    window.location.href = url.toString();
+}
+</script>
+{% endblock %}

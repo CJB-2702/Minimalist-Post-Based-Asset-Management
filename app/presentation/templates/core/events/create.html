@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+
+{% block title %}Create Event - Asset Management System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{{ url_for('events.list') }}">Events</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Create Event</li>
+                    </ol>
+                </nav>
+                <h1>Create New Event</h1>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Event Information</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="event_type" class="form-label">Event Type *</label>
+                                <select class="form-select" id="event_type" name="event_type" required>
+                                    <option value="">Select Event Type</option>
+                                    <option value="Asset Created" {% if request.form.get('event_type') == 'Asset Created' %}selected{% endif %}>Asset Created</option>
+                                    <option value="Maintenance" {% if request.form.get('event_type') == 'Maintenance' %}selected{% endif %}>Maintenance</option>
+                                    <option value="Repair" {% if request.form.get('event_type') == 'Repair' %}selected{% endif %}>Repair</option>
+                                    <option value="Inspection" {% if request.form.get('event_type') == 'Inspection' %}selected{% endif %}>Inspection</option>
+                                    <option value="Installation" {% if request.form.get('event_type') == 'Installation' %}selected{% endif %}>Installation</option>
+                                    <option value="Decommission" {% if request.form.get('event_type') == 'Decommission' %}selected{% endif %}>Decommission</option>
+                                    <option value="Relocation" {% if request.form.get('event_type') == 'Relocation' %}selected{% endif %}>Relocation</option>
+                                    <option value="Purchase" {% if request.form.get('event_type') == 'Purchase' %}selected{% endif %}>Purchase</option>
+                                    <option value="Sale" {% if request.form.get('event_type') == 'Sale' %}selected{% endif %}>Sale</option>
+                                    <option value="System" {% if request.form.get('event_type') == 'System' %}selected{% endif %}>System</option>
+                                    <option value="Other" {% if request.form.get('event_type') == 'Other' %}selected{% endif %}>Other</option>
+                                </select>
+                                <div class="form-text">Select the type of event or choose "Other" for custom types</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="custom_event_type" class="form-label">Custom Event Type</label>
+                                <input type="text" class="form-control" id="custom_event_type" name="custom_event_type"
+                                       value="{{ request.form.get('custom_event_type', '') }}" 
+                                       placeholder="Enter custom event type"
+                                       style="display: none;">
+                                <div class="form-text">Enter a custom event type if "Other" is selected</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description *</label>
+                        <textarea class="form-control" id="description" name="description" rows="4" required
+                                  placeholder="Provide a detailed description of the event">{{ request.form.get('description', '') }}</textarea>
+                        <div class="form-text">Describe what happened, who was involved, and any important details</div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="asset_id" class="form-label">Related Asset</label>
+                                <select class="form-select" id="asset_id" name="asset_id">
+                                    <option value="">Select Asset (Optional)</option>
+                                    {% for asset in assets %}
+                                    <option value="{{ asset.id }}" {% if request.form.get('asset_id')|int == asset.id %}selected{% endif %}>
+                                        {{ asset.name }}
+                                        {% if asset.serial_number %} ({{ asset.serial_number }}){% endif %}
+                                        {% if asset.major_location %} - {{ asset.major_location.name }}{% endif %}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">Link this event to a specific asset if applicable</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="major_location_id" class="form-label">Location</label>
+                                <select class="form-select" id="major_location_id" name="major_location_id">
+                                    <option value="">Select Location (Optional)</option>
+                                    {% for location in locations %}
+                                    <option value="{{ location.id }}" {% if request.form.get('major_location_id')|int == location.id %}selected{% endif %}>
+                                        {{ location.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">Select the location where this event occurred</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('events.list') }}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Create Event
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <!-- Help Information -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Help</h5>
+            </div>
+            <div class="card-body">
+                <h6>Required Fields</h6>
+                <ul class="list-unstyled">
+                    <li><i class="bi bi-asterisk text-danger"></i> Event Type</li>
+                    <li><i class="bi bi-asterisk text-danger"></i> Description</li>
+                </ul>
+
+                <h6>Optional Fields</h6>
+                <ul class="list-unstyled">
+                    <li><i class="bi bi-circle text-muted"></i> Related Asset</li>
+                    <li><i class="bi bi-circle text-muted"></i> Location</li>
+                </ul>
+
+                <hr>
+
+                <h6>Event Types</h6>
+                <ul class="small">
+                    <li><strong>Asset Created:</strong> When a new asset is added to the system</li>
+                    <li><strong>Maintenance:</strong> Scheduled or routine maintenance activities</li>
+                    <li><strong>Repair:</strong> Fixing broken or malfunctioning equipment</li>
+                    <li><strong>Inspection:</strong> Safety or compliance inspections</li>
+                    <li><strong>Installation:</strong> Setting up new equipment</li>
+                    <li><strong>Decommission:</strong> Taking equipment out of service</li>
+                    <li><strong>Relocation:</strong> Moving equipment to a new location</li>
+                    <li><strong>Purchase:</strong> Buying new equipment or parts</li>
+                    <li><strong>Sale:</strong> Selling equipment or parts</li>
+                    <li><strong>System:</strong> System-generated events</li>
+                    <li><strong>Other:</strong> Custom event types</li>
+                </ul>
+
+                <hr>
+
+                <h6>Tips</h6>
+                <ul class="small">
+                    <li>Be specific in your description to help with future reference</li>
+                    <li>Link to assets when the event directly involves equipment</li>
+                    <li>Include relevant details like costs, personnel, or outcomes</li>
+                    <li>Use consistent terminology for similar events</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0">Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('core_assets.create') }}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-plus-circle"></i> Create Asset
+                    </a>
+                    <a href="{{ url_for('locations.create') }}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-plus-circle"></i> Create Location
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const eventTypeSelect = document.getElementById('event_type');
+    const customEventTypeInput = document.getElementById('custom_event_type');
+    
+    eventTypeSelect.addEventListener('change', function() {
+        if (this.value === 'Other') {
+            customEventTypeInput.style.display = 'block';
+            customEventTypeInput.required = true;
+        } else {
+            customEventTypeInput.style.display = 'none';
+            customEventTypeInput.required = false;
+            customEventTypeInput.value = '';
+        }
+    });
+    
+    // Handle form submission to use custom event type if "Other" is selected
+    document.querySelector('form').addEventListener('submit', function(e) {
+        if (eventTypeSelect.value === 'Other' && customEventTypeInput.value.trim()) {
+            // Create a hidden input with the custom event type
+            const hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.name = 'event_type';
+            hiddenInput.value = customEventTypeInput.value.trim();
+            this.appendChild(hiddenInput);
+            
+            // Remove the original event_type select from submission
+            eventTypeSelect.disabled = true;
+        }
+    });
+});
+</script>
+{% endblock %} 

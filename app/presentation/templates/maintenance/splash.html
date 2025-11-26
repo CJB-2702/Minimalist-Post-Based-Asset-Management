@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}Maintenance Portal{% endblock %}
+
+{% block extra_css %}
+<style>
+    .portal-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+        border: none;
+        border-radius: 12px;
+        height: 100%;
+        min-height: 300px;
+    }
+    .portal-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    .portal-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+    }
+    .portal-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="portal-container">
+    <!-- Page Header -->
+    <div class="row mb-5">
+        <div class="col-12 text-center">
+            <h1 class="display-4 mb-3">
+                <i class="bi bi-tools"></i> Maintenance Portal
+            </h1>
+            <p class="lead text-muted">Choose your portal based on your role</p>
+        </div>
+    </div>
+
+    <!-- Portal Cards -->
+    <div class="row g-4">
+        <!-- Technician Portal -->
+        <div class="col-lg-4">
+            <div class="card portal-card h-100 border-primary shadow-sm">
+                <div class="card-body text-center d-flex flex-column p-4">
+                    <div class="portal-icon text-primary">
+                        <i class="bi bi-person-wrench"></i>
+                    </div>
+                    <h3 class="card-title mb-3">Technician Portal</h3>
+                    <p class="card-text flex-grow-1 mb-4">
+                        View assigned work, complete actions, request parts, and track your maintenance history.
+                    </p>
+                    <a href="{{ url_for('technician_portal.dashboard') }}" class="btn btn-primary btn-lg mt-auto">
+                        <i class="bi bi-arrow-right-circle"></i> Go to Technician Portal
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Manager Portal -->
+        <div class="col-lg-4">
+            <div class="card portal-card h-100 border-success shadow-sm">
+                <div class="card-body text-center d-flex flex-column p-4">
+                    <div class="portal-icon text-success">
+                        <i class="bi bi-clipboard-check"></i>
+                    </div>
+                    <h3 class="card-title mb-3">Manager Portal</h3>
+                    <p class="card-text flex-grow-1 mb-4">
+                        Create templates, manage plans, assign work to technicians, and approve part requests.
+                    </p>
+                    <a href="{{ url_for('manager_portal.dashboard') }}" class="btn btn-success btn-lg mt-auto">
+                        <i class="bi bi-arrow-right-circle"></i> Go to Manager Portal
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Leader/Admin Portal -->
+        <div class="col-lg-4">
+            <div class="card portal-card h-100 border-info shadow-sm">
+                <div class="card-body text-center d-flex flex-column p-4">
+                    <div class="portal-icon text-info">
+                        <i class="bi bi-speedometer2"></i>
+                    </div>
+                    <h3 class="card-title mb-3">Fleet/Admin Portal</h3>
+                    <p class="card-text flex-grow-1 mb-4">
+                        Fleet-wide dashboard, analytics, comprehensive maintenance data views, and reporting.
+                    </p>
+                    <a href="{{ url_for('fleet_portal.dashboard') }}" class="btn btn-info btn-lg mt-auto">
+                        <i class="bi bi-arrow-right-circle"></i> Go to Fleet Portal
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    {% if stats %}
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="bi bi-graph-up"></i> Maintenance Overview
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center g-3">
+                        <div class="col-md-3">
+                            <h3 class="text-primary mb-1">{{ stats.get('total_maintenance_events', 0) }}</h3>
+                            <p class="text-muted mb-0 small">Total Events</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h3 class="text-success mb-1">{{ stats.get('completed_events', 0) }}</h3>
+                            <p class="text-muted mb-0 small">Completed</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h3 class="text-warning mb-1">{{ stats.get('in_progress_events', 0) }}</h3>
+                            <p class="text-muted mb-0 small">In Progress</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h3 class="text-info mb-1">{{ stats.get('planned_events', 0) }}</h3>
+                            <p class="text-muted mb-0 small">Planned</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+
+

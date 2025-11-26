@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Asset Management System{% endblock %}</title>
+    
+    <!-- HTMX for dynamic interactions -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    
+    <!-- Alpine.js for complex interactions -->
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-icons.css') }}">
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('main.index') }}">MIN FMS</a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <!-- Core Management -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            Core Management
+                        </a>
+                        <ul class="dropdown-menu">
+                            <!-- Dashboard -->
+                            <li><a class="dropdown-item" href="{{ url_for('core_dashboard.dashboard') }}">
+                                <i class="bi bi-speedometer2"></i> Dashboard
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            
+                            <!-- Asset Info Section -->
+                            <li><h6 class="dropdown-header">
+                                <i class="bi bi-truck"></i> Asset Info
+                            </h6></li>
+                            <li><a class="dropdown-item" href="{{ url_for('core_assets.list') }}">
+                                <i class="bi bi-list-ul"></i> Assets
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('asset_types.list') }}">
+                                <i class="bi bi-tags"></i> Asset Types
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('make_models.list') }}">
+                                <i class="bi bi-tag"></i> Make/Models
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            
+                            <!-- Event Info Section -->
+                            <li><h6 class="dropdown-header">
+                                <i class="bi bi-calendar-event"></i> Event Info
+                            </h6></li>
+                            <li><a class="dropdown-item" href="{{ url_for('events.list') }}">
+                                <i class="bi bi-list-ul"></i> Events
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            
+                            <!-- Supply Section -->
+                            <li><h6 class="dropdown-header">
+                                <i class="bi bi-box-seam"></i> Supply
+                            </h6></li>
+                            <li><a class="dropdown-item" href="{{ url_for('core_supply_parts.list') }}">
+                                <i class="bi bi-box"></i> Parts
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('core_supply_tools.list') }}">
+                                <i class="bi bi-tools"></i> Tool Definitions
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('core_supply_issuable_tools.list') }}">
+                                <i class="bi bi-wrench"></i> Issuable Tools
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            
+                            <!-- User Info Section -->
+                            <li><h6 class="dropdown-header">
+                                <i class="bi bi-people"></i> User Info
+                            </h6></li>
+                            <li><a class="dropdown-item" href="{{ url_for('users.list') }}">
+                                <i class="bi bi-person"></i> Users
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('locations.list') }}">
+                                <i class="bi bi-geo-alt"></i> Locations
+                            </a></li>
+                        </ul>
+                    </li>
+                    
+                    <!-- Asset Management -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#assetManagementModal">
+                            Asset Management
+                        </a>
+                    </li>
+                    
+                    <!-- Dispatching -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('dispatching.index') }}">Dispatching</a>
+                    </li>
+                    
+                    <!-- Maintenance -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            Maintenance
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('maintenance.index') }}">Dashboard</a></li>
+                        </ul>
+                    </li>
+                    
+                    <!-- System/Admin -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            System
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('main.logs') }}">
+                                <i class="bi bi-journal-text"></i> Log Viewer
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item disabled" href="#" title="Coming Soon">
+                                <i class="bi bi-gear"></i> Settings
+                            </a></li>
+                        </ul>
+                    </li>
+                </ul>
+                
+                <!-- Search -->
+                <form class="d-flex me-3" action="{{ url_for('main.search') }}" method="GET">
+                    <input class="form-control me-2" type="search" name="q" placeholder="Search..." aria-label="Search">
+                    <button class="btn btn-outline-light" type="submit">Search</button>
+                </form>
+                
+                <!-- User Menu -->
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            {{ current_user.username if current_user.is_authenticated else 'Guest' }}
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">Logout</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    <div class="container mt-3">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Main Content -->
+    <main class="container mt-4">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-light mt-5 py-3">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <p class="mb-0">&copy; 2024 Asset Management System</p>
+                </div>
+                <div class="col-md-6 text-end">
+                    <a href="{{ url_for('main.help') }}" class="text-muted me-3">Help</a>
+                    <a href="{{ url_for('main.about') }}" class="text-muted">About</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/base.js') }}"></script>
+    
+    {% block extra_js %}{% endblock %}
+    
+    <!-- Asset Management Modal -->
+    <div class="modal" id="assetManagementModal" tabindex="-1" aria-labelledby="assetManagementModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="assetManagementModalLabel">
+                        <i class="bi bi-truck"></i> Asset Management
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <!-- System Dashboard -->
+                        <div class="col-md-6">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-body text-center">
+                                    <div class="mb-3">
+                                        <i class="bi bi-speedometer2 text-info" style="font-size: 2rem;"></i>
+                                    </div>
+                                    <h6 class="card-title">System Dashboard</h6>
+                                    <p class="card-text small text-muted">System overview and analytics</p>
+                                    <a href="{{ url_for('main.dashboard') }}" class="btn btn-info btn-sm w-100">
+                                        <i class="bi bi-arrow-right"></i> Open Dashboard
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Asset Dashboard -->
+                        <div class="col-md-6">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-body text-center">
+                                    <div class="mb-3">
+                                        <i class="bi bi-truck text-primary" style="font-size: 2rem;"></i>
+                                    </div>
+                                    <h6 class="card-title">Asset Dashboard</h6>
+                                    <p class="card-text small text-muted">Asset overview and statistics</p>
+                                    <a href="{{ url_for('main.asset_management') }}" class="btn btn-primary btn-sm w-100">
+                                        <i class="bi bi-arrow-right"></i> Open Dashboard
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Asset List -->
+                        <div class="col-md-6">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-body text-center">
+                                    <div class="mb-3">
+                                        <i class="bi bi-list-ul text-success" style="font-size: 2rem;"></i>
+                                    </div>
+                                    <h6 class="card-title">Asset List</h6>
+                                    <p class="card-text small text-muted">View all assets</p>
+                                    <a href="{{ url_for('core_assets.list') }}" class="btn btn-success btn-sm w-100">
+                                        <i class="bi bi-arrow-right"></i> View Assets
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Quick Actions -->
+                        <div class="col-md-6">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-body text-center">
+                                    <div class="mb-3">
+                                        <i class="bi bi-lightning text-warning" style="font-size: 2rem;"></i>
+                                    </div>
+                                    <h6 class="card-title">Quick Actions</h6>
+                                    <p class="card-text small text-muted">Add new assets and records</p>
+                                    <div class="d-grid gap-2">
+                                        <a href="{{ url_for('core_assets.create') }}" class="btn btn-outline-warning btn-sm">
+                                            <i class="bi bi-plus-circle"></i> Add Asset
+                                        </a>
+                                        <a href="{{ url_for('locations.create') }}" class="btn btn-outline-secondary btn-sm">
+                                            <i class="bi bi-geo-alt"></i> Add Location
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Asset Details Section -->
+                        <div class="col-12">
+                            <h6 class="text-muted mb-3">
+                                <i class="bi bi-folder"></i> Asset Details
+                            </h6>
+                        </div>
+                        
+                        <!-- Purchase Info -->
+                        <div class="col-md-4">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-body text-center">
+                                    <div class="mb-2">
+                                        <i class="bi bi-receipt text-info" style="font-size: 1.5rem;"></i>
+                                    </div>
+                                    <h6 class="card-title small">Purchase Info</h6>
+                                    <a href="{{ url_for('assets.detail_tables.list', detail_type='purchase_info') }}" class="btn btn-outline-info btn-sm w-100">
+                                        View
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Vehicle Registration -->
+                        <div class="col-md-4">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-body text-center">
+                                    <div class="mb-2">
+                                        <i class="bi bi-card-text text-warning" style="font-size: 1.5rem;"></i>
+                                    </div>
+                                    <h6 class="card-title small">Vehicle Registration</h6>
+                                    <a href="{{ url_for('assets.detail_tables.list', detail_type='vehicle_registration') }}" class="btn btn-outline-warning btn-sm w-100">
+                                        View
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Toyota Warranty -->
+                        <div class="col-md-4">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-body text-center">
+                                    <div class="mb-2">
+                                        <i class="bi bi-shield-check text-success" style="font-size: 1.5rem;"></i>
+                                    </div>
+                                    <h6 class="card-title small">Toyota Warranty</h6>
+                                    <a href="{{ url_for('assets.detail_tables.list', detail_type='toyota_warranty_receipt') }}" class="btn btn-outline-success btn-sm w-100">
+                                        View
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Model Details Section -->
+                        <div class="col-12">
+                            <h6 class="text-muted mb-3">
+                                <i class="bi bi-gear"></i> Model Details
+                            </h6>
+                        </div>
+                        
+                        <!-- Emissions Info -->
+                        <div class="col-md-6">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-body text-center">
+                                    <div class="mb-2">
+                                        <i class="bi bi-cloud text-danger" style="font-size: 1.5rem;"></i>
+                                    </div>
+                                    <h6 class="card-title small">Emissions Info</h6>
+                                    <a href="{{ url_for('assets.model_details.list', detail_type='emissions_info') }}" class="btn btn-outline-danger btn-sm w-100">
+                                        View
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Model Info -->
+                        <div class="col-md-6">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-body text-center">
+                                    <div class="mb-2">
+                                        <i class="bi bi-info-circle text-primary" style="font-size: 1.5rem;"></i>
+                                    </div>
+                                    <h6 class="card-title small">Model Info</h6>
+                                    <a href="{{ url_for('assets.model_details.list', detail_type='model_info') }}" class="btn btn-outline-primary btn-sm w-100">
+                                        View
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 

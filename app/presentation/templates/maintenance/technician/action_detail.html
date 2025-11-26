@@ -1,0 +1,320 @@
+{% extends "base.html" %}
+
+{% block title %}{{ action.action_name }} - Action Detail{% endblock %}
+
+{% block extra_css %}
+<style>
+    .action-status-badge {
+        font-size: 1rem;
+        padding: 0.5rem 1rem;
+    }
+    .part-demand-row {
+        border-left: 3px solid #dee2e6;
+    }
+    .part-demand-row.fulfilled {
+        border-left-color: #198754;
+    }
+    .part-demand-row.pending {
+        border-left-color: #ffc107;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('technician_portal.dashboard') }}">Dashboard</a></li>
+                    {% if action.maintenance_action_set %}
+                    <li class="breadcrumb-item">
+                        <a href="{{ url_for('technician_portal.work_detail', action_set_id=action.maintenance_action_set.id) }}">
+                            {{ action.maintenance_action_set.task_name }}
+                        </a>
+                    </li>
+                    {% endif %}
+                    <li class="breadcrumb-item active">{{ action.action_name }}</li>
+                </ol>
+            </nav>
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1>{{ action.action_name }}</h1>
+                    <span class="badge action-status-badge bg-{{ 'success' if action.status == 'Completed' else 'primary' if action.status == 'In Progress' else 'secondary' }}">
+                        {{ action.status }}
+                    </span>
+                    <span class="badge bg-secondary ms-2">Order: #{{ action.sequence_order }}</span>
+                </div>
+                <div>
+                    {% if action.maintenance_action_set %}
+                    <a href="{{ url_for('technician_portal.work_detail', action_set_id=action.maintenance_action_set.id) }}" 
+                       class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Work
+                    </a>
+                    {% else %}
+                    <a href="{{ url_for('technician_portal.dashboard') }}" 
+                       class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Dashboard
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-lg-8">
+            <!-- Action Details -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Action Details</h5>
+                </div>
+                <div class="card-body">
+                    {% if action.description %}
+                    <div class="mb-3">
+                        <h6>Description</h6>
+                        <p>{{ action.description }}</p>
+                    </div>
+                    {% endif %}
+
+                    {% if action.safety_notes %}
+                    <div class="alert alert-warning">
+                        <h6><i class="bi bi-shield-exclamation"></i> Safety Notes</h6>
+                        <p class="mb-0">{{ action.safety_notes }}</p>
+                    </div>
+                    {% endif %}
+
+                    {% if action.notes %}
+                    <div class="mb-3">
+                        <h6>Notes</h6>
+                        <p>{{ action.notes }}</p>
+                    </div>
+                    {% endif %}
+
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">Estimated Duration:</dt>
+                        <dd class="col-sm-8">{{ action.estimated_duration or 'N/A' }}</dd>
+
+                        <dt class="col-sm-4">Start Time:</dt>
+                        <dd class="col-sm-8">{{ action.start_time.strftime('%Y-%m-%d %H:%M') if action.start_time else 'Not started' }}</dd>
+
+                        <dt class="col-sm-4">End Time:</dt>
+                        <dd class="col-sm-8">{{ action.end_time.strftime('%Y-%m-%d %H:%M') if action.end_time else 'Not completed' }}</dd>
+
+                        <dt class="col-sm-4">Billable Hours:</dt>
+                        <dd class="col-sm-8">{{ action.billable_hours or 'N/A' }}</dd>
+
+                        {% if action.completion_notes %}
+                        <dt class="col-sm-4">Completion Notes:</dt>
+                        <dd class="col-sm-8">{{ action.completion_notes }}</dd>
+                        {% endif %}
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Part Demands -->
+            {% if action.part_demands %}
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-box-seam"></i> Parts Required ({{ action.part_demands|length }})
+                    </h5>
+                    <a href="{{ url_for('technician_portal.request_parts', action_set_id=action.maintenance_action_set.id if action.maintenance_action_set else None) }}" 
+                       class="btn btn-sm btn-success">
+                        <i class="bi bi-plus-circle"></i> Request More
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        {% for demand in action.part_demands %}
+                        <div class="list-group-item px-0 py-3 part-demand-row {{ demand.status|lower }}">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">
+                                        {% if demand.part %}
+                                        {{ demand.part.part_name }}
+                                        <small class="text-muted">({{ demand.part.part_number }})</small>
+                                        {% else %}
+                                        Part ID: {{ demand.part_id }}
+                                        {% endif %}
+                                    </h6>
+                                    <small class="text-muted">
+                                        Quantity: {{ demand.quantity_required }}
+                                        {% if demand.notes %}
+                                        <br>{{ demand.notes }}
+                                        {% endif %}
+                                    </small>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge bg-{{ 'success' if demand.status == 'Fulfilled' else 'warning' if demand.status == 'Pending' else 'secondary' }}">
+                                        {{ demand.status }}
+                                    </span>
+                                    {% if demand.priority %}
+                                    <br>
+                                    <span class="badge bg-{{ 'danger' if demand.priority == 'Critical' else 'warning' if demand.priority == 'High' else 'info' }} mt-1">
+                                        {{ demand.priority }}
+                                    </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Related Asset -->
+            {% if action.maintenance_action_set and action.maintenance_action_set.asset %}
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-box"></i> Related Asset
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <h6>
+                        <a href="{{ url_for('core_assets.detail', asset_id=action.maintenance_action_set.asset.id) }}">
+                            {{ action.maintenance_action_set.asset.name }}
+                        </a>
+                    </h6>
+                    {% if action.maintenance_action_set.asset.major_location %}
+                    <p class="text-muted mb-0">
+                        <i class="bi bi-geo-alt"></i> {{ action.maintenance_action_set.asset.major_location.name }}
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Action Controls -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Action Controls</h5>
+                </div>
+                <div class="card-body">
+                    {% if action.status == 'Not Started' %}
+                    <form method="POST" action="{{ url_for('technician_portal.start_action', action_id=action.id) }}" class="mb-3">
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="bi bi-play-circle"></i> Start Action
+                        </button>
+                    </form>
+                    {% endif %}
+
+                    {% if action.status in ['Not Started', 'In Progress'] %}
+                    <button type="button" class="btn btn-primary w-100 mb-3" data-bs-toggle="modal" data-bs-target="#completeModal">
+                        <i class="bi bi-check-circle"></i> Complete Action
+                    </button>
+                    {% endif %}
+
+                    {% if action.status == 'In Progress' %}
+                    <button type="button" class="btn btn-warning w-100 mb-3" data-bs-toggle="modal" data-bs-target="#skipModal">
+                        <i class="bi bi-skip-forward-circle"></i> Skip Action
+                    </button>
+                    {% endif %}
+
+                    {% if action.status == 'Completed' %}
+                    <div class="alert alert-success mb-0">
+                        <i class="bi bi-check-circle-fill"></i> This action has been completed.
+                        {% if action.end_time %}
+                        <br><small>Completed: {{ action.end_time.strftime('%Y-%m-%d %H:%M') }}</small>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Quick Info -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Quick Info</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-5">Sequence:</dt>
+                        <dd class="col-sm-7">#{{ action.sequence_order }}</dd>
+
+                        {% if action.maintenance_action_set %}
+                        <dt class="col-sm-5">Work:</dt>
+                        <dd class="col-sm-7">
+                            <a href="{{ url_for('technician_portal.work_detail', action_set_id=action.maintenance_action_set.id) }}">
+                                {{ action.maintenance_action_set.task_name }}
+                            </a>
+                        </dd>
+                        {% endif %}
+
+                        {% if action.template_action_item %}
+                        <dt class="col-sm-5">Template:</dt>
+                        <dd class="col-sm-7">{{ action.template_action_item.action_name }}</dd>
+                        {% endif %}
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Complete Action Modal -->
+<div class="modal fade" id="completeModal" tabindex="-1" aria-labelledby="completeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('technician_portal.complete_action', action_id=action.id) }}">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="completeModalLabel">Complete Action</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Completion Notes (Optional)</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="billable_hours" class="form-label">Billable Hours (Optional)</label>
+                        <input type="number" class="form-control" id="billable_hours" name="billable_hours" 
+                               step="0.25" min="0" placeholder="Auto-calculated if not specified">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Complete Action</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Skip Action Modal -->
+<div class="modal fade" id="skipModal" tabindex="-1" aria-labelledby="skipModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('technician_portal.skip_action', action_id=action.id) }}">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="skipModalLabel">Skip Action</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="reason" class="form-label">Reason for Skipping (Required)</label>
+                        <textarea class="form-control" id="reason" name="reason" rows="3" required></textarea>
+                        <small class="form-text text-muted">Please provide a reason for skipping this action.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">Skip Action</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+
+
+

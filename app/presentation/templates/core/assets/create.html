@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+
+{% block title %}Create Asset - Asset Management System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{{ url_for('core_assets.list') }}">Assets</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Create Asset</li>
+                    </ol>
+                </nav>
+                <h1>Create New Asset</h1>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Asset Information</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Asset Name *</label>
+                                <input type="text" class="form-control" id="name" name="name" required
+                                       value="{{ request.form.get('name', '') }}" placeholder="Enter asset name">
+                                <div class="form-text">A descriptive name for the asset</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="serial_number" class="form-label">Serial Number *</label>
+                                <input type="text" class="form-control" id="serial_number" name="serial_number" required
+                                       value="{{ request.form.get('serial_number', '') }}" placeholder="Enter serial number">
+                                <div class="form-text">Unique identifier for the asset</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="status" class="form-label">Status</label>
+                                <select class="form-select" id="status" name="status">
+                                    <option value="Active" {% if request.form.get('status') == 'Active' %}selected{% endif %}>Active</option>
+                                    <option value="Inactive" {% if request.form.get('status') == 'Inactive' %}selected{% endif %}>Inactive</option>
+                                    <option value="Maintenance" {% if request.form.get('status') == 'Maintenance' %}selected{% endif %}>Maintenance</option>
+                                    <option value="Retired" {% if request.form.get('status') == 'Retired' %}selected{% endif %}>Retired</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="major_location_id" class="form-label">Location</label>
+                                <select class="form-select" id="major_location_id" name="major_location_id">
+                                    <option value="">Select Location</option>
+                                    {% for location in locations %}
+                                    <option value="{{ location.id }}" {% if request.form.get('major_location_id')|int == location.id %}selected{% endif %}>
+                                        {{ location.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="make_model_id" class="form-label">Make/Model</label>
+                                <select class="form-select" id="make_model_id" name="make_model_id">
+                                    <option value="">Select Make/Model</option>
+                                    {% for make_model in make_models %}
+                                    <option value="{{ make_model.id }}" {% if request.form.get('make_model_id')|int == make_model.id %}selected{% endif %}>
+                                        {{ make_model.make }} {{ make_model.model }}
+                                        {% if make_model.year %} ({{ make_model.year }}){% endif %}
+                                        {% if make_model.asset_type %} - {{ make_model.asset_type.name }}{% endif %}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <h6>Meter Readings</h6>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="meter1" class="form-label">Meter 1</label>
+                                <input type="number" step="0.1" class="form-control" id="meter1" name="meter1"
+                                       value="{{ request.form.get('meter1', '') }}" placeholder="0.0">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="meter2" class="form-label">Meter 2</label>
+                                <input type="number" step="0.1" class="form-control" id="meter2" name="meter2"
+                                       value="{{ request.form.get('meter2', '') }}" placeholder="0.0">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="meter3" class="form-label">Meter 3</label>
+                                <input type="number" step="0.1" class="form-control" id="meter3" name="meter3"
+                                       value="{{ request.form.get('meter3', '') }}" placeholder="0.0">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="meter4" class="form-label">Meter 4</label>
+                                <input type="number" step="0.1" class="form-control" id="meter4" name="meter4"
+                                       value="{{ request.form.get('meter4', '') }}" placeholder="0.0">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('core_assets.list') }}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Create Asset
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <!-- Help Information -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Help</h5>
+            </div>
+            <div class="card-body">
+                <h6>Required Fields</h6>
+                <ul class="list-unstyled">
+                    <li><i class="bi bi-asterisk text-danger"></i> Asset Name</li>
+                    <li><i class="bi bi-asterisk text-danger"></i> Serial Number</li>
+                </ul>
+
+                <h6>Optional Fields</h6>
+                <ul class="list-unstyled">
+                    <li><i class="bi bi-circle text-muted"></i> Status (defaults to Active)</li>
+                    <li><i class="bi bi-circle text-muted"></i> Location</li>
+                    <li><i class="bi bi-circle text-muted"></i> Make/Model</li>
+                    <li><i class="bi bi-circle text-muted"></i> Meter Readings</li>
+                </ul>
+
+                <hr>
+
+                <h6>Tips</h6>
+                <ul class="small">
+                    <li>Choose a descriptive name that helps identify the asset</li>
+                    <li>Serial numbers must be unique across all assets</li>
+                    <li>Selecting a Make/Model will automatically set the Asset Type</li>
+                    <li>Meter readings can be updated later</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0">Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('make_models.create') }}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-plus-circle"></i> Create Make/Model
+                    </a>
+                    <a href="{{ url_for('locations.create') }}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-plus-circle"></i> Create Location
+                    </a>
+                    <a href="{{ url_for('asset_types.create') }}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-plus-circle"></i> Create Asset Type
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

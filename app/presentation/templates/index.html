@@ -1,0 +1,339 @@
+{% extends "base.html" %}
+
+{% block title %}Asset Management System - Home{% endblock %}
+
+{% block head %}
+<style>
+    .section-card {
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        border: none;
+        border-radius: 12px;
+    }
+    
+    .section-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    
+    .section-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+    
+    .hero-section {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 4rem 0;
+        margin-bottom: 3rem;
+    }
+    
+    .feature-grid {
+        margin-top: 3rem;
+    }
+    
+    .status-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 8px;
+    }
+    
+    .status-active { background-color: #28a745; }
+    .status-development { background-color: #ffc107; }
+    .status-planned { background-color: #6c757d; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="hero-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="display-4 fw-bold mb-3">Asset Management System</h1>
+                <p class="lead mb-4">Comprehensive fleet and asset management solution for modern operations</p>
+                <div class="d-flex gap-3">
+                    <a href="{{ url_for('main.asset_management') }}" class="btn btn-light btn-lg">
+                        <i class="bi bi-gear"></i> Get Started
+                    </a>
+                    <a href="{{ url_for('main.help') }}" class="btn btn-outline-light btn-lg">
+                        <i class="bi bi-question-circle"></i> Learn More
+                    </a>
+                </div>
+            </div>
+            <div class="col-md-4 text-center">
+                <i class="bi bi-tools" style="font-size: 6rem; opacity: 0.8;"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Sections Grid -->
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="text-center mb-5">System Modules</h2>
+        </div>
+    </div>
+    
+    <div class="row g-4">
+        <!-- Core Management -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card section-card h-100">
+                <div class="card-body text-center p-4">
+                    <div class="section-icon text-primary">
+                        <i class="bi bi-database"></i>
+                    </div>
+                    <h4 class="card-title">Core Management</h4>
+                    <p class="card-text text-muted mb-4">
+                        Manage users, locations, asset types, and make/models. The foundation of the system.
+                    </p>
+                    <div class="mb-3">
+                        <span class="status-indicator status-active"></span>
+                        <small class="text-success">Active</small>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('core_dashboard.dashboard') }}" class="btn btn-primary btn-sm">
+                            <i class="bi bi-speedometer2"></i> Core Dashboard
+                        </a>
+                        <a href="{{ url_for('users.list') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-people"></i> Users
+                        </a>
+                        <a href="{{ url_for('locations.list') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-geo-alt"></i> Locations
+                        </a>
+                        <a href="{{ url_for('asset_types.list') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-tags"></i> Asset Types
+                        </a>
+                        <a href="{{ url_for('make_models.list') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-tag"></i> Make/Models
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Asset Management -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card section-card h-100">
+                <div class="card-body text-center p-4">
+                    <div class="section-icon text-success">
+                        <i class="bi bi-truck"></i>
+                    </div>
+                    <h4 class="card-title">Asset Management</h4>
+                    <p class="card-text text-muted mb-4">
+                        Track and manage all assets with detailed information, events, and maintenance history.
+                    </p>
+                    <div class="mb-3">
+                        <span class="status-indicator status-active"></span>
+                        <small class="text-success">Active</small>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('main.asset_management') }}" class="btn btn-success btn-sm">
+                            <i class="bi bi-arrow-right"></i> Asset Dashboard
+                        </a>
+                        <a href="{{ url_for('core_assets.list') }}" class="btn btn-outline-success btn-sm">
+                            <i class="bi bi-list"></i> View Assets
+                        </a>
+                        <a href="{{ url_for('core_assets.create') }}" class="btn btn-outline-success btn-sm">
+                            <i class="bi bi-plus-circle"></i> Add Asset
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dispatching -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card section-card h-100">
+                <div class="card-body text-center p-4">
+                    <div class="section-icon text-warning">
+                        <i class="bi bi-calendar-check"></i>
+                    </div>
+                    <h4 class="card-title">Dispatching</h4>
+                    <p class="card-text text-muted mb-4">
+                        Schedule and dispatch assets for jobs, track assignments, and manage work orders.
+                    </p>
+                    <div class="mb-3">
+                        <span class="status-indicator status-active"></span>
+                        <small class="text-success">Active</small>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('dispatching.index') }}" class="btn btn-warning btn-sm">
+                            <i class="bi bi-calendar-check"></i> Dispatch Dashboard
+                        </a>
+                        <a href="{{ url_for('dispatching.requests_new') }}" class="btn btn-outline-warning btn-sm">
+                            <i class="bi bi-plus-circle"></i> Create Dispatch
+                        </a>
+                        <a href="{{ url_for('dispatching.index') }}" class="btn btn-outline-warning btn-sm">
+                            <i class="bi bi-list"></i> View All Dispatches
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Maintenance -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card section-card h-100">
+                <div class="card-body text-center p-4">
+                    <div class="section-icon text-info">
+                        <i class="bi bi-wrench"></i>
+                    </div>
+                    <h4 class="card-title">Maintenance</h4>
+                    <p class="card-text text-muted mb-4">
+                        Plan and track maintenance schedules, service records, and repair history.
+                    </p>
+                    <div class="mb-3">
+                        <span class="status-indicator status-development"></span>
+                        <small class="text-warning">In Development</small>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('maintenance.index') }}" class="btn btn-info btn-sm">
+                            <i class="bi bi-arrow-right"></i> Maintenance Dashboard
+                        </a>
+                        <small class="text-muted">Data layer complete</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Supply -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card section-card h-100">
+                <div class="card-body text-center p-4">
+                    <div class="section-icon text-danger">
+                        <i class="bi bi-box-seam"></i>
+                    </div>
+                    <h4 class="card-title">Supply</h4>
+                    <p class="card-text text-muted mb-4">
+                        Manage inventory, parts, supplies, and procurement for maintenance operations.
+                    </p>
+                    <div class="mb-3">
+                        <span class="status-indicator status-active"></span>
+                        <small class="text-success">Active</small>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('core_supply_parts.list') }}" class="btn btn-danger btn-sm">
+                            <i class="bi bi-box"></i> Parts
+                        </a>
+                        <a href="{{ url_for('core_supply_tools.list') }}" class="btn btn-outline-danger btn-sm">
+                            <i class="bi bi-tools"></i> Tool Definitions
+                        </a>
+                        <a href="{{ url_for('core_supply_issuable_tools.list') }}" class="btn btn-outline-danger btn-sm">
+                            <i class="bi bi-wrench"></i> Issuable Tools
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Status -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card section-card h-100">
+                <div class="card-body text-center p-4">
+                    <div class="section-icon text-secondary">
+                        <i class="bi bi-speedometer2"></i>
+                    </div>
+                    <h4 class="card-title">System Status</h4>
+                    <p class="card-text text-muted mb-4">
+                        Monitor system health, performance, and get quick access to system tools.
+                    </p>
+                    <div class="mb-3">
+                        <span class="status-indicator status-active"></span>
+                        <small class="text-success">Online</small>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-graph-up"></i> Dashboard
+                        </a>
+                        <a href="{{ url_for('main.search') }}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-search"></i> Search
+                        </a>
+                        <a href="{{ url_for('main.help') }}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-question-circle"></i> Help
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Stats Section -->
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-12">
+            <h3 class="text-center mb-4">System Overview</h3>
+        </div>
+    </div>
+    <div class="row g-3">
+        <div class="col-md-2">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title text-primary">{{ total_assets or 0 }}</h5>
+                    <p class="card-text small">Assets</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title text-success">{{ total_locations or 0 }}</h5>
+                    <p class="card-text small">Locations</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title text-info">{{ total_users or 0 }}</h5>
+                    <p class="card-text small">Users</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title text-warning">{{ total_events or 0 }}</h5>
+                    <p class="card-text small">Events</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title text-danger">{{ total_asset_types or 0 }}</h5>
+                    <p class="card-text small">Asset Types</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title text-secondary">{{ total_make_models or 0 }}</h5>
+                    <p class="card-text small">Make/Models</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Footer Section -->
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-12">
+            <hr>
+            <div class="text-center text-muted">
+                <p class="mb-0">
+                    <i class="bi bi-info-circle"></i>
+                    Need help? Check out our 
+                    <a href="{{ url_for('main.help') }}">documentation</a> or 
+                    <a href="{{ url_for('main.about') }}">about page</a>.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

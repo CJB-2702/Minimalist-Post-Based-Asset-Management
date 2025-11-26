@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block title %}Maintenance Delays{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="{{ url_for('technician_portal.dashboard') }}">Dashboard</a></li>
+                            <li class="breadcrumb-item active">Delays</li>
+                        </ol>
+                    </nav>
+                    <h1>Maintenance Delays</h1>
+                </div>
+                <a href="{{ url_for('technician_portal.dashboard') }}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-exclamation-triangle"></i> Active Delays ({{ active_delays|length }})
+                    </h5>
+                    {% if active_delays %}
+                    <span class="badge bg-warning">{{ active_delays|length }} Active</span>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    {% if active_delays %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Work</th>
+                                    <th>Type</th>
+                                    <th>Reason</th>
+                                    <th>Start Date</th>
+                                    <th>Duration</th>
+                                    <th>Priority</th>
+                                    <th>Billable Hours</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for delay in active_delays %}
+                                <tr>
+                                    <td>
+                                        {% if delay.maintenance_action_set %}
+                                        <a href="{{ url_for('technician_portal.work_detail', action_set_id=delay.maintenance_action_set.id) }}">
+                                            {{ delay.maintenance_action_set.task_name }}
+                                        </a>
+                                        {% else %}
+                                        N/A
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ delay.delay_type or 'N/A' }}</td>
+                                    <td>
+                                        <div style="max-width: 300px;">
+                                            {{ delay.delay_reason[:100] }}{% if delay.delay_reason and delay.delay_reason|length > 100 %}...{% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {{ delay.delay_start_date.strftime('%Y-%m-%d %H:%M') if delay.delay_start_date else 'N/A' }}
+                                    </td>
+                                    <td>
+                                        {% if delay.delay_start_date %}
+                                        Active since {{ delay.delay_start_date.strftime('%Y-%m-%d %H:%M') }}
+                                        {% else %}
+                                        N/A
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ 'danger' if delay.priority == 'Critical' else 'warning' if delay.priority == 'High' else 'info' }}">
+                                            {{ delay.priority }}
+                                        </span>
+                                    </td>
+                                    <td>{{ delay.delay_billable_hours or '-' }}</td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-success" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#resolveModal{{ delay.id }}">
+                                            <i class="bi bi-check-circle"></i> Resolve
+                                        </button>
+                                    </td>
+                                </tr>
+
+                                <!-- Resolve Delay Modal -->
+                                <div class="modal fade" id="resolveModal{{ delay.id }}" tabindex="-1" 
+                                     aria-labelledby="resolveModalLabel{{ delay.id }}" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <form method="POST" 
+                                                  action="{{ url_for('technician_portal.resolve_delay', delay_id=delay.id) }}">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title" id="resolveModalLabel{{ delay.id }}">Resolve Delay</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <p><strong>Delay Type:</strong> {{ delay.delay_type }}</p>
+                                                    <p><strong>Reason:</strong> {{ delay.delay_reason }}</p>
+                                                    
+                                                    <div class="mb-3">
+                                                        <label for="end_date" class="form-label">End Date</label>
+                                                        <input type="datetime-local" class="form-control" id="end_date" name="end_date">
+                                                        <small class="form-text text-muted">Leave blank to use current time</small>
+                                                    </div>
+
+                                                    <div class="mb-3">
+                                                        <label for="billable_hours" class="form-label">Billable Hours (Optional)</label>
+                                                        <input type="number" class="form-control" id="billable_hours" name="billable_hours" 
+                                                               step="0.25" min="0" value="{{ delay.delay_billable_hours or '' }}">
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                    <button type="submit" class="btn btn-success">Resolve Delay</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-success">
+                        <i class="bi bi-check-circle"></i> No active delays! Great work!
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

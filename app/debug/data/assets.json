@@ -1,0 +1,195 @@
+{
+  "Asset_Details": {
+    "Detail_Table_Templates": {
+      "Asset_details_from_asset_type": [
+        {
+          "asset_type_name": "Vehicle",
+          "detail_table_type": "purchase_info",
+          "is_asset_detail": true,
+          "is_active": true
+        },
+        {
+          "asset_type_name": "Vehicle",
+          "detail_table_type": "vehicle_registration",
+          "is_asset_detail": true,
+          "is_active": true
+        },
+        {
+          "asset_type_name": null,
+          "detail_table_type": "purchase_info",
+          "is_asset_detail": true,
+          "is_active": true
+        }
+      ],
+      "Asset_details_from_model_type": [
+        {
+          "make": "Toyota",
+          "model": "Corolla",
+          "detail_table_type": "toyota_warranty_receipt",
+          "is_asset_detail": true,
+          "is_active": true
+        }
+      ],
+      "Model_detail_table_template": [
+        {
+          "asset_type_name": "Vehicle",
+          "detail_table_type": "emissions_info",
+          "is_asset_detail": false,
+          "is_active": true
+        },
+        {
+          "asset_type_name": null,
+          "detail_table_type": "model_info",
+          "is_asset_detail": false,
+          "is_active": true
+        }
+      ]
+    },
+    "Models_for_automatic_detail_insertion": [
+      {
+        "make": "Ford",
+        "model": "F-250",
+        "year": 2023
+      }
+    ],
+    "Assets_for_automatic_detail_insertion": [
+      {
+        "name": "VTC-002",
+        "serial_number": "VTC0022023002",
+        "make": "Toyota",
+        "model": "Corolla",
+        "status": "Active",
+        "major_location_name": "LosAngelesOffice"
+      },
+      {
+        "name": "FTK-001",
+        "serial_number": "FTK0012023001",
+        "make": "Ford",
+        "model": "F-250",
+        "status": "Active",
+        "major_location_name": "SanDiegoHQ"
+      }
+    ],
+    "Model_Details": {
+      "Toyota_Corolla_Emissions": {
+        "make": "Toyota",
+        "model": "Corolla",
+        "detail_type": "emissions_info",
+        "emissions_standard": "EPA",
+        "emissions_rating": "ULEV",
+        "fuel_type": "gasoline",
+        "mpg_city": 32.0,
+        "mpg_highway": 41.0,
+        "mpg_combined": 35.0,
+        "co2_emissions": 250.0,
+        "emissions_test_date": "2022-12-01",
+        "emissions_certification": "EPA-2023-COROLLA-001"
+      },
+      "Toyota_Corolla_Model_Info": {
+        "make": "Toyota",
+        "model": "Corolla",
+        "detail_type": "model_info",
+        "model_year": 2023,
+        "body_style": "sedan",
+        "engine_type": "2.0L 4-Cylinder",
+        "engine_displacement": "2.0L",
+        "transmission_type": "CVT",
+        "drivetrain": "FWD",
+        "seating_capacity": 5,
+        "cargo_capacity": 13.1,
+        "towing_capacity": 1500,
+        "manufacturer_website": "https://www.toyota.com/corolla",
+        "technical_specifications": "2.0L Dynamic Force 4-Cylinder engine with 169 hp, CVT transmission"
+      },
+      "Ford_F250_Emissions": {
+        "make": "Ford",
+        "model": "F-250",
+        "detail_type": "emissions_info",
+        "emissions_standard": "EPA",
+        "emissions_rating": "Tier 3",
+        "fuel_type": "diesel",
+        "mpg_city": 15.0,
+        "mpg_highway": 20.0,
+        "mpg_combined": 17.0,
+        "co2_emissions": 650.0,
+        "emissions_test_date": "2022-11-15",
+        "emissions_certification": "EPA-2023-F250-001"
+      },
+      "Ford_F250_Model_Info": {
+        "make": "Ford",
+        "model": "F-250",
+        "detail_type": "model_info",
+        "model_year": 2023,
+        "body_style": "pickup truck",
+        "engine_type": "6.7L Power Stroke V8 Turbo Diesel",
+        "engine_displacement": "6.7L",
+        "transmission_type": "10-speed automatic",
+        "drivetrain": "4WD",
+        "seating_capacity": 6,
+        "cargo_capacity": 52.8,
+        "towing_capacity": 20000,
+        "manufacturer_website": "https://www.ford.com/trucks/super-duty/f250/",
+        "technical_specifications": "6.7L Power Stroke V8 Turbo Diesel with 475 hp and 1,050 lb-ft torque"
+      }
+    },
+    "Sample_Data": {
+      "Purchase_Info": {
+        "purchase_date": "2023-01-15",
+        "purchase_price": 25000.00,
+        "purchase_vendor": "Toyota of San Diego",
+        "purchase_order_number": "PO-2023-001",
+        "warranty_start_date": "2023-01-15",
+        "warranty_end_date": "2026-01-15",
+        "purchase_notes": "Purchased for fleet use"
+      },
+      "Vehicle_Registration": {
+        "license_plate": "ABC123",
+        "registration_number": "REG-2023-001",
+        "registration_expiry": "2024-12-31",
+        "vin_number": "1HGBH41JXMN109186",
+        "state_registered": "CA",
+        "registration_status": "Active",
+        "insurance_provider": "State Farm",
+        "insurance_policy_number": "SF-123456",
+        "insurance_expiry": "2024-06-30"
+      },
+      "Toyota_Warranty_Receipt": {
+        "warranty_receipt_number": "TOY-2023-001",
+        "warranty_type": "Basic",
+        "warranty_mileage_limit": 36000,
+        "warranty_time_limit_months": 36,
+        "dealer_name": "Toyota of San Diego",
+        "dealer_contact": "John Smith",
+        "dealer_phone": "(619) 555-0123",
+        "dealer_email": "service@toyotasandiego.com",
+        "service_history": "Initial inspection completed",
+        "warranty_claims": "None"
+      },
+      "Emissions_Info": {
+        "emissions_standard": "EPA",
+        "emissions_rating": "ULEV",
+        "fuel_type": "gasoline",
+        "mpg_city": 32.0,
+        "mpg_highway": 41.0,
+        "mpg_combined": 35.0,
+        "co2_emissions": 250.0,
+        "emissions_test_date": "2022-12-01",
+        "emissions_certification": "EPA-2023-001"
+      },
+      "Model_Info": {
+        "model_year": 2023,
+        "body_style": "sedan",
+        "engine_type": "2.0L 4-Cylinder",
+        "engine_displacement": "2.0L",
+        "transmission_type": "automatic",
+        "drivetrain": "FWD",
+        "seating_capacity": 5,
+        "cargo_capacity": 13.1,
+        "towing_capacity": 1500,
+        "manufacturer_website": "https://www.toyota.com/corolla",
+        "technical_specifications": "2.0L Dynamic Force 4-Cylinder engine with 169 hp"
+      }
+    }
+  }
+}
+

@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}Add Delay{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('technician_portal.dashboard') }}">Dashboard</a></li>
+                    {% if action_set_id %}
+                    <li class="breadcrumb-item">
+                        <a href="{{ url_for('technician_portal.work_detail', action_set_id=action_set_id) }}">Work Detail</a>
+                    </li>
+                    {% endif %}
+                    <li class="breadcrumb-item active">Add Delay</li>
+                </ol>
+            </nav>
+            <h1>Report Maintenance Delay</h1>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Delay Information</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('technician_portal.add_delay', action_set_id=action_set_id) }}">
+                        {% if action_set_id %}
+                        <input type="hidden" name="action_set_id" value="{{ action_set_id }}">
+                        {% endif %}
+
+                        <div class="mb-3">
+                            <label for="delay_type" class="form-label">Delay Type <span class="text-danger">*</span></label>
+                            <select class="form-select" id="delay_type" name="delay_type" required>
+                                <option value="">Select delay type...</option>
+                                <option value="Parts">Waiting for Parts</option>
+                                <option value="Weather">Weather Conditions</option>
+                                <option value="Equipment">Equipment Unavailable</option>
+                                <option value="Access">Access Issues</option>
+                                <option value="Safety">Safety Concern</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="delay_reason" class="form-label">Reason <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="delay_reason" name="delay_reason" rows="4" required 
+                                      placeholder="Provide details about why the maintenance is delayed..."></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="priority" class="form-label">Priority</label>
+                            <select class="form-select" id="priority" name="priority">
+                                <option value="Low">Low</option>
+                                <option value="Medium" selected>Medium</option>
+                                <option value="High">High</option>
+                                <option value="Critical">Critical</option>
+                            </select>
+                            <small class="form-text text-muted">How urgent is resolving this delay?</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="delay_start_date" class="form-label">Delay Start Date</label>
+                            <input type="datetime-local" class="form-control" id="delay_start_date" name="delay_start_date">
+                            <small class="form-text text-muted">When did the delay start? (leave blank to use current time)</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="billable_hours" class="form-label">Billable Hours (Optional)</label>
+                            <input type="number" class="form-control" id="billable_hours" name="billable_hours" 
+                                   step="0.25" min="0" placeholder="Hours spent waiting">
+                            <small class="form-text text-muted">Time spent waiting during this delay (if billable)</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="delay_notes" class="form-label">Additional Notes (Optional)</label>
+                            <textarea class="form-control" id="delay_notes" name="delay_notes" rows="3" 
+                                      placeholder="Any additional information about the delay..."></textarea>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            {% if action_set_id %}
+                            <a href="{{ url_for('technician_portal.work_detail', action_set_id=action_set_id) }}" 
+                               class="btn btn-secondary">Cancel</a>
+                            {% else %}
+                            <a href="{{ url_for('technician_portal.dashboard') }}" 
+                               class="btn btn-secondary">Cancel</a>
+                            {% endif %}
+                            <button type="submit" class="btn btn-warning">
+                                <i class="bi bi-exclamation-triangle"></i> Report Delay
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">About Delays</h5>
+                </div>
+                <div class="card-body">
+                    <p class="small">Report delays when maintenance work cannot proceed as scheduled. This helps management track issues and make informed decisions.</p>
+                    
+                    <h6 class="mt-3">Common Delay Types</h6>
+                    <ul class="small">
+                        <li><strong>Parts:</strong> Waiting for parts to arrive</li>
+                        <li><strong>Weather:</strong> Weather conditions prevent work</li>
+                        <li><strong>Equipment:</strong> Required equipment unavailable</li>
+                        <li><strong>Access:</strong> Cannot access work area</li>
+                        <li><strong>Safety:</strong> Safety concerns preventing work</li>
+                    </ul>
+
+                    <h6 class="mt-3">Resolving Delays</h6>
+                    <p class="small">Once the delay is resolved, you can mark it as complete from the delays page. This updates the maintenance status automatically.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}Edit {{ make_model.make }} {{ make_model.model }} - Asset Management System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Edit Make/Model</h1>
+            <div>
+                <a href="{{ url_for('make_models.detail', make_model_id=make_model.id) }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Make/Model
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Edit Make/Model Information</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="make" class="form-label">Make <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="make" name="make" 
+                                       value="{{ request.form.get('make', make_model.make) }}" required>
+                                <div class="form-text">Manufacturer name (e.g., Toyota, Ford).</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="model" class="form-label">Model <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="model" name="model" 
+                                       value="{{ request.form.get('model', make_model.model) }}" required>
+                                <div class="form-text">Model name (e.g., Corolla, F-150).</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="year" class="form-label">Year</label>
+                                <input type="number" class="form-control" id="year" name="year" 
+                                       value="{{ request.form.get('year', make_model.year or '') }}" min="1900" max="2100">
+                                <div class="form-text">Model year (optional).</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="revision" class="form-label">Revision</label>
+                                <input type="text" class="form-control" id="revision" name="revision" 
+                                       value="{{ request.form.get('revision', make_model.revision or '') }}">
+                                <div class="form-text">Revision or variant (e.g., LE, XSE).</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="asset_type_id" class="form-label">Asset Type</label>
+                        <select class="form-select" id="asset_type_id" name="asset_type_id">
+                            <option value="">Select Asset Type</option>
+                            {% for asset_type in asset_types %}
+                            <option value="{{ asset_type.id }}" 
+                                    {% if request.form.get('asset_type_id')|int == asset_type.id or make_model.asset_type_id == asset_type.id %}selected{% endif %}>
+                                {{ asset_type.name }}
+                                {% if asset_type.category %}
+                                    ({{ asset_type.category }})
+                                {% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Category this make/model belongs to.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3">{{ request.form.get('description', make_model.description or '') }}</textarea>
+                        <div class="form-text">Brief description of the make/model and its characteristics.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="is_active" name="is_active" 
+                                   {% if request.form.get('is_active', 'on' if make_model.is_active else '') == 'on' %}checked{% endif %}>
+                            <label class="form-check-label" for="is_active">
+                                Active Make/Model
+                            </label>
+                        </div>
+                        <div class="form-text">Inactive make/models cannot be assigned to new assets.</div>
+                    </div>
+                    
+                    <!-- Make/Model Statistics -->
+                    <div class="alert alert-info">
+                        <h6 class="alert-heading">Make/Model Statistics</h6>
+                        <div class="row text-center">
+                            <div class="col-4">
+                                <strong>{{ Asset.query.filter_by(make_model_id=make_model.id).count() }}</strong><br>
+                                <small>Total Assets</small>
+                            </div>
+                            <div class="col-4">
+                                <strong>{{ Asset.query.filter_by(make_model_id=make_model.id, status='Active').count() }}</strong><br>
+                                <small>Active Assets</small>
+                            </div>
+                            <div class="col-4">
+                                <strong>{{ Asset.query.filter_by(make_model_id=make_model.id, status='Inactive').count() }}</strong><br>
+                                <small>Inactive Assets</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('make_models.detail', make_model_id=make_model.id) }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Update Make/Model
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

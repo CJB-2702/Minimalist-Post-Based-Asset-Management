@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}{{ template_action_set.task_name }} - Template Action Set{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>{{ template_action_set.task_name }}</h1>
+            <div>
+                <a href="{{ url_for('template_actions.list') }}" class="btn btn-secondary">Back to List</a>
+                <a href="{{ url_for('template_actions.edit', template_action_set_id=template_action_set.id) }}" class="btn btn-warning">Edit</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Template Details</h5>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-4">ID:</dt>
+                    <dd class="col-sm-8">{{ template_action_set.id }}</dd>
+
+                    <dt class="col-sm-4">Task Name:</dt>
+                    <dd class="col-sm-8">{{ template_action_set.task_name }}</dd>
+
+                    <dt class="col-sm-4">Description:</dt>
+                    <dd class="col-sm-8">{{ template_action_set.task_description or 'N/A' }}</dd>
+
+                    <dt class="col-sm-4">Estimated Hours:</dt>
+                    <dd class="col-sm-8">{{ template_action_set.estimated_duration_hours or 'N/A' }}</dd>
+
+                    <dt class="col-sm-4">Category:</dt>
+                    <dd class="col-sm-8">{{ template_action_set.task_category or 'N/A' }}</dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Template Action Items ({{ proto_action_items|length }})</h5>
+            </div>
+            <div class="card-body">
+                {% if proto_action_items %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Order</th>
+                                <th>Action Name</th>
+                                <th>Required</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in proto_action_items %}
+                            <tr>
+                                <td>{{ item.sequence_order }}</td>
+                                <td>
+                                    <a href="{{ url_for('proto_action_items.detail', template_action_item_id=item.id) }}">
+                                        {{ item.action_name }}
+                                    </a>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if item.is_required else 'secondary' }}">
+                                        {{ 'Required' if item.is_required else 'Optional' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('proto_action_items.detail', template_action_item_id=item.id) }}" 
+                                       class="btn btn-sm btn-info">View</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">No template action items found.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

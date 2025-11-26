@@ -1,0 +1,375 @@
+{% extends "base.html" %}
+
+{% block title %}Log Viewer - Asset Management{% endblock %}
+
+{% block extra_head %}
+<style>
+    .log-table {
+        font-family: 'Courier New', monospace;
+        font-size: 0.9rem;
+    }
+    
+    .log-table th {
+        background-color: #f8f9fa;
+        font-weight: bold;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+    
+    .log-level {
+        font-weight: bold;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 0.8rem;
+        text-align: center;
+    }
+    
+    .log-level.DEBUG { background-color: #6c757d; color: white; }
+    .log-level.INFO { background-color: #17a2b8; color: white; }
+    .log-level.WARNING { background-color: #ffc107; color: black; }
+    .log-level.ERROR { background-color: #dc3545; color: white; }
+    .log-level.CRITICAL { background-color: #721c24; color: white; }
+    
+    .log-message {
+        max-width: 400px;
+        word-break: break-word;
+    }
+    
+    .log-details {
+        font-size: 0.8rem;
+        color: #666;
+    }
+    
+    .table-responsive {
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+    
+    .stats-panel {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    
+    .filters-panel {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    
+    .log-table th a {
+        color: #333;
+        text-decoration: none;
+    }
+    
+    .log-table th a:hover {
+        color: #007bff;
+        text-decoration: underline;
+    }
+    
+    .log-table th i {
+        margin-left: 5px;
+        font-size: 0.8em;
+    }
+    
+    .column-controls {
+        background-color: #e9ecef;
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 15px;
+    }
+    
+    .column-controls .form-check {
+        margin-right: 15px;
+        margin-bottom: 5px;
+    }
+    
+    .hidden-column {
+        display: none !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h1><i class="bi bi-journal-text"></i> Log Viewer</h1>
+                <div>
+                    <a href="/logs" class="btn btn-primary">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Filters Panel -->
+            <div class="filters-panel">
+                <form method="GET" action="/logs" class="row g-3">
+                    <!-- Sort Controls -->
+                    <div class="col-md-2">
+                        <label class="form-label">Sort By:</label>
+                        <select name="sort_by" class="form-select" onchange="this.form.submit()">
+                            <option value="line" {% if sort_by == 'line' %}selected{% endif %}>Line</option>
+                            <option value="level" {% if sort_by == 'level' %}selected{% endif %}>Level</option>
+                            <option value="module" {% if sort_by == 'module' %}selected{% endif %}>Module</option>
+                            <option value="function" {% if sort_by == 'function' %}selected{% endif %}>Function</option>
+                            <option value="message" {% if sort_by == 'message' %}selected{% endif %}>Message</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Order:</label>
+                        <select name="sort_order" class="form-select" onchange="this.form.submit()">
+                            <option value="desc" {% if sort_order == 'desc' %}selected{% endif %}>Descending</option>
+                            <option value="asc" {% if sort_order == 'asc' %}selected{% endif %}>Ascending</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Filters -->
+                    <div class="col-md-2">
+                        <label class="form-label">Level:</label>
+                        <select name="level" class="form-select" onchange="this.form.submit()">
+                            <option value="">All Levels</option>
+                            {% for level in unique_levels %}
+                            <option value="{{ level }}" {% if level_filter == level %}selected{% endif %}>{{ level }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Module:</label>
+                        <select name="module" class="form-select" onchange="this.form.submit()">
+                            <option value="">All Modules</option>
+                            {% for module in unique_modules %}
+                            <option value="{{ module }}" {% if module_filter == module %}selected{% endif %}>{{ module }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Function:</label>
+                        <select name="function" class="form-select" onchange="this.form.submit()">
+                            <option value="">All Functions</option>
+                            {% for function in unique_functions %}
+                            <option value="{{ function }}" {% if function_filter == function %}selected{% endif %}>{{ function }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Limit:</label>
+                        <select name="limit" class="form-select" onchange="this.form.submit()">
+                            <option value="50" {% if limit == 50 %}selected{% endif %}>50 entries</option>
+                            <option value="100" {% if limit == 100 %}selected{% endif %}>100 entries</option>
+                            <option value="200" {% if limit == 200 %}selected{% endif %}>200 entries</option>
+                            <option value="500" {% if limit == 500 %}selected{% endif %}>500 entries</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Text Search -->
+                    <div class="col-md-6">
+                        <label class="form-label">Message Search:</label>
+                        <div class="input-group">
+                            <input type="text" name="message" class="form-control" placeholder="Search in messages..." 
+                                   value="{{ message_filter }}">
+                            <button type="submit" class="btn btn-outline-secondary">Search</button>
+                            <a href="/logs" class="btn btn-outline-danger">Clear</a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Column Visibility Controls -->
+            <div class="column-controls" x-data="columnVisibility()">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="mb-0"><i class="bi bi-eye"></i> Column Visibility</h6>
+                    <div>
+                        <span class="badge bg-info me-2" x-text="'Visible: ' + Object.values(columns).filter(v => v).length + '/' + Object.keys(columns).length"></span>
+                        <button type="button" class="btn btn-sm btn-outline-primary" @click="showAll()">Show All</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" @click="hideAll()">Hide All</button>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-2">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="col-index" x-model="columns.index">
+                            <label class="form-check-label" for="col-index">
+                                <i class="bi bi-hash"></i> Index
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="col-level" x-model="columns.level">
+                            <label class="form-check-label" for="col-level">
+                                <i class="bi bi-flag"></i> Level
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="col-module" x-model="columns.module">
+                            <label class="form-check-label" for="col-module">
+                                <i class="bi bi-box"></i> Module
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="col-function" x-model="columns.function">
+                            <label class="form-check-label" for="col-function">
+                                <i class="bi bi-gear"></i> Function
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="col-line" x-model="columns.line">
+                            <label class="form-check-label" for="col-line">
+                                <i class="bi bi-list-ol"></i> Line
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="col-message" x-model="columns.message">
+                            <label class="form-check-label" for="col-message">
+                                <i class="bi bi-chat-text"></i> Message
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Stats Panel -->
+            <div class="stats-panel">
+                <div class="row">
+                    <div class="col-md-3">
+                        <strong>Total Log Entries:</strong> <span>{{ logs|length }}</span>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Log File:</strong> <span>asset_management.log</span>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Last Updated:</strong> <span id="last-updated"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Sort:</strong> <span>{{ sort_by|title }} ({{ sort_order|upper }})</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Log Table -->
+            <div class="table-responsive">
+                <table class="table table-striped table-hover log-table" x-data="columnVisibility()">
+                    <thead>
+                        <tr>
+                            <th :class="{ 'hidden-column': !columns.index }">#</th>
+                            <th :class="{ 'hidden-column': !columns.level }">
+                                <a href="{{ url_for('main.logs', sort_by='level', sort_order='asc' if sort_by == 'level' and sort_order == 'desc' else 'desc', level=level_filter, module=module_filter, function=function_filter, message=message_filter, limit=limit) }}" class="text-decoration-none">
+                                    Level
+                                    {% if sort_by == 'level' %}
+                                        <i class="bi bi-arrow-{{ 'up' if sort_order == 'asc' else 'down' }}"></i>
+                                    {% endif %}
+                                </a>
+                            </th>
+                            <th :class="{ 'hidden-column': !columns.module }">
+                                <a href="{{ url_for('main.logs', sort_by='module', sort_order='asc' if sort_by == 'module' and sort_order == 'desc' else 'desc', level=level_filter, module=module_filter, function=function_filter, message=message_filter, limit=limit) }}" class="text-decoration-none">
+                                    Module
+                                    {% if sort_by == 'module' %}
+                                        <i class="bi bi-arrow-{{ 'up' if sort_order == 'asc' else 'down' }}"></i>
+                                    {% endif %}
+                                </a>
+                            </th>
+                            <th :class="{ 'hidden-column': !columns.function }">
+                                <a href="{{ url_for('main.logs', sort_by='function', sort_order='asc' if sort_by == 'function' and sort_order == 'desc' else 'desc', level=level_filter, module=module_filter, function=function_filter, message=message_filter, limit=limit) }}" class="text-decoration-none">
+                                    Function
+                                    {% if sort_by == 'function' %}
+                                        <i class="bi bi-arrow-{{ 'up' if sort_order == 'asc' else 'down' }}"></i>
+                                    {% endif %}
+                                </a>
+                            </th>
+                            <th :class="{ 'hidden-column': !columns.line }">
+                                <a href="{{ url_for('main.logs', sort_by='line', sort_order='asc' if sort_by == 'line' and sort_order == 'desc' else 'desc', level=level_filter, module=module_filter, function=function_filter, message=message_filter, limit=limit) }}" class="text-decoration-none">
+                                    Line
+                                    {% if sort_by == 'line' %}
+                                        <i class="bi bi-arrow-{{ 'up' if sort_order == 'asc' else 'down' }}"></i>
+                                    {% endif %}
+                                </a>
+                            </th>
+                            <th :class="{ 'hidden-column': !columns.message }">
+                                <a href="{{ url_for('main.logs', sort_by='message', sort_order='asc' if sort_by == 'message' and sort_order == 'desc' else 'desc', level=level_filter, module=module_filter, function=function_filter, message=message_filter, limit=limit) }}" class="text-decoration-none">
+                                    Message
+                                    {% if sort_by == 'message' %}
+                                        <i class="bi bi-arrow-{{ 'up' if sort_order == 'asc' else 'down' }}"></i>
+                                    {% endif %}
+                                </a>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in logs %}
+                        <tr>
+                            <td :class="{ 'hidden-column': !columns.index }">{{ log.index if log.index else loop.index }}</td>
+                            <td :class="{ 'hidden-column': !columns.level }">
+                                <span class="log-level {{ log.level }}" title="{{ log.level }}">
+                                    {{ log.level }}
+                                </span>
+                            </td>
+                            <td :class="{ 'hidden-column': !columns.module }">{{ log.module }}</td>
+                            <td :class="{ 'hidden-column': !columns.function }">{{ log.function }}</td>
+                            <td :class="{ 'hidden-column': !columns.line }">{{ log.line }}</td>
+                            <td :class="{ 'hidden-column': !columns.message }" class="log-message" title="{{ log.message }}">
+                                {{ log.message }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- No Results -->
+            {% if logs|length == 0 %}
+            <div class="text-center text-muted py-4">
+                <i class="bi bi-inbox"></i> No log entries found.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+// Update last updated timestamp
+document.getElementById('last-updated').textContent = new Date().toLocaleString();
+
+// Alpine.js component for column visibility
+function columnVisibility() {
+    return {
+        columns: {
+            index: true,
+            level: true,
+            module: true,
+            function: true,
+            line: true,
+            message: true
+        },
+        
+        toggleColumn(column) {
+            this.columns[column] = !this.columns[column];
+        },
+        
+        showAll() {
+            Object.keys(this.columns).forEach(key => {
+                this.columns[key] = true;
+            });
+        },
+        
+        hideAll() {
+            Object.keys(this.columns).forEach(key => {
+                this.columns[key] = false;
+            });
+        }
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block title %}Request Parts{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('technician_portal.dashboard') }}">Dashboard</a></li>
+                    {% if action_set_id %}
+                    <li class="breadcrumb-item">
+                        <a href="{{ url_for('technician_portal.work_detail', action_set_id=action_set_id) }}">Work Detail</a>
+                    </li>
+                    {% endif %}
+                    <li class="breadcrumb-item active">Request Parts</li>
+                </ol>
+            </nav>
+            <h1>Request Parts</h1>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Part Request Form</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('technician_portal.request_parts', action_set_id=action_set_id) }}">
+                        {% if action_set_id %}
+                        <input type="hidden" name="action_set_id" value="{{ action_set_id }}">
+                        {% endif %}
+
+                        <div class="mb-3">
+                            <label for="action_id" class="form-label">For Action <span class="text-danger">*</span></label>
+                            <select class="form-select" id="action_id" name="action_id" required>
+                                <option value="">Select an action...</option>
+                                {% if action_set_id %}
+                                {# Actions would be loaded from context #}
+                                {% endif %}
+                            </select>
+                            <small class="form-text text-muted">Select which action these parts are needed for.</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="part_id" class="form-label">Part <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="part_id" name="part_id" required 
+                                   placeholder="Enter Part ID">
+                            <small class="form-text text-muted">Enter the part ID you need.</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="quantity_required" class="form-label">Quantity Required <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="quantity_required" name="quantity_required" 
+                                   min="1" required placeholder="Enter quantity">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="priority" class="form-label">Priority</label>
+                            <select class="form-select" id="priority" name="priority">
+                                <option value="Low">Low</option>
+                                <option value="Medium" selected>Medium</option>
+                                <option value="High">High</option>
+                                <option value="Critical">Critical</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Notes (Optional)</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3" 
+                                      placeholder="Additional information about this part request..."></textarea>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            {% if action_set_id %}
+                            <a href="{{ url_for('technician_portal.work_detail', action_set_id=action_set_id) }}" 
+                               class="btn btn-secondary">Cancel</a>
+                            {% else %}
+                            <a href="{{ url_for('technician_portal.dashboard') }}" 
+                               class="btn btn-secondary">Cancel</a>
+                            {% endif %}
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-send"></i> Submit Request
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Existing Parts List -->
+            {% if parts_list %}
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Parts Already Requested</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Part</th>
+                                    <th>Quantity</th>
+                                    <th>Status</th>
+                                    <th>Priority</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for part in parts_list %}
+                                <tr>
+                                    <td>{{ part.part_name or part.part_id }}</td>
+                                    <td>{{ part.quantity_required }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if part.status == 'Fulfilled' else 'warning' if part.status == 'Pending' else 'secondary' }}">
+                                            {{ part.status }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ 'danger' if part.priority == 'Critical' else 'warning' if part.priority == 'High' else 'info' }}">
+                                            {{ part.priority }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Help</h5>
+                </div>
+                <div class="card-body">
+                    <h6>Requesting Parts</h6>
+                    <p class="small">Use this form to request parts needed for maintenance work. Your request will be sent to management for approval.</p>
+                    
+                    <h6 class="mt-3">Priority Levels</h6>
+                    <ul class="small">
+                        <li><strong>Low:</strong> Can wait for next delivery</li>
+                        <li><strong>Medium:</strong> Needed soon</li>
+                        <li><strong>High:</strong> Urgent - needed immediately</li>
+                        <li><strong>Critical:</strong> Work cannot proceed without this part</li>
+                    </ul>
+
+                    <h6 class="mt-3">Status Tracking</h6>
+                    <p class="small">You can check the status of your part requests on the work detail page or in the parts section.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+
+
+

@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}Contracts{% endblock %}
+{% block content %}
+<div class="container mt-3">
+  <h2>Contracts</h2>
+  <table class="table table-sm">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Company</th>
+        <th>Amount</th>
+        <th>Request</th>
+        <th>Created</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for contract in items %}
+      {% set ctx = contexts[loop.index0] %}
+      <tr>
+        <td>{{ contract.id }}</td>
+        <td>{{ contract.company_name }}</td>
+        <td>{{ contract.cost_currency }} {{ contract.cost_amount }}</td>
+        <td><a href="{{ url_for('dispatching.requests_detail', item_id=ctx.request_id) }}">Request #{{ ctx.request_id }}</a></td>
+        <td>{{ contract.created_at.strftime('%Y-%m-%d') if contract.created_at else '' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+

@@ -1,0 +1,24 @@
+{% for t in proto_action_items %}
+<tr>
+    <td>{{ t.id }}</td>
+    <td>{{ t.action_name }}</td>
+    <td class="text-muted">
+        {{ t.description[:80] + '...' if t.description and t.description|length > 80 else (t.description or '') }}
+    </td>
+    <td>
+        <form method="POST"
+              action="{{ url_for('maintenance_action_sets.add_action_from_template', action_set_id=action_set_id) }}"
+              hx-post="{{ url_for('maintenance_action_sets.add_action_from_template', action_set_id=action_set_id) }}"
+              hx-target="#actions-card"
+              hx-select="#actions-card"
+              hx-swap="outerHTML">
+            <input type="hidden" name="template_action_item_id" value="{{ t.id }}">
+            <button type="submit" class="btn btn-sm btn-outline-primary">
+                Add
+            </button>
+        </form>
+    </td>
+</tr>
+{% endfor %}
+
+

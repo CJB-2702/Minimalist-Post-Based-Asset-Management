@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}My Maintenance History{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="{{ url_for('technician_portal.dashboard') }}">Dashboard</a></li>
+                            <li class="breadcrumb-item active">History</li>
+                        </ol>
+                    </nav>
+                    <h1>My Maintenance History</h1>
+                </div>
+                <a href="{{ url_for('technician_portal.dashboard') }}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-clock-history"></i> Completed Maintenance
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if history %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Task Name</th>
+                                    <th>Asset</th>
+                                    <th>Completed Date</th>
+                                    <th>Duration</th>
+                                    <th>Actions</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in history %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ item.task_name }}</strong>
+                                        {% if item.priority %}
+                                        <br>
+                                        <span class="badge bg-{{ 'danger' if item.priority == 'Critical' else 'warning' if item.priority == 'High' else 'info' }}">
+                                            {{ item.priority }}
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if item.asset %}
+                                        <a href="{{ url_for('core_assets.detail', asset_id=item.asset.id) }}">
+                                            {{ item.asset.name }}
+                                        </a>
+                                        {% else %}
+                                        N/A
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {{ item.end_date.strftime('%Y-%m-%d %H:%M') if item.end_date else 'N/A' }}
+                                    </td>
+                                    <td>
+                                        {% if item.start_date and item.end_date %}
+                                        {% set seconds = (item.end_date - item.start_date).total_seconds() %}
+                                        {% set hours = (seconds / 3600) | int %}
+                                        {% set minutes = ((seconds % 3600) / 60) | int %}
+                                        {% if hours > 0 %}{{ hours }}h{% endif %}{% if minutes > 0 %} {{ minutes }}m{% endif %}
+                                        {% else %}
+                                        N/A
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% set total = item.actions|length if item.actions else 0 %}
+                                        {% set completed = 0 %}
+                                        {% if item.actions %}
+                                            {% for action in item.actions %}
+                                                {% if action.status == 'Completed' %}
+                                                    {% set completed = completed + 1 %}
+                                                {% endif %}
+                                            {% endfor %}
+                                        {% endif %}
+                                        <span class="badge bg-success">{{ completed }}/{{ total }}</span>
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('technician_portal.work_detail', action_set_id=item.id) }}" 
+                                           class="btn btn-sm btn-info">
+                                            <i class="bi bi-eye"></i> View Details
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> No completed maintenance history found.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

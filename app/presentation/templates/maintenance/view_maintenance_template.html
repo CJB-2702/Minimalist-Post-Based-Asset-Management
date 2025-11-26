@@ -1,0 +1,677 @@
+{% extends "base.html" %}
+
+{% block title %}{{ template.task_name }} - Maintenance Template{% endblock %}
+
+{% block extra_css %}
+<style>
+    .info-card {
+        border-left: 4px solid;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .info-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .info-card.primary { border-left-color: #0d6efd; }
+    .info-card.success { border-left-color: #198754; }
+    .info-card.warning { border-left-color: #ffc107; }
+    .info-card.danger { border-left-color: #dc3545; }
+    .info-card.info { border-left-color: #0dcaf0; }
+    
+    .action-item {
+        border-left: 3px solid #dee2e6;
+        transition: all 0.2s;
+    }
+    .action-item:hover {
+        border-left-color: #0d6efd;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .status-badge {
+        font-size: 0.875rem;
+        padding: 0.375rem 0.75rem;
+    }
+    
+    .detail-row {
+        border-bottom: 1px solid #e9ecef;
+        padding: 0.5rem 0;
+    }
+    .detail-row:last-child {
+        border-bottom: none;
+    }
+    
+    /* Collapse chevron rotation */
+    button[data-bs-toggle="collapse"] .bi-chevron-down {
+        transition: transform 0.3s ease;
+    }
+    button[data-bs-toggle="collapse"][aria-expanded="true"] .bi-chevron-down {
+        transform: rotate(180deg);
+    }
+    
+    /* Collapse button styling */
+    [data-bs-toggle="collapse"] {
+        color: inherit;
+    }
+    [data-bs-toggle="collapse"]:hover {
+        color: var(--bs-primary);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="bi bi-file-earmark-text text-success"></i> {{ template.task_name or 'Maintenance Template' }}
+                    </h1>
+                    <p class="text-muted mb-0">
+                        {% if template.description %}
+                            {{ template.description }}
+                        {% else %}
+                            Maintenance Template Details
+                        {% endif %}
+                    </p>
+                </div>
+                <div>
+                    <a href="{{ url_for('manager_portal.view_maintenance') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to View Maintenance
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card info-card {% if template.is_active %}success{% else %}secondary{% endif %}">
+                <div class="card-body">
+                    <h6 class="text-muted mb-1">Status</h6>
+                    <h4 class="mb-0">
+                        <span class="badge status-badge bg-{% if template.is_active %}success{% else %}secondary{% endif %}">
+                            {% if template.is_active %}Active{% else %}Inactive{% endif %}
+                        </span>
+                    </h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card info-card info">
+                <div class="card-body">
+                    <h6 class="text-muted mb-1">Revision</h6>
+                    <h4 class="mb-0">{{ template.revision or 'N/A' }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card info-card info">
+                <div class="card-body">
+                    <h6 class="text-muted mb-1">Action Items</h6>
+                    <h4 class="mb-0">{{ action_items|length }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card info-card {% if template.template_part_demands %}warning{% else %}success{% endif %}">
+                <div class="card-body">
+                    <h6 class="text-muted mb-1">Parts Required</h6>
+                    <h4 class="mb-0">{{ template.template_part_demands|length }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Left Column - Main Details -->
+        <div class="col-lg-8">
+            <!-- Template Details -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> Template Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="detail-row">
+                                <strong>Task Name:</strong><br>
+                                <span>{{ template.task_name or 'N/A' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <strong>Description:</strong><br>
+                                <span>{{ template.description or 'N/A' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <strong>Revision:</strong><br>
+                                <span>{{ template.revision or 'N/A' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <strong>Is Active:</strong><br>
+                                <span class="badge bg-{% if template.is_active %}success{% else %}secondary{% endif %}">
+                                    {% if template.is_active %}Active{% else %}Inactive{% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="detail-row">
+                                <strong>Estimated Duration:</strong><br>
+                                <span>{{ template.template_action_set.estimated_duration }} hours</span>{% if template.template_action_set.estimated_duration %} <small class="text-muted">(estimated)</small>{% endif %}
+                            </div>
+                            <div class="detail-row">
+                                <strong>Staff Count:</strong><br>
+                                <span>{{ template.template_action_set.staff_count or 'N/A' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <strong>Parts Cost:</strong><br>
+                                <span>{% if template.template_action_set.parts_cost %}${{ "%.2f"|format(template.template_action_set.parts_cost) }}{% else %}N/A{% endif %}</span>
+                            </div>
+                            <div class="detail-row">
+                                <strong>Labor Hours:</strong><br>
+                                <span>{{ template.template_action_set.labor_hours or 'N/A' }}</span>
+                            </div>
+                            {% if template.template_action_set.safety_review_required %}
+                            <div class="detail-row">
+                                <strong>Safety Review:</strong><br>
+                                <span class="badge bg-warning">Required</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Template Action Items List -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-list-task"></i> Template Action Items ({{ action_items|length }})</h5>
+                </div>
+                <div class="card-body">
+                    {% if action_items %}
+                    <div class="list-group list-group-flush">
+                        {% for action_item_struct in action_items %}
+                        {% set action_item = action_item_struct.template_action_item %}
+                        <div class="list-group-item action-item px-0 py-3">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <h6 class="mb-0 me-2">
+                                            <span class="badge bg-secondary me-2">#{{ action_item.sequence_order }}</span>
+                                            {{ action_item.action_name }}
+                                        </h6>
+                                        {% if not action_item.is_required %}
+                                        <span class="badge bg-warning">Optional</span>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    {% if action_item.description %}
+                                    <p class="text-muted small mb-2">{{ action_item.description }}</p>
+                                    {% endif %}
+                                    
+                                    <div class="row g-2 mb-2">
+                                        {% if action_item.estimated_duration %}
+                                        <div class="col-auto">
+                                            <small class="text-muted">
+                                                <i class="bi bi-clock"></i> Est: {{ action_item.estimated_duration }}h
+                                            </small>
+                                        </div>
+                                        {% endif %}
+                                        {% if action_item.expected_billable_hours %}
+                                        <div class="col-auto">
+                                            <small class="text-muted">
+                                                <i class="bi bi-cash"></i> Billable: {{ action_item.expected_billable_hours }}h
+                                            </small>
+                                        </div>
+                                        {% endif %}
+                                        {% if action_item.minimum_staff_count %}
+                                        <div class="col-auto">
+                                            <small class="text-muted">
+                                                <i class="bi bi-people"></i> Staff: {{ action_item.minimum_staff_count }}
+                                            </small>
+                                        </div>
+                                        {% endif %}
+                                        {% if action_item.proto_action_item %}
+                                        <div class="col-auto">
+                                            <small class="text-muted">
+                                                <i class="bi bi-link-45deg"></i> From: {{ action_item.proto_action_item.action_name }}
+                                            </small>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    {% if action_item.safety_notes %}
+                                    <div class="alert alert-warning py-2 px-3 mb-2">
+                                        <small><strong><i class="bi bi-exclamation-triangle"></i> Safety Notes:</strong> {{ action_item.safety_notes }}</small>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if action_item.notes %}
+                                    <div class="mb-2">
+                                        <small class="text-muted"><strong>Notes:</strong> {{ action_item.notes }}</small>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if action_item.instructions %}
+                                    <div class="mb-2">
+                                        <small class="text-info"><strong>Instructions:</strong> {{ action_item.instructions }}</small>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if action_item.required_skills %}
+                                    <div class="mb-2">
+                                        <small class="text-muted"><strong>Required Skills:</strong> {{ action_item.required_skills }}</small>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <!-- Part Demands for this action item - Only show if there are any -->
+                                    {% if action_item_struct.template_part_demands %}
+                                    <div class="card mt-3 border-info">
+                                        <div class="card-header bg-info bg-opacity-10 py-2">
+                                            <small class="fw-bold text-info">
+                                                <i class="bi bi-box-seam"></i> Parts Required
+                                            </small>
+                                        </div>
+                                        <div class="card-body py-2">
+                                            <div class="d-flex flex-wrap gap-1">
+                                                {% for part_demand in action_item_struct.template_part_demands %}
+                                                <span class="badge bg-info">
+                                                    {% if part_demand.part %}
+                                                        {{ part_demand.part.part_name }}
+                                                    {% else %}
+                                                        Part #{{ part_demand.part_id }}
+                                                    {% endif %}
+                                                    x{{ part_demand.quantity_required }}
+                                                    {% if part_demand.is_optional %}
+                                                        (Optional)
+                                                    {% endif %}
+                                                </span>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <!-- Tools for this action item - Only show if there are any -->
+                                    {% if action_item_struct.template_action_tools %}
+                                    <div class="card mt-2 border-secondary">
+                                        <div class="card-header bg-secondary bg-opacity-10 py-2">
+                                            <small class="fw-bold text-secondary">
+                                                <i class="bi bi-tools"></i> Tools Required
+                                            </small>
+                                        </div>
+                                        <div class="card-body py-2">
+                                            <div class="d-flex flex-wrap gap-1">
+                                                {% for action_tool in action_item_struct.template_action_tools %}
+                                                <span class="badge bg-secondary">
+                                                    {% if action_tool.tool %}
+                                                        {{ action_tool.tool.tool_name }}
+                                                    {% else %}
+                                                        Tool #{{ action_tool.tool_id }}
+                                                    {% endif %}
+                                                    x{{ action_tool.quantity_required }}
+                                                    {% if not action_tool.is_required %}
+                                                        (Optional)
+                                                    {% endif %}
+                                                </span>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted mb-0">No action items defined for this template.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Proto Actions (Referenced by Template Actions) -->
+            {% if proto_actions %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <button class="btn btn-link text-decoration-none p-0 w-100 text-start" type="button" 
+                            data-bs-toggle="collapse" data-bs-target="#protoActionsCollapse" 
+                            aria-expanded="false" aria-controls="protoActionsCollapse">
+                        <h5 class="mb-0 d-flex justify-content-between align-items-center">
+                            <span>
+                                <i class="bi bi-collection"></i> Referenced Proto Actions ({{ proto_actions|length }})
+                            </span>
+                            <i class="bi bi-chevron-down"></i>
+                        </h5>
+                    </button>
+                </div>
+                <div class="collapse" id="protoActionsCollapse">
+                    <div class="card-body">
+                        <p class="text-muted small mb-3">
+                            <i class="bi bi-info-circle"></i> These are the reusable proto actions referenced by the template action items above.
+                        </p>
+                        <div class="list-group list-group-flush">
+                            {% for proto_data in proto_actions %}
+                            {% set proto_struct = proto_data.struct %}
+                            {% set proto = proto_struct.proto_action_item %}
+                            {% set referenced_by = proto_data.referenced_by %}
+                            <div class="list-group-item action-item px-0 py-3">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <h6 class="mb-0 me-2">
+                                                <i class="bi bi-link-45deg text-info"></i> {{ proto.action_name }}
+                                            </h6>
+                                            {% if not proto.is_required %}
+                                            <span class="badge bg-warning">Optional</span>
+                                            {% endif %}
+                                            {% if proto.revision %}
+                                            <span class="badge bg-secondary ms-2">v{{ proto.revision }}</span>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        {% if proto.description %}
+                                        <p class="text-muted small mb-2">{{ proto.description }}</p>
+                                        {% endif %}
+                                        
+                                        <div class="mb-2">
+                                            <small class="text-muted">
+                                                <strong>Referenced by:</strong>
+                                                {% for ref_item in referenced_by %}
+                                                <span class="badge bg-info">{{ ref_item.action_name }}</span>
+                                                {% endfor %}
+                                            </small>
+                                        </div>
+                                        
+                                        <div class="row g-2 mb-2">
+                                            {% if proto.estimated_duration %}
+                                            <div class="col-auto">
+                                                <small class="text-muted">
+                                                    <i class="bi bi-clock"></i> Est: {{ proto.estimated_duration }}h
+                                                </small>
+                                            </div>
+                                            {% endif %}
+                                            {% if proto.expected_billable_hours %}
+                                            <div class="col-auto">
+                                                <small class="text-muted">
+                                                    <i class="bi bi-cash"></i> Billable: {{ proto.expected_billable_hours }}h
+                                                </small>
+                                            </div>
+                                            {% endif %}
+                                            {% if proto.minimum_staff_count %}
+                                            <div class="col-auto">
+                                                <small class="text-muted">
+                                                    <i class="bi bi-people"></i> Staff: {{ proto.minimum_staff_count }}
+                                                </small>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        {% if proto.safety_notes %}
+                                        <div class="alert alert-warning py-2 px-3 mb-2">
+                                            <small><strong><i class="bi bi-exclamation-triangle"></i> Safety Notes:</strong> {{ proto.safety_notes }}</small>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        {% if proto.notes %}
+                                        <div class="mb-2">
+                                            <small class="text-muted"><strong>Notes:</strong> {{ proto.notes }}</small>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        {% if proto.instructions %}
+                                        <div class="mb-2">
+                                            <small class="text-info"><strong>Instructions:</strong> {{ proto.instructions }}</small>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        {% if proto.required_skills %}
+                                        <div class="mb-2">
+                                            <small class="text-muted"><strong>Required Skills:</strong> {{ proto.required_skills }}</small>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        <!-- Proto Part Demands - Only show if there are any -->
+                                        {% if proto_struct.proto_part_demands %}
+                                        <div class="card mt-3 border-info">
+                                            <div class="card-header bg-info bg-opacity-10 py-2">
+                                                <small class="fw-bold text-info">
+                                                    <i class="bi bi-box-seam"></i> Parts Required
+                                                </small>
+                                            </div>
+                                            <div class="card-body py-2">
+                                                <div class="d-flex flex-wrap gap-1">
+                                                    {% for part_demand in proto_struct.proto_part_demands %}
+                                                    <span class="badge bg-info">
+                                                        {% if part_demand.part %}
+                                                            {{ part_demand.part.part_name }}
+                                                        {% else %}
+                                                            Part #{{ part_demand.part_id }}
+                                                        {% endif %}
+                                                        x{{ part_demand.quantity_required }}
+                                                        {% if part_demand.is_optional %}
+                                                            (Optional)
+                                                        {% endif %}
+                                                    </span>
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        <!-- Proto Action Tools - Only show if there are any -->
+                                        {% if proto_struct.proto_action_tools %}
+                                        <div class="card mt-2 border-secondary">
+                                            <div class="card-header bg-secondary bg-opacity-10 py-2">
+                                                <small class="fw-bold text-secondary">
+                                                    <i class="bi bi-tools"></i> Tools Required
+                                                </small>
+                                            </div>
+                                            <div class="card-body py-2">
+                                                <div class="d-flex flex-wrap gap-1">
+                                                    {% for action_tool in proto_struct.proto_action_tools %}
+                                                    <span class="badge bg-secondary">
+                                                        {% if action_tool.tool %}
+                                                            {{ action_tool.tool.tool_name }}
+                                                        {% else %}
+                                                            Tool #{{ action_tool.tool_id }}
+                                                        {% endif %}
+                                                        x{{ action_tool.quantity_required }}
+                                                        {% if not action_tool.is_required %}
+                                                            (Optional)
+                                                        {% endif %}
+                                                    </span>
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Right Column - Sidebar Info -->
+        <div class="col-lg-4">
+            <!-- Template Info -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-file-earmark-text"></i> Template Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="detail-row">
+                        <strong>Template ID:</strong><br>
+                        <span>{{ template.id }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <strong>Revision:</strong><br>
+                        <span>{{ template.revision or 'N/A' }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <strong>Status:</strong><br>
+                        <span class="badge bg-{% if template.is_active %}success{% else %}secondary{% endif %}">
+                            {% if template.is_active %}Active{% else %}Inactive{% endif %}
+                        </span>
+                    </div>
+                    {% if template.template_action_set.prior_revision %}
+                    <div class="detail-row">
+                        <strong>Prior Revision:</strong><br>
+                        <span>{{ template.template_action_set.prior_revision.task_name }} ({{ template.template_action_set.prior_revision.revision }})</span>
+                    </div>
+                    {% endif %}
+                    <div class="detail-row">
+                        <strong>Created:</strong><br>
+                        <span>{{ template.template_action_set.created_at.strftime('%Y-%m-%d %H:%M') if template.template_action_set.created_at else 'N/A' }}</span>
+                    </div>
+                    {% if template.template_action_set.created_by %}
+                    <div class="detail-row">
+                        <strong>Created By:</strong><br>
+                        <span>{{ template.template_action_set.created_by.username }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Summary Stats -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="detail-row">
+                        <strong>Total Action Items:</strong> {{ action_items|length }}
+                    </div>
+                    <div class="detail-row">
+                        <strong>Total Parts:</strong> 
+                        {{ template.template_part_demands|length }}
+                    </div>
+                    <div class="detail-row">
+                        <strong>Total Tools:</strong> 
+                        {{ template.template_action_tools|length }}
+                    </div>
+                    {% if template_context.total_estimated_duration %}
+                    <div class="detail-row">
+                        <strong>Total Estimated Duration:</strong> {{ template_context.total_estimated_duration }} hours
+                    </div>
+                    {% endif %}
+                    {% if template_context.total_estimated_cost %}
+                    <div class="detail-row">
+                        <strong>Total Estimated Cost:</strong> ${{ "%.2f"|format(template_context.total_estimated_cost) }}
+                    </div>
+                    {% endif %}
+                    {% if template.template_action_set.labor_hours %}
+                    <div class="detail-row">
+                        <strong>Labor Hours:</strong> {{ template.template_action_set.labor_hours }}
+                    </div>
+                    {% endif %}
+                    {% if template.template_action_set.parts_cost %}
+                    <div class="detail-row">
+                        <strong>Parts Cost:</strong> ${{ "%.2f"|format(template.template_action_set.parts_cost) }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- All Part Demands -->
+            <div class="card mb-4 border-info">
+                <div class="card-header bg-info bg-opacity-10">
+                    <h5 class="mb-0">
+                        <i class="bi bi-box-seam text-info"></i> All Parts Required
+                        <span class="badge bg-info ms-2">{{ template.template_part_demands|length }}</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if template.template_part_demands %}
+                    <div class="list-group list-group-flush">
+                        {% for part_demand in template.template_part_demands %}
+                        <div class="list-group-item px-0 py-2 border-0">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <span class="badge bg-info me-2">
+                                        {% if part_demand.part %}
+                                            {{ part_demand.part.part_name }}
+                                        {% else %}
+                                            Part #{{ part_demand.part_id }}
+                                        {% endif %}
+                                        x{{ part_demand.quantity_required }}
+                                    </span>
+                                    {% if part_demand.is_optional %}
+                                    <span class="badge bg-warning">Optional</span>
+                                    {% endif %}
+                                </div>
+                                {% if part_demand.template_action_item %}
+                                <small class="text-muted">{{ part_demand.template_action_item.action_name }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted mb-0 small"><em>No parts required for this template</em></p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- All Action Tools -->
+            <div class="card mb-4 border-secondary">
+                <div class="card-header bg-secondary bg-opacity-10">
+                    <h5 class="mb-0">
+                        <i class="bi bi-tools text-secondary"></i> All Tools Required
+                        <span class="badge bg-secondary ms-2">{{ template.template_action_tools|length }}</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if template.template_action_tools %}
+                    <div class="list-group list-group-flush">
+                        {% for action_tool in template.template_action_tools %}
+                        <div class="list-group-item px-0 py-2 border-0">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <span class="badge bg-secondary me-2">
+                                        {% if action_tool.tool %}
+                                            {{ action_tool.tool.tool_name }}
+                                        {% else %}
+                                            Tool #{{ action_tool.tool_id }}
+                                        {% endif %}
+                                        x{{ action_tool.quantity_required }}
+                                    </span>
+                                    {% if not action_tool.is_required %}
+                                    <span class="badge bg-warning">Optional</span>
+                                    {% endif %}
+                                </div>
+                                {% if action_tool.template_action_item %}
+                                <small class="text-muted">{{ action_tool.template_action_item.action_name }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted mb-0 small"><em>No tools required for this template</em></p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Warning if no proto actions -->
+            {% if not proto_actions %}
+            <div class="alert alert-warning mb-4" role="alert">
+                <div class="d-flex align-items-start">
+                    <i class="bi bi-exclamation-triangle-fill me-2 mt-1"></i>
+                    <div>
+                        <strong>Recommendation:</strong> It's recommended that common actions are linked to action prototypes.
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+

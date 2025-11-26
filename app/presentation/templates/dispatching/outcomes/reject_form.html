@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% block title %}Reject Dispatch Request{% endblock %}
+
+{% block content %}
+<div class="container mt-3">
+  <div class="card">
+    <div class="card-header bg-danger text-white">
+      <h4 class="mb-0">
+        <i class="bi bi-x-circle"></i> Reject Dispatch Request
+      </h4>
+      <small>Request #{{ request_id }}</small>
+    </div>
+    <div class="card-body">
+      <form method="post" action="{{ url_for('dispatching.outcome_create', request_id=request_id, outcome_type='reject') }}">
+        <div class="row g-3">
+          <!-- Rejection Reason -->
+          <div class="col-12">
+            <label class="form-label">Reason <span class="text-danger">*</span></label>
+            <textarea class="form-control" name="reason" rows="4" required placeholder="Explain why this request is being rejected"></textarea>
+            <div class="form-text">Provide a clear explanation for the rejection</div>
+          </div>
+          
+          <!-- Rejection Category -->
+          <div class="col-md-6">
+            <label class="form-label">Rejection Category</label>
+            <select class="form-select" name="rejection_category">
+              <option value="">-- Select Category (Optional) --</option>
+              <option value="Resource Unavailable">Resource Unavailable</option>
+              <option value="Policy Violation">Policy Violation</option>
+              <option value="Timing Conflict">Timing Conflict</option>
+              <option value="Insufficient Information">Insufficient Information</option>
+              <option value="Budget Constraints">Budget Constraints</option>
+              <option value="Maintenance Required">Maintenance Required</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          
+          <!-- Can Resubmit -->
+          <div class="col-md-6">
+            <label class="form-label">Resubmission</label>
+            <div class="form-check mt-2">
+              <input class="form-check-input" type="checkbox" name="can_resubmit" value="1" id="can_resubmit">
+              <label class="form-check-label" for="can_resubmit">
+                Allow resubmission of this request
+              </label>
+            </div>
+          </div>
+          
+          <!-- Resubmit After Date -->
+          <div class="col-md-6" id="resubmit_date_field" style="display: none;">
+            <label class="form-label">Resubmit After</label>
+            <input class="form-control" type="date" name="resubmit_after" id="resubmit_after">
+            <div class="form-text">Earliest date this request can be resubmitted</div>
+          </div>
+          
+          <!-- Alternative Suggestion -->
+          <div class="col-12">
+            <label class="form-label">Alternative Suggestion</label>
+            <textarea class="form-control" name="alternative_suggestion" rows="3" placeholder="Suggest alternatives or modifications that might make the request acceptable"></textarea>
+            <div class="form-text">Optional: Provide suggestions for how the requester might modify their request</div>
+          </div>
+          
+          <!-- Additional Notes -->
+          <div class="col-12">
+            <label class="form-label">Additional Notes</label>
+            <textarea class="form-control" name="notes" rows="3" placeholder="Any additional notes or comments"></textarea>
+          </div>
+        </div>
+        
+        <div class="alert alert-warning mt-4">
+          <i class="bi bi-exclamation-triangle"></i>
+          <strong>Warning:</strong> Rejecting this request will set its status to "Rejected" and prevent further outcomes from being assigned.
+        </div>
+        
+        <div class="mt-4">
+          <button class="btn btn-danger" type="submit">
+            <i class="bi bi-x-circle"></i> Reject Request
+          </button>
+          <a class="btn btn-outline-secondary" href="{{ url_for('dispatching.requests_detail', item_id=request_id) }}">
+            Cancel
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const canResubmitCheckbox = document.getElementById('can_resubmit');
+  const resubmitDateField = document.getElementById('resubmit_date_field');
+  
+  canResubmitCheckbox.addEventListener('change', function() {
+    if (this.checked) {
+      resubmitDateField.style.display = 'block';
+    } else {
+      resubmitDateField.style.display = 'none';
+      document.getElementById('resubmit_after').value = '';
+    }
+  });
+});
+</script>
+{% endblock %}

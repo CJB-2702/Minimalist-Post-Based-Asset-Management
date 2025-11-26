@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block title %}{{ config.name }} - Asset Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>
+                    <i class="bi {{ config.icon }}"></i>
+                    {{ config.name }}
+                </h1>
+                <a href="{{ url_for('assets.detail_tables.create', detail_type=detail_type) }}" 
+                   class="btn btn-primary">
+                    <i class="bi bi-plus"></i> Create New
+                </a>
+            </div>
+            
+            <!-- Filters -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-funnel"></i> Filters
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="GET" class="row g-3">
+                        <div class="col-md-4">
+                            <label for="asset_id" class="form-label">Asset</label>
+                            <select class="form-select" id="asset_id" name="asset_id">
+                                <option value="">All Assets</option>
+                                {% for asset_id, asset_name in asset_options %}
+                                <option value="{{ asset_id }}" {% if current_asset_filter == asset_id %}selected{% endif %}>
+                                    {{ asset_name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="model_id" class="form-label">Model</label>
+                            <select class="form-select" id="model_id" name="model_id">
+                                <option value="">All Models</option>
+                                {% for model_id, model_name in model_options %}
+                                <option value="{{ model_id }}" {% if current_model_filter == model_id %}selected{% endif %}>
+                                    {{ model_name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <div class="btn-group" role="group">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-search"></i> Apply Filters
+                                </button>
+                                <a href="{{ url_for('assets.detail_tables.list', detail_type=detail_type) }}" 
+                                   class="btn btn-outline-secondary">
+                                    <i class="bi bi-x-circle"></i> Clear
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            {% if records %}
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Asset ID</th>
+                                    <th>Asset Name</th>
+                                    <th>Model ID</th>
+                                    <th>Model</th>
+                                    {% for field in config.fields %}
+                                    <th>{{ field.replace('_', ' ').title() }}</th>
+                                    {% endfor %}
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for record in records %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ record.id }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-primary">{{ record.asset_id }}</span>
+                                    </td>
+                                    <td>
+                                        {% if record.asset %}
+                                            <strong>{{ record.asset.name }}</strong>
+                                            <br>
+                                            <small class="text-muted">{{ record.asset.serial_number }}</small>
+                                        {% else %}
+                                            <span class="text-muted">Asset not found</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if record.asset and record.asset.make_model %}
+                                            <span class="badge bg-info">{{ record.asset.make_model_id }}</span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if record.asset and record.asset.make_model %}
+                                            <strong>{{ record.asset.make_model.make }} {{ record.asset.make_model.model }}</strong>
+                                            {% if record.asset.make_model.year %}
+                                                <br>
+                                                <small class="text-muted">{{ record.asset.make_model.year }}</small>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-muted">Model not found</span>
+                                        {% endif %}
+                                    </td>
+                                    {% for field in config.fields %}
+                                    <td>
+                                        {% if field == 'purchase_date' or field == 'warranty_expiry' or field == 'registration_expiry' or field == 'insurance_expiry' or field == 'service_date' or field == 'certification_date' or field == 'warranty_start_date' or field == 'warranty_end_date' %}
+                                            {{ record[field].strftime('%Y-%m-%d') if record[field] else '-' }}
+                                        {% elif field == 'purchase_price' or field == 'co2_emissions' or field == 'cargo_capacity' %}
+                                            {{ "${:,.2f}".format(record[field]) if record[field] else '-' }}
+                                        {% elif field == 'fuel_economy_city' or field == 'fuel_economy_highway' or field == 'mpg_city' or field == 'mpg_highway' or field == 'mpg_combined' %}
+                                            {{ "{:.1f} mpg".format(record[field]) if record[field] else '-' }}
+                                        {% elif field == 'seating_capacity' or field == 'mileage_at_service' or field == 'warranty_mileage_limit' or field == 'warranty_time_limit_months' %}
+                                            {{ record[field] if record[field] else '-' }}
+                                        {% else %}
+                                            {{ record[field] if record[field] else '-' }}
+                                        {% endif %}
+                                    </td>
+                                    {% endfor %}
+                                    <td>{{ record.created_at.strftime('%Y-%m-%d') }}</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{{ url_for('assets.detail_tables.detail', detail_type=detail_type, id=record.id) }}" 
+                                               class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a href="{{ url_for('assets.detail_tables.edit', detail_type=detail_type, id=record.id) }}" 
+                                               class="btn btn-sm btn-outline-secondary">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <button type="button" 
+                                                    class="btn btn-sm btn-outline-danger"
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#deleteModal{{ record.id }}">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="bi {{ config.icon }} display-1 text-muted"></i>
+                    <h3 class="text-muted">No {{ config.name }} records found</h3>
+                    <p class="text-muted">Get started by creating your first {{ config.name.lower() }} record.</p>
+                    <a href="{{ url_for('assets.detail_tables.create', detail_type=detail_type) }}" 
+                       class="btn btn-primary">
+                        <i class="bi bi-plus"></i> Create First Record
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Delete Modals -->
+{% for record in records %}
+<div class="modal fade" id="deleteModal{{ record.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Delete {{ config.name }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this {{ config.name.lower() }} record?</p>
+                <p class="text-muted">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="POST" action="{{ url_for('assets.detail_tables.delete', detail_type=detail_type, id=record.id) }}" 
+                      style="display: inline;">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %} 

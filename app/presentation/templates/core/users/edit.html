@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}Edit {{ user.username }} - Asset Management System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Edit User</h1>
+            <div>
+                <a href="{{ url_for('users.detail', user_id=user.id) }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to User
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Edit User Information</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="username" class="form-label">Username <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="username" name="username" 
+                                       value="{{ request.form.get('username', user.username) }}" required>
+                                <div class="form-text">Username must be unique.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control" id="email" name="email" 
+                                       value="{{ request.form.get('email', user.email) }}" required>
+                                <div class="form-text">Email must be unique and will be used for login.</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="password" class="form-label">New Password</label>
+                                <input type="password" class="form-control" id="password" name="password">
+                                <div class="form-text">Leave blank to keep current password. Must be at least 8 characters if changed.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="confirm_password" class="form-label">Confirm New Password</label>
+                                <input type="password" class="form-control" id="confirm_password" name="confirm_password">
+                                <div class="form-text">Please confirm the new password.</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="is_admin" name="is_admin" 
+                                           {% if request.form.get('is_admin', 'on' if user.is_admin else '') == 'on' %}checked{% endif %}>
+                                    <label class="form-check-label" for="is_admin">
+                                        Admin User
+                                    </label>
+                                </div>
+                                <div class="form-text">Admin users have full system access.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="is_active" name="is_active" 
+                                           {% if request.form.get('is_active', 'on' if user.is_active else '') == 'on' %}checked{% endif %}>
+                                    <label class="form-check-label" for="is_active">
+                                        Active User
+                                    </label>
+                                </div>
+                                <div class="form-text">Inactive users cannot log in to the system.</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- User Statistics -->
+                    <div class="alert alert-info">
+                        <h6 class="alert-heading">User Statistics</h6>
+                        <div class="row text-center">
+                            <div class="col-3">
+                                <strong>{{ Asset.query.filter_by(created_by_id=user.id).count() }}</strong><br>
+                                <small>Created Assets</small>
+                            </div>
+                            <div class="col-3">
+                                <strong>{{ Event.query.filter_by(user_id=user.id).count() }}</strong><br>
+                                <small>Total Events</small>
+                            </div>
+                            <div class="col-3">
+                                <strong>{{ MajorLocation.query.filter_by(created_by_id=user.id).count() }}</strong><br>
+                                <small>Created Locations</small>
+                            </div>
+                            <div class="col-3">
+                                <strong>{{ AssetType.query.filter_by(created_by_id=user.id).count() }}</strong><br>
+                                <small>Created Asset Types</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('users.detail', user_id=user.id) }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Update User
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Password confirmation validation
+document.getElementById('confirm_password').addEventListener('input', function() {
+    const password = document.getElementById('password').value;
+    const confirmPassword = this.value;
+    
+    if (password && confirmPassword && password !== confirmPassword) {
+        this.setCustomValidity('Passwords do not match');
+    } else {
+        this.setCustomValidity('');
+    }
+});
+
+document.getElementById('password').addEventListener('input', function() {
+    const confirmPassword = document.getElementById('confirm_password');
+    if (confirmPassword.value) {
+        if (this.value !== confirmPassword.value) {
+            confirmPassword.setCustomValidity('Passwords do not match');
+        } else {
+            confirmPassword.setCustomValidity('');
+        }
+    }
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,370 @@
+{% extends "base.html" %}
+
+{% block title %}Supply Management - Dashboard{% endblock %}
+
+{% block head %}
+<style>
+    .stat-card {
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        border: none;
+        border-radius: 12px;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .stat-icon {
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .alert-card {
+        border-left: 4px solid;
+        border-radius: 8px;
+    }
+    
+    .alert-low-stock { border-left-color: #ffc107; }
+    .alert-out-of-stock { border-left-color: #dc3545; }
+    .alert-calibration { border-left-color: #fd7e14; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="bi bi-box-seam text-danger"></i>
+                        Supply Management Dashboard
+                    </h1>
+                    <p class="text-muted mb-0">Manage inventory, parts, tools, and procurement</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('core_supply_parts.create') }}" class="btn btn-danger">
+                        <i class="bi bi-plus-circle"></i> Add Part
+                    </a>
+                    <a href="{{ url_for('core_supply_tools.create') }}" class="btn btn-outline-danger">
+                        <i class="bi bi-plus-circle"></i> Add Tool Definition
+                    </a>
+                    <a href="{{ url_for('core_supply_issuable_tools.create') }}" class="btn btn-outline-danger">
+                        <i class="bi bi-plus-circle"></i> Add Issuable Tool
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card text-center">
+                <div class="card-body">
+                    <div class="stat-icon text-primary">
+                        <i class="bi bi-box"></i>
+                    </div>
+                    <h3 class="card-title text-primary">{{ total_parts or 0 }}</h3>
+                    <p class="card-text small">Total Parts</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card text-center">
+                <div class="card-body">
+                    <div class="stat-icon text-success">
+                        <i class="bi bi-tools"></i>
+                    </div>
+                    <h3 class="card-title text-success">{{ total_tools or 0 }}</h3>
+                    <p class="card-text small">Total Tools</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card text-center">
+                <div class="card-body">
+                    <div class="stat-icon text-warning">
+                        <i class="bi bi-clipboard-check"></i>
+                    </div>
+                    <h3 class="card-title text-warning">{{ total_part_demands or 0 }}</h3>
+                    <p class="card-text small">Part Demands</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card text-center">
+                <div class="card-body">
+                    <div class="stat-icon text-info">
+                        <i class="bi bi-graph-up"></i>
+                    </div>
+                    <h3 class="card-title text-info">{{ (total_parts or 0) + (total_tools or 0) }}</h3>
+                    <p class="card-text small">Total Items</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alerts and Quick Actions -->
+    <div class="row g-4">
+        <!-- Low Stock Alerts -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-exclamation-triangle text-warning"></i>
+                        Low Stock Alerts
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if low_stock_parts %}
+                        {% for part in low_stock_parts %}
+                        <div class="alert alert-warning alert-card alert-low-stock mb-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ part.part_name }}</strong>
+                                    <br>
+                                    <small class="text-muted">
+                                        Stock: {{ part.current_stock_level }} {{ part.unit_of_measure or 'units' }} 
+                                        (Min: {{ part.minimum_stock_level }})
+                                    </small>
+                                </div>
+                                <a href="{{ url_for('core_supply_parts.detail', part_id=part.id) }}" class="btn btn-sm btn-outline-warning">
+                                    View
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted mb-0">No low stock alerts</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Out of Stock Alerts -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-x-circle text-danger"></i>
+                        Out of Stock
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if out_of_stock_parts %}
+                        {% for part in out_of_stock_parts %}
+                        <div class="alert alert-danger alert-card alert-out-of-stock mb-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ part.part_name }}</strong>
+                                    <br>
+                                    <small class="text-muted">
+                                        Stock: {{ part.current_stock_level }} {{ part.unit_of_measure or 'units' }}
+                                    </small>
+                                </div>
+                                <a href="{{ url_for('core_supply_parts.detail', part_id=part.id) }}" class="btn btn-sm btn-outline-danger">
+                                    View
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted mb-0">No out of stock items</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Tools Needing Calibration -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-calendar-exclamation text-warning"></i>
+                        Tools Needing Calibration
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if tools_needing_calibration %}
+                        {% for tool in tools_needing_calibration %}
+                        <div class="alert alert-warning alert-card alert-calibration mb-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ tool.tool_name }}</strong>
+                                    <br>
+                                    <small class="text-muted">
+                                        Due: {{ tool.next_calibration_date.strftime('%Y-%m-%d') if tool.next_calibration_date else 'Not set' }}
+                                    </small>
+                                </div>
+                                <a href="{{ url_for('core_supply_tools.detail', tool_id=tool.id) }}" class="btn btn-sm btn-outline-warning">
+                                    View
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted mb-0">No tools need calibration</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-lightning"></i>
+                        Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('core_supply_parts.list') }}" class="btn btn-outline-primary">
+                            <i class="bi bi-list"></i> View All Parts
+                        </a>
+                        <a href="{{ url_for('core_supply_tools.list') }}" class="btn btn-outline-success">
+                            <i class="bi bi-tools"></i> View All Tools
+                        </a>
+                        <a href="{{ url_for('actions.list') }}" class="btn btn-outline-warning">
+                            <i class="bi bi-clipboard-check"></i> View Maintenance Actions
+                        </a>
+                        <a href="{{ url_for('maintenance_plans.list') }}" class="btn btn-outline-info">
+                            <i class="bi bi-plus-circle"></i> View Maintenance Plans
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="row g-4 mt-2">
+        <!-- Recent Parts -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-clock-history"></i>
+                        Recent Parts
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_parts %}
+                        <div class="list-group list-group-flush">
+                            {% for part in recent_parts %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ part.part_name }}</strong>
+                                    <br>
+                                    <small class="text-muted">
+                                        {{ part.part_number }} • {{ part.category or 'Uncategorized' }}
+                                    </small>
+                                </div>
+                                <a href="{{ url_for('core_supply_parts.detail', part_id=part.id) }}" class="btn btn-sm btn-outline-primary">
+                                    View
+                                </a>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">No recent parts</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Tools -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-clock-history"></i>
+                        Recent Tools
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_tools %}
+                        <div class="list-group list-group-flush">
+                            {% for tool in recent_tools %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ tool.tool_name }}</strong>
+                                    <br>
+                                    <small class="text-muted">
+                                        {{ tool.tool_type or 'No type' }} • {{ tool.status }}
+                                    </small>
+                                </div>
+                                <a href="{{ url_for('core_supply_tools.detail', tool_id=tool.id) }}" class="btn btn-sm btn-outline-success">
+                                    View
+                                </a>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">No recent tools</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="row g-4 mt-2">
+        <!-- Parts by Category -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-pie-chart"></i>
+                        Parts by Category
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if parts_by_category %}
+                        <div class="list-group list-group-flush">
+                            {% for category, count in parts_by_category.items() %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>{{ category }}</span>
+                                <span class="badge bg-primary rounded-pill">{{ count }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">No parts categorized</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Tools by Status -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-pie-chart"></i>
+                        Tools by Status
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if tools_by_status %}
+                        <div class="list-group list-group-flush">
+                            {% for status, count in tools_by_status.items() %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>{{ status }}</span>
+                                <span class="badge bg-success rounded-pill">{{ count }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">No tools found</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

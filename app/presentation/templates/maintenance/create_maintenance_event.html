@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Create Maintenance Event - Asset Management System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>
+                    <i class="bi bi-play-circle text-success"></i>
+                    Create Maintenance Event
+                </h1>
+                <a href="{{ url_for('maintenance.index') }}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Select Asset and Maintenance Procedure</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('maintenance.create_maintenance_event') }}">
+                        <div class="mb-4">
+                            <label for="asset_id" class="form-label">
+                                <i class="bi bi-box"></i> Select Asset *
+                            </label>
+                            <select class="form-select form-select-lg" id="asset_id" name="asset_id" required>
+                                <option value="">-- Select an Asset --</option>
+                                {% for asset in assets %}
+                                <option value="{{ asset.id }}">
+                                    {{ asset.name }} ({{ asset.serial_number }})
+                                    {% if asset.make_model %}
+                                    - {{ asset.make_model.make }} {{ asset.make_model.model }}
+                                    {% endif %}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Choose the asset that needs maintenance</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="template_action_set_id" class="form-label">
+                                <i class="bi bi-clipboard-check"></i> Select Maintenance Procedure *
+                            </label>
+                            <select class="form-select form-select-lg" id="template_action_set_id" name="template_action_set_id" required onchange="updateTemplateInfo()">
+                                <option value="">-- Select a Maintenance Procedure --</option>
+                                {% for template in template_actions %}
+                                <option value="{{ template.id }}" 
+                                        data-description="{{ template.task_description or 'No description' }}"
+                                        data-duration="{{ template.estimated_duration_hours or 'N/A' }}"
+                                        data-category="{{ template.task_category or 'General' }}">
+                                    {{ template.task_name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Choose the maintenance procedure to perform</div>
+                        </div>
+
+                        <!-- Template Info Display -->
+                        <div id="templateInfo" class="alert alert-info d-none">
+                            <h6 class="alert-heading"><i class="bi bi-info-circle"></i> Procedure Details</h6>
+                            <p class="mb-2"><strong>Description:</strong> <span id="templateDescription">-</span></p>
+                            <p class="mb-2"><strong>Estimated Duration:</strong> <span id="templateDuration">-</span> hours</p>
+                            <p class="mb-0"><strong>Category:</strong> <span id="templateCategory">-</span></p>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="bi bi-play-circle"></i> Create Maintenance Event
+                            </button>
+                            <a href="{{ url_for('maintenance.index') }}" class="btn btn-outline-secondary">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Help Section -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-question-circle"></i> How It Works</h5>
+                </div>
+                <div class="card-body">
+                    <ol class="mb-0">
+                        <li class="mb-2">Select the asset that needs maintenance</li>
+                        <li class="mb-2">Choose the appropriate maintenance procedure template</li>
+                        <li class="mb-2">Click "Create Maintenance Event" to start</li>
+                        <li class="mb-0">You'll be taken to the maintenance execution page where you can perform and track the work</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function updateTemplateInfo() {
+    const select = document.getElementById('template_action_set_id');
+    const infoDiv = document.getElementById('templateInfo');
+    const selectedOption = select.options[select.selectedIndex];
+    
+    if (selectedOption.value) {
+        document.getElementById('templateDescription').textContent = selectedOption.dataset.description;
+        document.getElementById('templateDuration').textContent = selectedOption.dataset.duration;
+        document.getElementById('templateCategory').textContent = selectedOption.dataset.category;
+        infoDiv.classList.remove('d-none');
+    } else {
+        infoDiv.classList.add('d-none');
+    }
+}
+</script>
+{% endblock %}
+

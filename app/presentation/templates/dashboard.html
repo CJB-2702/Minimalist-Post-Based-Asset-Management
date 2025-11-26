@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Asset Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Welcome Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h1 class="card-title">
+                        <i class="bi bi-speedometer2"></i>
+                        Asset Management Dashboard
+                    </h1>
+                    <p class="card-text">Welcome to the Asset Management System - Phase 2A Detail Tables Implementation</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-tag display-4 text-primary"></i>
+                    <h5 class="card-title">Asset Types</h5>
+                    <p class="card-text display-6">{{ asset_types_count|default(0) }}</p>
+                    <a href="{{ url_for('asset_types.list') }}" class="btn btn-outline-primary">View All</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-car-front display-4 text-success"></i>
+                    <h5 class="card-title">Assets</h5>
+                    <p class="card-text display-6">{{ assets_count|default(0) }}</p>
+                    <a href="{{ url_for('core_assets.list') }}" class="btn btn-outline-success">View All</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-gear display-4 text-warning"></i>
+                    <h5 class="card-title">Make/Models</h5>
+                    <p class="card-text display-6">{{ make_models_count|default(0) }}</p>
+                    <a href="{{ url_for('make_models.list') }}" class="btn btn-outline-warning">View All</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-calendar-event display-4 text-info"></i>
+                    <h5 class="card-title">Events</h5>
+                    <p class="card-text display-6">{{ events_count|default(0) }}</p>
+                    <a href="{{ url_for('events.list') }}" class="btn btn-outline-info">View All</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Phase 2A Detail Tables Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4>
+                        <i class="bi bi-card-list"></i>
+                        Phase 2A: Asset Detail Tables
+                    </h4>
+                    <p class="text-muted mb-0">Manage asset-specific detail information</p>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100 border-primary">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-cart display-4 text-primary"></i>
+                                    <h5 class="card-title">Purchase Information</h5>
+                                    <p class="card-text">Track purchase dates, prices, vendors, and warranty information for assets.</p>
+                                    <div class="btn-group-vertical w-100">
+                                        <a href="{{ url_for('assets.detail_tables.list', detail_type='purchase_info') }}" 
+                                           class="btn btn-primary">
+                                            <i class="bi bi-list"></i> View All
+                                        </a>
+                                        <a href="{{ url_for('assets.detail_tables.create', detail_type='purchase_info') }}" 
+                                           class="btn btn-outline-primary">
+                                            <i class="bi bi-plus"></i> Create New
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100 border-success">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-car-front display-4 text-success"></i>
+                                    <h5 class="card-title">Vehicle Registration</h5>
+                                    <p class="card-text">Manage license plates, VIN numbers, registration and insurance details.</p>
+                                    <div class="btn-group-vertical w-100">
+                                        <a href="{{ url_for('assets.detail_tables.list', detail_type='vehicle_registration') }}" 
+                                           class="btn btn-success">
+                                            <i class="bi bi-list"></i> View All
+                                        </a>
+                                        <a href="{{ url_for('assets.detail_tables.create', detail_type='vehicle_registration') }}" 
+                                           class="btn btn-outline-success">
+                                            <i class="bi bi-plus"></i> Create New
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100 border-warning">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-shield-check display-4 text-warning"></i>
+                                    <h5 class="card-title">Toyota Warranty Receipt</h5>
+                                    <p class="card-text">Track warranty numbers, service dates, and dealer information.</p>
+                                    <div class="btn-group-vertical w-100">
+                                        <a href="{{ url_for('assets.detail_tables.list', detail_type='toyota_warranty_receipt') }}" 
+                                           class="btn btn-warning">
+                                            <i class="bi bi-list"></i> View All
+                                        </a>
+                                        <a href="{{ url_for('assets.detail_tables.create', detail_type='toyota_warranty_receipt') }}" 
+                                           class="btn btn-outline-warning">
+                                            <i class="bi bi-plus"></i> Create New
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Model Details Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4>
+                        <i class="bi bi-info-circle"></i>
+                        Model Detail Tables
+                    </h4>
+                    <p class="text-muted mb-0">Manage model-specific information and specifications</p>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100 border-info">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-cloud display-4 text-info"></i>
+                                    <h5 class="card-title">Emissions Information</h5>
+                                    <p class="card-text">Track fuel economy, emissions standards, and environmental data for vehicle models.</p>
+                                    <div class="btn-group-vertical w-100">
+                                        <a href="{{ url_for('assets.model_details.list', detail_type='emissions_info') }}" 
+                                           class="btn btn-info">
+                                            <i class="bi bi-list"></i> View All
+                                        </a>
+                                        <a href="{{ url_for('assets.model_details.create', detail_type='emissions_info') }}" 
+                                           class="btn btn-outline-info">
+                                            <i class="bi bi-plus"></i> Create New
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100 border-secondary">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-info-circle display-4 text-secondary"></i>
+                                    <h5 class="card-title">Model Information</h5>
+                                    <p class="card-text">Store body styles, engine specifications, transmission types, and capacity data.</p>
+                                    <div class="btn-group-vertical w-100">
+                                        <a href="{{ url_for('assets.model_details.list', detail_type='model_info') }}" 
+                                           class="btn btn-secondary">
+                                            <i class="bi bi-list"></i> View All
+                                        </a>
+                                        <a href="{{ url_for('assets.model_details.create', detail_type='model_info') }}" 
+                                           class="btn btn-outline-secondary">
+                                            <i class="bi bi-plus"></i> Create New
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4>
+                        <i class="bi bi-lightning"></i>
+                        Quick Actions
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('core_assets.create') }}" class="btn btn-primary btn-lg w-100">
+                                <i class="bi bi-plus-circle"></i><br>
+                                Add New Asset
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('events.create') }}" class="btn btn-success btn-lg w-100">
+                                <i class="bi bi-calendar-plus"></i><br>
+                                Create Event
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('make_models.create') }}" class="btn btn-warning btn-lg w-100">
+                                <i class="bi bi-gear-wide-connected"></i><br>
+                                Add Make/Model
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('asset_types.create') }}" class="btn btn-info btn-lg w-100">
+                                <i class="bi bi-tag"></i><br>
+                                Create Asset Type
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,615 @@
+{% extends "base.html" %}
+
+{% block title %}Template Builder - {{ builder.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .builder-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 12px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    .action-item {
+        border-left: 4px solid #0d6efd;
+        transition: all 0.2s;
+        margin-bottom: 1rem;
+    }
+    .action-item:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        transform: translateX(4px);
+    }
+    .action-item.selected {
+        border-left-color: #198754;
+        background-color: #f8f9fa;
+    }
+    .sequence-badge {
+        font-size: 1.1rem;
+        font-weight: bold;
+        min-width: 40px;
+        text-align: center;
+    }
+    .metadata-section {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    .add-action-section {
+        background: #fff;
+        border: 2px dashed #dee2e6;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    .add-action-section:hover {
+        border-color: #0d6efd;
+        background: #f8f9ff;
+    }
+    .status-badge {
+        font-size: 0.875rem;
+        padding: 0.375rem 0.75rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Flash Messages Container for OOB Swaps -->
+    <div id="flash-messages-container" class="mt-3" hx-swap-oob="true">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Builder Header -->
+    <div class="builder-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="h3 mb-2">
+                    <i class="bi bi-tools"></i> {{ builder.name }}
+                </h1>
+                <p class="mb-0 opacity-75">
+                    <span class="badge status-badge bg-light text-dark me-2">{{ builder.build_status }}</span>
+                    <span>{{ builder.total_actions }} action{{ 's' if builder.total_actions != 1 else '' }}</span>
+                </p>
+            </div>
+            <div>
+                <a href="{{ url_for('manager_portal.build_maintenance') }}" class="btn btn-light">
+                    <i class="bi bi-arrow-left"></i> Back
+                </a>
+                <form method="POST" action="{{ url_for('template_builder.delete_builder', builder_id=builder.builder_id) }}" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this draft template? This action cannot be undone.');">
+                    <button type="submit" class="btn btn-danger ms-2">
+                        <i class="bi bi-trash"></i> Delete Draft
+                    </button>
+                </form>
+                <form method="POST" action="{{ url_for('template_builder.submit_template', builder_id=builder.builder_id) }}" class="d-inline" onsubmit="return confirm('Are you sure you want to submit this template? This will create a production template.');">
+                    <button type="submit" class="btn btn-success ms-2" id="submit-template-btn">
+                        <i class="bi bi-check-circle"></i> Submit Template
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Metadata Section -->
+    <div id="metadata-section" class="metadata-section">
+        <h5 class="mb-3"><i class="bi bi-info-circle"></i> Template Metadata</h5>
+        <form method="POST" 
+              action="{{ url_for('template_builder.update_metadata', builder_id=builder.builder_id) }}"
+              hx-post="{{ url_for('template_builder.update_metadata', builder_id=builder.builder_id) }}"
+              hx-target="#metadata-section"
+              hx-select="#metadata-section"
+              hx-swap="outerHTML"
+              hx-indicator="#save-metadata-spinner">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="task_name" class="form-label">Task Name *</label>
+                    <input type="text" class="form-control" id="task_name" name="task_name" 
+                           value="{{ builder.metadata.task_name }}" 
+                           {% if builder.is_revision %}disabled{% endif %}
+                           required>
+                    {% if builder.is_revision %}
+                    <!-- Hidden field to ensure task_name is submitted even when disabled -->
+                    <input type="hidden" name="task_name" value="{{ builder.metadata.task_name }}">
+                    <small class="form-text text-muted">Task name is inherited from the source revision and cannot be changed.</small>
+                    {% endif %}
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="revision" class="form-label">Revision Number</label>
+                    <input type="text" class="form-control" id="revision" name="revision" 
+                           value="{{ builder.metadata.revision or '0' }}"
+                           disabled>
+                    <!-- Hidden field to ensure revision is submitted even when disabled -->
+                    <input type="hidden" name="revision" value="{{ builder.metadata.revision or '0' }}">
+                    {% if builder.is_revision %}
+                    <small class="form-text text-muted">Revision number is automatically set based on the source revision.</small>
+                    {% else %}
+                    <small class="form-text text-muted">New templates default to revision 0.</small>
+                    {% endif %}
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="estimated_duration" class="form-label">Estimated Duration (hours)</label>
+                    <input type="number" step="0.1" class="form-control" id="estimated_duration" 
+                           name="estimated_duration" value="{{ builder.metadata.estimated_duration or '' }}">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12 mb-3">
+                    <label for="description" class="form-label">Description</label>
+                    <textarea class="form-control" id="description" name="description" rows="3">{{ builder.metadata.description }}</textarea>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary" id="save-metadata-btn">
+                <span id="save-metadata-spinner" class="spinner-border spinner-border-sm htmx-indicator" role="status" aria-hidden="true"></span>
+                <i class="bi bi-save"></i> <span id="save-metadata-text">Save Metadata</span>
+            </button>
+        </form>
+    </div>
+
+    <!-- Add Action Section -->
+    <div id="add-action-section" class="add-action-section" hx-swap-oob="true">
+        <h5 class="mb-3"><i class="bi bi-plus-circle"></i> Add Action</h5>
+        <ul class="nav nav-tabs mb-3" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#add-custom" type="button">
+                    Custom Action
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#add-from-template" type="button">
+                    From Template Action
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#add-from-proto" type="button">
+                    From Proto Action
+                </button>
+            </li>
+        </ul>
+        
+        <div class="tab-content">
+            <!-- Custom Action Tab -->
+            <div class="tab-pane fade show active" id="add-custom" role="tabpanel">
+                <form method="POST" 
+                      action="{{ url_for('template_builder.add_action', builder_id=builder.builder_id) }}"
+                      hx-post="{{ url_for('template_builder.add_action', builder_id=builder.builder_id) }}"
+                      hx-swap="none"
+                      hx-indicator="#add-custom-spinner">
+                    <input type="hidden" name="action_type" value="custom">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="action_name" class="form-label">Action Name *</label>
+                            <input type="text" class="form-control" id="action_name" name="action_name" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="estimated_duration" class="form-label">Estimated Duration (hours)</label>
+                            <input type="number" step="0.1" class="form-control" id="estimated_duration" name="estimated_duration">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="2"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <span id="add-custom-spinner" class="spinner-border spinner-border-sm htmx-indicator" role="status" aria-hidden="true"></span>
+                        <i class="bi bi-plus"></i> Add Custom Action
+                    </button>
+                </form>
+            </div>
+            
+            <!-- From Template Action Tab -->
+            <div class="tab-pane fade" id="add-from-template" role="tabpanel">
+                <form method="POST" 
+                      action="{{ url_for('template_builder.add_action', builder_id=builder.builder_id) }}"
+                      hx-post="{{ url_for('template_builder.add_action', builder_id=builder.builder_id) }}"
+                      hx-swap="none"
+                      hx-indicator="#add-from-template-spinner">
+                    <input type="hidden" name="action_type" value="from_template">
+                    <div class="mb-3">
+                        <label for="template_action_id" class="form-label">Template Action ID *</label>
+                        <input type="number" class="form-control" id="template_action_id" name="template_action_id" required>
+                        <small class="form-text text-muted">Enter the ID of an existing template action to copy</small>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <span id="add-from-template-spinner" class="spinner-border spinner-border-sm htmx-indicator" role="status" aria-hidden="true"></span>
+                        <i class="bi bi-plus"></i> Add from Template Action
+                    </button>
+                </form>
+            </div>
+            
+            <!-- From Proto Action Tab -->
+            <div class="tab-pane fade" id="add-from-proto" role="tabpanel">
+                <form method="POST" 
+                      action="{{ url_for('template_builder.add_action', builder_id=builder.builder_id) }}"
+                      hx-post="{{ url_for('template_builder.add_action', builder_id=builder.builder_id) }}"
+                      hx-swap="none"
+                      hx-indicator="#add-from-proto-spinner">
+                    <input type="hidden" name="action_type" value="from_proto">
+                    <div class="mb-3">
+                        <label for="proto_action_id" class="form-label">Proto Action ID *</label>
+                        <input type="number" class="form-control" id="proto_action_id" name="proto_action_id" required>
+                        <small class="form-text text-muted">Enter the ID of a proto action to copy</small>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <span id="add-from-proto-spinner" class="spinner-border spinner-border-sm htmx-indicator" role="status" aria-hidden="true"></span>
+                        <i class="bi bi-plus"></i> Add from Proto Action
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions List -->
+    <div id="actions-list-container" class="card" hx-swap-oob="true">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-list-ol"></i> Actions ({{ builder.total_actions }})</h5>
+        </div>
+        <div class="card-body">
+            {% if builder.actions %}
+                {% for action in builder.actions %}
+                <div class="card action-item" id="action-{{ action.index }}">
+                    <div class="card-body">
+                        <div class="d-flex align-items-start">
+                            <div class="sequence-badge badge bg-primary me-3">{{ action.sequence_order }}</div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">{{ action.action_name }}</h6>
+                                {% if action.description %}
+                                <p class="text-muted mb-2 small">{{ action.description }}</p>
+                                {% endif %}
+                                <div class="d-flex gap-3 mb-2">
+                                    {% if action.estimated_duration %}
+                                    <small class="text-muted">
+                                        <i class="bi bi-clock"></i> {{ action.estimated_duration }}h
+                                    </small>
+                                    {% endif %}
+                                    <small class="text-muted">
+                                        <i class="bi bi-box"></i> {{ action.part_count }} part{{ 's' if action.part_count != 1 else '' }}
+                                    </small>
+                                    <small class="text-muted">
+                                        <i class="bi bi-wrench"></i> {{ action.tool_count }} tool{{ 's' if action.tool_count != 1 else '' }}
+                                    </small>
+                                    {% if action.has_proto_reference %}
+                                    <small class="text-info">
+                                        <i class="bi bi-link-45deg"></i> Proto: {{ action.proto_action_item_id }}
+                                    </small>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Part Demands List -->
+                                {% if action.part_demands %}
+                                <div class="mb-2 p-2 border border-dark bg-light rounded">
+                                    <small class="text-muted fw-bold"><i class="bi bi-box"></i> Parts:</small>
+                                    <ul class="list-unstyled ms-3 mb-1 mt-2">
+                                        {% for part_demand in action.part_demands %}
+                                        <li class="small d-flex align-items-center gap-2">
+                                            <div class="flex-grow-1">
+                                                {% if part_demand.part %}
+                                                <span class="badge bg-primary">{{ part_demand.part.part_number }}</span>
+                                                <strong>{{ part_demand.part.part_name }}</strong>
+                                                {% else %}
+                                                <span class="badge bg-secondary">Part ID: {{ part_demand.part_id }}</span>
+                                                {% endif %}
+                                                Qty: {{ part_demand.quantity_required }}
+                                                {% if part_demand.expected_cost %}
+                                                <span class="text-muted">(${{ "%.2f"|format(part_demand.expected_cost) }})</span>
+                                                {% endif %}
+                                                {% if part_demand.notes %}
+                                                <span class="text-muted">- {{ part_demand.notes }}</span>
+                                                {% endif %}
+                                            </div>
+                                            <form method="POST" 
+                                                  action="{{ url_for('template_builder.delete_part_demand', builder_id=builder.builder_id, action_index=action.index, part_index=loop.index0) }}"
+                                                  class="d-inline"
+                                                  onsubmit="return confirm('Delete this part demand?');">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete Part">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                                {% endif %}
+                                
+                                <!-- Tools List -->
+                                {% if action.tools %}
+                                <div class="mb-2 p-2 border border-dark bg-light rounded">
+                                    <small class="text-muted fw-bold"><i class="bi bi-wrench"></i> Tools:</small>
+                                    <ul class="list-unstyled ms-3 mb-1 mt-2">
+                                        {% for tool_demand in action.tools %}
+                                        <li class="small d-flex align-items-center gap-2">
+                                            <div class="flex-grow-1">
+                                                {% if tool_demand.tool %}
+                                                <span class="badge bg-success">{{ tool_demand.tool.tool_name }}</span>
+                                                {% if tool_demand.tool.tool_type %}
+                                                <span class="text-muted">({{ tool_demand.tool.tool_type }})</span>
+                                                {% endif %}
+                                                {% else %}
+                                                <span class="badge bg-secondary">Tool ID: {{ tool_demand.tool_id }}</span>
+                                                {% endif %}
+                                                Qty: {{ tool_demand.quantity_required }}
+                                                {% if tool_demand.notes %}
+                                                <span class="text-muted">- {{ tool_demand.notes }}</span>
+                                                {% endif %}
+                                            </div>
+                                            <form method="POST" 
+                                                  action="{{ url_for('template_builder.delete_tool', builder_id=builder.builder_id, action_index=action.index, tool_index=loop.index0) }}"
+                                                  class="d-inline"
+                                                  onsubmit="return confirm('Delete this tool?');">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete Tool">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                                {% endif %}
+                                
+                                <!-- Attachments List -->
+                                {% if action.attachments %}
+                                <div class="mb-2">
+                                    <small class="text-muted fw-bold"><i class="bi bi-paperclip"></i> Attachments:</small>
+                                    <ul class="list-unstyled ms-3 mb-1">
+                                        {% for attachment in action.attachments %}
+                                        <li class="small">
+                                            <span class="badge bg-info">Attachment ID: {{ attachment.attachment_id }}</span>
+                                            {% if attachment.description %}
+                                            <span class="text-muted">- {{ attachment.description }}</span>
+                                            {% endif %}
+                                            {% if attachment.is_required %}
+                                            <span class="badge bg-warning text-dark">Required</span>
+                                            {% endif %}
+                                        </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                                {% endif %}
+                                
+                                <!-- Add Part/Tool Forms -->
+                                <div class="row g-2 mb-2">
+                                    <div class="col-md-6">
+                                        <form method="POST" action="{{ url_for('template_builder.add_part_demand', builder_id=builder.builder_id, action_index=action.index) }}" class="d-flex gap-2">
+                                            <input type="number" class="form-control form-control-sm" name="part_id" placeholder="Part ID" required>
+                                            <input type="number" step="0.1" class="form-control form-control-sm" name="quantity_required" placeholder="Qty" value="1" style="width: 80px;">
+                                            <button type="submit" class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-plus"></i> Part
+                                            </button>
+                                        </form>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <form method="POST" 
+                                              action="{{ url_for('template_builder.add_tool', builder_id=builder.builder_id, action_index=action.index) }}" 
+                                              class="d-flex gap-2"
+                                              onsubmit="console.log('Tool form submitting to:', this.action); return true;">
+                                            <input type="number" class="form-control form-control-sm" name="tool_id" placeholder="Tool ID" required>
+                                            <input type="number" class="form-control form-control-sm" name="quantity_required" placeholder="Qty" value="1" style="width: 80px;">
+                                            <button type="submit" class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-plus"></i> Tool
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-flex flex-column gap-2">
+                                <!-- Move Up -->
+                                {% if action.index > 0 %}
+                                <form method="POST" 
+                                      action="{{ url_for('template_builder.move_action', builder_id=builder.builder_id, action_index=action.index) }}"
+                                      hx-post="{{ url_for('template_builder.move_action', builder_id=builder.builder_id, action_index=action.index) }}"
+                                      hx-swap="none"
+                                      class="d-inline">
+                                    <input type="hidden" name="direction" value="up">
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary" title="Move Up">
+                                        <i class="bi bi-arrow-up"></i>
+                                    </button>
+                                </form>
+                                {% else %}
+                                <button type="button" class="btn btn-sm btn-outline-secondary disabled" disabled>
+                                    <i class="bi bi-arrow-up"></i>
+                                </button>
+                                {% endif %}
+                                
+                                <!-- Move Down -->
+                                {% if action.index < builder.total_actions - 1 %}
+                                <form method="POST" 
+                                      action="{{ url_for('template_builder.move_action', builder_id=builder.builder_id, action_index=action.index) }}"
+                                      hx-post="{{ url_for('template_builder.move_action', builder_id=builder.builder_id, action_index=action.index) }}"
+                                      hx-swap="none"
+                                      class="d-inline">
+                                    <input type="hidden" name="direction" value="down">
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary" title="Move Down">
+                                        <i class="bi bi-arrow-down"></i>
+                                    </button>
+                                </form>
+                                {% else %}
+                                <button type="button" class="btn btn-sm btn-outline-secondary disabled" disabled>
+                                    <i class="bi bi-arrow-down"></i>
+                                </button>
+                                {% endif %}
+                                
+                                <!-- Delete -->
+                                <form method="POST" action="{{ url_for('template_builder.delete_action', builder_id=builder.builder_id, action_index=action.index) }}" 
+                                      class="d-inline" onsubmit="return confirm('Delete this action? Sequence will be automatically renumbered.');">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="text-center text-muted py-4">
+                    <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                    <p class="mt-2">No actions yet. Add your first action above.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Builder Context JSON Summary -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <details>
+                <summary class="cursor-pointer" style="cursor: pointer;">
+                    <h5 class="mb-0 d-inline">
+                        <i class="bi bi-code-square"></i> Template Builder Context JSON
+                    </h5>
+                </summary>
+                <div class="card-body mt-3">
+                    <pre class="bg-light p-3 rounded" style="max-height: 600px; overflow-y: auto; font-size: 0.875rem;"><code>{{ builder_json }}</code></pre>
+                </div>
+            </details>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    'use strict';
+    
+    // Function to get references to elements (needed after HTMX swaps)
+    function getElements() {
+        return {
+            taskNameField: document.getElementById('task_name'),
+            descriptionField: document.getElementById('description'),
+            estimatedDurationField: document.getElementById('estimated_duration'),
+            submitBtn: document.getElementById('submit-template-btn'),
+            saveMetadataBtn: document.getElementById('save-metadata-btn'),
+            saveMetadataText: document.getElementById('save-metadata-text'),
+            metadataForm: document.getElementById('metadata-section')?.querySelector('form')
+        };
+    }
+    
+    // Store initial values
+    let initialValues = {};
+    
+    // Function to update initial values from current field values
+    function updateInitialValues() {
+        const elems = getElements();
+        initialValues = {
+            task_name: elems.taskNameField ? elems.taskNameField.value : '',
+            description: elems.descriptionField ? elems.descriptionField.value : '',
+            estimated_duration: elems.estimatedDurationField ? elems.estimatedDurationField.value : ''
+        };
+    }
+    
+    // Function to check if metadata has changed
+    function hasMetadataChanged() {
+        const elems = getElements();
+        const currentValues = {
+            task_name: elems.taskNameField ? elems.taskNameField.value : '',
+            description: elems.descriptionField ? elems.descriptionField.value : '',
+            estimated_duration: elems.estimatedDurationField ? elems.estimatedDurationField.value : ''
+        };
+        
+        return (
+            currentValues.task_name !== initialValues.task_name ||
+            currentValues.description !== initialValues.description ||
+            currentValues.estimated_duration !== initialValues.estimated_duration
+        );
+    }
+    
+    // Function to update button states based on changes
+    function updateButtonStates() {
+        const elems = getElements();
+        const hasChanges = hasMetadataChanged();
+        
+        if (hasChanges) {
+            // Disable submit button
+            if (elems.submitBtn) {
+                elems.submitBtn.disabled = true;
+                elems.submitBtn.classList.remove('btn-success');
+                elems.submitBtn.classList.add('btn-secondary');
+                elems.submitBtn.title = 'Please save metadata changes before submitting';
+            }
+            
+            // Change save button to warning/orange
+            if (elems.saveMetadataBtn) {
+                elems.saveMetadataBtn.classList.remove('btn-primary');
+                elems.saveMetadataBtn.classList.add('btn-warning');
+                if (elems.saveMetadataText) {
+                    elems.saveMetadataText.innerHTML = '<i class="bi bi-exclamation-triangle"></i> Save Metadata (Unsaved Changes)';
+                }
+            }
+        } else {
+            // Enable submit button
+            if (elems.submitBtn) {
+                elems.submitBtn.disabled = false;
+                elems.submitBtn.classList.remove('btn-secondary');
+                elems.submitBtn.classList.add('btn-success');
+                elems.submitBtn.title = '';
+            }
+            
+            // Reset save button to primary
+            if (elems.saveMetadataBtn) {
+                elems.saveMetadataBtn.classList.remove('btn-warning');
+                elems.saveMetadataBtn.classList.add('btn-primary');
+                if (elems.saveMetadataText) {
+                    elems.saveMetadataText.innerHTML = 'Save Metadata';
+                }
+            }
+        }
+    }
+    
+    // Function to setup event listeners on metadata fields
+    function setupFieldListeners() {
+        const elems = getElements();
+        
+        if (elems.taskNameField) {
+            elems.taskNameField.addEventListener('input', updateButtonStates);
+            elems.taskNameField.addEventListener('change', updateButtonStates);
+        }
+        
+        if (elems.descriptionField) {
+            elems.descriptionField.addEventListener('input', updateButtonStates);
+            elems.descriptionField.addEventListener('change', updateButtonStates);
+        }
+        
+        if (elems.estimatedDurationField) {
+            elems.estimatedDurationField.addEventListener('input', updateButtonStates);
+            elems.estimatedDurationField.addEventListener('change', updateButtonStates);
+        }
+    }
+    
+    // Initialize on page load
+    updateInitialValues();
+    setupFieldListeners();
+    updateButtonStates();
+    
+    // Handle HTMX events - reinitialize after metadata section is swapped
+    document.body.addEventListener('htmx:afterSwap', function(evt) {
+        // Check if the metadata section was swapped
+        if (evt.detail.target.id === 'metadata-section') {
+            // Reinitialize after swap
+            updateInitialValues();
+            setupFieldListeners();
+            updateButtonStates();
+        }
+    });
+    
+    // Handle successful HTMX response - reset initial values
+    document.body.addEventListener('htmx:afterSettle', function(evt) {
+        // Check if the metadata form was submitted
+        if (evt.detail.target.id === 'metadata-section') {
+            // Reset initial values to current values after successful save
+            updateInitialValues();
+            updateButtonStates();
+        }
+    });
+})();
+</script>
+{% endblock %}
+
+

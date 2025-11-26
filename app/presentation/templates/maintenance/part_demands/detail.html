@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}Part Demand - {{ part.part_name if part else 'N/A' }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Part Demand: {{ part.part_name if part else 'N/A' }}</h1>
+            <div>
+                <a href="{{ url_for('part_demands.list') }}" class="btn btn-secondary">Back to List</a>
+                <a href="{{ url_for('part_demands.edit', part_demand_id=part_demand.id) }}" class="btn btn-warning">Edit</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Part Demand Details</h5>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-4">ID:</dt>
+                    <dd class="col-sm-8">{{ part_demand.id }}</dd>
+
+                    <dt class="col-sm-4">Part:</dt>
+                    <dd class="col-sm-8">{{ part.part_name if part else 'N/A' }}</dd>
+
+                    <dt class="col-sm-4">Quantity Required:</dt>
+                    <dd class="col-sm-8">{{ part_demand.quantity_required }}</dd>
+
+                    <dt class="col-sm-4">Quantity Issued:</dt>
+                    <dd class="col-sm-8">{{ part_demand.quantity_issued or 0 }}</dd>
+
+                    <dt class="col-sm-4">Status:</dt>
+                    <dd class="col-sm-8">
+                        {% if part_demand.status == 'Issued' or part_demand.status == 'Used' %}
+                            <span class="badge bg-success">{{ part_demand.status }}</span>
+                        {% elif part_demand.status == 'Received' or part_demand.status == 'Partially Issued' %}
+                            <span class="badge bg-info">{{ part_demand.status }}</span>
+                        {% elif part_demand.status == 'Cancelled' %}
+                            <span class="badge bg-danger">{{ part_demand.status }}</span>
+                        {% else %}
+                            <span class="badge bg-warning">{{ part_demand.status or 'Pending' }}</span>
+                        {% endif %}
+                    </dd>
+
+                    <dt class="col-sm-4">Notes:</dt>
+                    <dd class="col-sm-8">{{ part_demand.notes or 'N/A' }}</dd>
+                    
+                    {% if part_demand.expected_cost %}
+                    <dt class="col-sm-4">Expected Cost:</dt>
+                    <dd class="col-sm-8">${{ "%.2f"|format(part_demand.expected_cost) }}</dd>
+                    {% endif %}
+                    
+                    {% if part_demand.total_cost %}
+                    <dt class="col-sm-4">Total Cost:</dt>
+                    <dd class="col-sm-8">${{ "%.2f"|format(part_demand.total_cost) }}</dd>
+                    {% endif %}
+                </dl>
+            </div>
+        </div>
+        
+        <!-- Action Context -->
+        {% if action %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Action Context</h5>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-4">Action:</dt>
+                    <dd class="col-sm-8">{{ action.action_name }}</dd>
+
+                    <dt class="col-sm-4">Action Status:</dt>
+                    <dd class="col-sm-8">
+                        {% if action.status == 'Completed' %}
+                            <span class="badge bg-success">{{ action.status }}</span>
+                        {% elif action.status == 'In Progress' %}
+                            <span class="badge bg-info">{{ action.status }}</span>
+                        {% elif action.status == 'Skipped' %}
+                            <span class="badge bg-secondary">{{ action.status }}</span>
+                        {% else %}
+                            <span class="badge bg-warning">{{ action.status }}</span>
+                        {% endif %}
+                    </dd>
+                    
+                    {% if action.maintenance_action_set %}
+                    <dt class="col-sm-4">Action Set:</dt>
+                    <dd class="col-sm-8">
+                        <a href="{{ url_for('maintenance_action_sets.detail', action_set_id=action.maintenance_action_set.id) }}">
+                            {{ action.maintenance_action_set.task_name }}
+                        </a>
+                    </dd>
+
+                    <dt class="col-sm-4">Action Set Status:</dt>
+                    <dd class="col-sm-8">
+                        {% if action.maintenance_action_set.status == 'Completed' %}
+                            <span class="badge bg-success">{{ action.maintenance_action_set.status }}</span>
+                        {% elif action.maintenance_action_set.status == 'In Progress' %}
+                            <span class="badge bg-info">{{ action.maintenance_action_set.status }}</span>
+                        {% elif action.maintenance_action_set.status == 'Cancelled' %}
+                            <span class="badge bg-danger">{{ action.maintenance_action_set.status }}</span>
+                        {% else %}
+                            <span class="badge bg-warning">{{ action.maintenance_action_set.status }}</span>
+                        {% endif %}
+                    </dd>
+                    
+                    {% if action.maintenance_action_set.asset %}
+                    <dt class="col-sm-4">Asset:</dt>
+                    <dd class="col-sm-8">
+                        <a href="{{ url_for('assets.asset_detail', asset_id=action.maintenance_action_set.asset.id) }}">
+                            {{ action.maintenance_action_set.asset.asset_name }}
+                        </a>
+                    </dd>
+                    {% endif %}
+                    {% endif %}
+                </dl>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Template Context -->
+        {% if template_part_demand %}
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Template Information</h5>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-4">Template Part Demand:</dt>
+                    <dd class="col-sm-8">{{ template_part_demand.id }}</dd>
+                    
+                    {% if template_part_demand.is_optional %}
+                    <dt class="col-sm-4">Optional:</dt>
+                    <dd class="col-sm-8">
+                        <span class="badge bg-info">Yes</span>
+                    </dd>
+                    {% endif %}
+                </dl>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

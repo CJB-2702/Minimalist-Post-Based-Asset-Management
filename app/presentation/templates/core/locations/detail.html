@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+
+{% block title %}{{ location.name }} - Asset Management System{% endblock %}
+
+{% block head %}
+<script src="https://unpkg.com/htmx.org@1.9.10"></script>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Location Details</h1>
+            <div>
+                <a href="{{ url_for('locations.edit', location_id=location.id) }}" class="btn btn-secondary">
+                    <i class="bi bi-pencil"></i> Edit Location
+                </a>
+                <a href="{{ url_for('locations.list') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Locations
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Location Information -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Location Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-sm-4">
+                        <strong>Name:</strong>
+                    </div>
+                    <div class="col-sm-8">
+                        {{ location.name }}
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-sm-4">
+                        <strong>Description:</strong>
+                    </div>
+                    <div class="col-sm-8">
+                        {{ location.description or 'No description' }}
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-sm-4">
+                        <strong>Address:</strong>
+                    </div>
+                    <div class="col-sm-8">
+                        {{ location.address or 'No address' }}
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-sm-4">
+                        <strong>Status:</strong>
+                    </div>
+                    <div class="col-sm-8">
+                        {% if location.is_active %}
+                            <span class="badge bg-success">Active</span>
+                        {% else %}
+                            <span class="badge bg-warning">Inactive</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-sm-4">
+                        <strong>Created:</strong>
+                    </div>
+                    <div class="col-sm-8">
+                        <small class="text-muted">
+                            {{ location.created_at.strftime('%Y-%m-%d %H:%M:%S') if location.created_at else 'N/A' }}
+                        </small>
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-sm-4">
+                        <strong>Last Updated:</strong>
+                    </div>
+                    <div class="col-sm-8">
+                        <small class="text-muted">
+                            {{ location.updated_at.strftime('%Y-%m-%d %H:%M:%S') if location.updated_at else 'N/A' }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Location Statistics</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="border-end">
+                            <h3 class="text-primary">{{ Asset.query.filter_by(major_location_id=location.id).count()}}</h3>
+                            <small class="text-muted">Total Assets</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <h3 class="text-success">{{ events|length }}</h3>
+                        <small class="text-muted">Recent Events</small>
+                    </div>
+                </div>
+                <hr>
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="border-end">
+                            <h3 class="text-info">{{ Asset.query.filter_by(major_location_id=location.id, status='Active').count() }}</h3>
+                            <small class="text-muted">Active Assets</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <h3 class="text-warning">{{ Asset.query.filter_by(major_location_id=location.id, status='Inactive').count() }}</h3>
+                        <small class="text-muted">Inactive Assets</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Assets and Events -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Assets at this Location</h5>
+            </div>
+            <div class="card-body">
+                {% if assets %}
+                <div class="list-group list-group-flush">
+                    {% for asset in assets %}
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">
+                                    <a href="{{ url_for('core_assets.detail', asset_id=asset.id) }}" 
+                                       class="text-decoration-none">{{ asset.name }}</a>
+                                </h6>
+                                <small class="text-muted">{{ asset.serial_number }}</small>
+                            </div>
+                            <span class="badge bg-{{ 'success' if asset.status == 'Active' else 'secondary' }}">
+                                {{ asset.status }}
+                            </span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-3">No assets at this location.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div id="location-events-container"
+             hx-get="{{ url_for('events.events_card', condensed_view=True, row_count=5, major_location_id=location.id) }}"
+             hx-trigger="load"
+             hx-swap="innerHTML">
+            <div class="card">
+                <div class="card-body text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Loading location events...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Action Buttons -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="btn-group" role="group">
+                    <a href="{{ url_for('locations.edit', location_id=location.id) }}" class="btn btn-primary">
+                        <i class="bi bi-pencil"></i> Edit Location
+                    </a>
+                    
+                    <button type="button" class="btn btn-danger" onclick="confirmDelete({{ location.id }}, '{{ location.name }}')">
+                        <i class="bi bi-trash"></i> Delete Location
+                    </button>
+                    
+                    <a href="{{ url_for('locations.list') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Locations
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete location <strong id="deleteLocationName"></strong>?</p>
+                <p class="text-danger"><small>This action cannot be undone.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">Delete Location</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmDelete(locationId, locationName) {
+    document.getElementById('deleteLocationName').textContent = locationName;
+    document.getElementById('deleteForm').action = "{{ url_for('locations.delete', location_id=0) }}".replace('0', locationId);
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+</script>
+{% endblock %} 

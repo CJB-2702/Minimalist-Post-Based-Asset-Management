@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}Edit {{ asset_type.name }} - Asset Management System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Edit Asset Type</h1>
+            <div>
+                <a href="{{ url_for('asset_types.detail', asset_type_id=asset_type.id) }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Asset Type
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Edit Asset Type Information</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="name" name="name" 
+                                       value="{{ request.form.get('name', asset_type.name) }}" required>
+                                <div class="form-text">Asset type name must be unique.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="category" class="form-label">Category</label>
+                                <input type="text" class="form-control" id="category" name="category" 
+                                       value="{{ request.form.get('category', asset_type.category or '') }}">
+                                <div class="form-text">Category to group similar asset types.</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3">{{ request.form.get('description', asset_type.description or '') }}</textarea>
+                        <div class="form-text">Brief description of the asset type and its characteristics.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="is_active" name="is_active" 
+                                   {% if request.form.get('is_active', 'on' if asset_type.is_active else '') == 'on' %}checked{% endif %}>
+                            <label class="form-check-label" for="is_active">
+                                Active Asset Type
+                            </label>
+                        </div>
+                        <div class="form-text">Inactive asset types cannot be assigned to new make/models.</div>
+                    </div>
+                    
+                    <!-- Asset Type Statistics -->
+                    <div class="alert alert-info">
+                        <h6 class="alert-heading">Asset Type Statistics</h6>
+                        <div class="row text-center">
+                            <div class="col-4">
+                                <strong>{{ MakeModel.query.filter_by(asset_type_id=asset_type.id).count() }}</strong><br>
+                                <small>Make/Models</small>
+                            </div>
+                            <div class="col-4">
+                                <strong>{{ len(asset_type.make_models.filter_by(is_active=True).all()) }}</strong><br>
+                                <small>Active Make/Models</small>
+                            </div>
+                            <div class="col-4">
+                                <strong>{{ len(asset_type.make_models.filter_by(is_active=False).all()) }}</strong><br>
+                                <small>Inactive Make/Models</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('asset_types.detail', asset_type_id=asset_type.id) }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Update Asset Type
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

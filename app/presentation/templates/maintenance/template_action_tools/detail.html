@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Template Action Tool - {{ tool.tool_name if tool else 'N/A' }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Template Action Tool: {{ tool.tool_name if tool else 'N/A' }}</h1>
+            <div>
+                <a href="{{ url_for('template_action_tools.list') }}" class="btn btn-secondary">Back to List</a>
+                <a href="{{ url_for('template_action_tools.edit', template_action_tool_id=template_action_tool.id) }}" class="btn btn-warning">Edit</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Template Action Tool Details</h5>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-4">ID:</dt>
+                    <dd class="col-sm-8">{{ template_action_tool.id }}</dd>
+
+                    <dt class="col-sm-4">Tool:</dt>
+                    <dd class="col-sm-8">{{ tool.tool_name if tool else 'N/A' }}</dd>
+
+                    <dt class="col-sm-4">Template Action Item:</dt>
+                    <dd class="col-sm-8">
+                        {% if template_action_item %}
+                        <a href="{{ url_for('proto_action_items.detail', template_action_item_id=template_action_item.id) }}">
+                            {{ template_action_item.action_name }}
+                        </a>
+                        {% else %}
+                        N/A
+                        {% endif %}
+                    </dd>
+
+                    <dt class="col-sm-4">Quantity Required:</dt>
+                    <dd class="col-sm-8">{{ template_action_tool.quantity_required }}</dd>
+
+                    <dt class="col-sm-4">Required:</dt>
+                    <dd class="col-sm-8">
+                        <span class="badge bg-{{ 'success' if template_action_tool.is_required else 'secondary' }}">
+                            {{ 'Required' if template_action_tool.is_required else 'Optional' }}
+                        </span>
+                    </dd>
+
+                    <dt class="col-sm-4">Sequence Order:</dt>
+                    <dd class="col-sm-8">{{ template_action_tool.sequence_order }}</dd>
+
+                    <dt class="col-sm-4">Notes:</dt>
+                    <dd class="col-sm-8">{{ template_action_tool.notes or 'N/A' }}</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

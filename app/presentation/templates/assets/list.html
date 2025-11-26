@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Assets - Asset Management System{% endblock %}
+
+{% block content %}
+<div>
+    <h2>Asset List</h2>
+    
+    <div>
+        <h3>Filters</h3>
+        <form method="GET" action="{{ url_for('core_assets.list') }}">
+            <div>
+                <label for="asset_type_id">Asset Type:</label>
+                <select name="asset_type_id" id="asset_type_id">
+                    <option value="">All Types</option>
+                    {% for asset_type in asset_types %}
+                        <option value="{{ asset_type.id }}" 
+                                {% if current_filters.asset_type_id == asset_type.id %}selected{% endif %}>
+                            {{ asset_type.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div>
+                <label for="location_id">Location:</label>
+                <select name="location_id" id="location_id">
+                    <option value="">All Locations</option>
+                    {% for location in locations %}
+                        <option value="{{ location.id }}"
+                                {% if current_filters.location_id == location.id %}selected{% endif %}>
+                            {{ location.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div>
+                <button type="submit">Apply Filters</button>
+                <a href="{{ url_for('core_assets.list') }}">Clear Filters</a>
+            </div>
+        </form>
+    </div>
+    
+    <div>
+        <h3>Assets ({{ assets.total }} total)</h3>
+        
+        {% if assets.items %}
+            <table border="1">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Asset Type</th>
+                        <th>Location</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for asset in assets.items %}
+                        <tr>
+                            <td>{{ asset.id }}</td>
+                            <td>{{ asset.name }}</td>
+                            <td>
+                                {% if asset.asset_type_id %}
+                                    {{ asset.asset_type.name if asset.asset_type else 'N/A' }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if asset.major_location_id %}
+                                    {{ asset.major_location.name if asset.major_location else 'N/A' }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </td>
+                            <td>{{ asset.created_at.strftime('%Y-%m-%d') }}</td>
+                            <td>
+                                <a href="{{ url_for('core_assets.detail', asset_id=asset.id) }}">View</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            
+            <div>
+                {% if assets.has_prev %}
+                    <a href="{{ url_for('core_assets.list', page=assets.prev_num, **request.args) }}">Previous</a>
+                {% endif %}
+                
+                <span>Page {{ assets.page }} of {{ assets.pages }}</span>
+                
+                {% if assets.has_next %}
+                    <a href="{{ url_for('core_assets.list', page=assets.next_num, **request.args) }}">Next</a>
+                {% endif %}
+            </div>
+        {% else %}
+            <p>No assets found.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

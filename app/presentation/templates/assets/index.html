@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+
+{% block title %}Asset Management - Dashboard{% endblock %}
+
+{% block head %}
+<script src="https://unpkg.com/htmx.org@1.9.10"></script>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Asset Management Dashboard</h1>
+            <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Home
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-2">
+        <a href="{{ url_for('core_assets.list') }}" class="text-decoration-none">
+            <div class="card text-center h-100">
+                <div class="card-body">
+                    <h5 class="card-title text-primary">{{ total_assets }}</h5>
+                    <p class="card-text">Assets</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-2">
+        <a href="{{ url_for('locations.list') }}" class="text-decoration-none">
+            <div class="card text-center h-100">
+                <div class="card-body">
+                    <h5 class="card-title text-primary">{{ total_locations }}</h5>
+                    <p class="card-text">Locations</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-2">
+        <a href="{{ url_for('asset_types.list') }}" class="text-decoration-none">
+            <div class="card text-center h-100">
+                <div class="card-body">
+                    <h5 class="card-title text-primary">{{ total_asset_types }}</h5>
+                    <p class="card-text">Asset Types</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-2">
+        <a href="{{ url_for('make_models.list') }}" class="text-decoration-none">
+            <div class="card text-center h-100">
+                <div class="card-body">
+                    <h5 class="card-title text-primary">{{ total_make_models }}</h5>
+                    <p class="card-text">Make/Models</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-2">
+        <a href="{{ url_for('users.list') }}" class="text-decoration-none">
+            <div class="card text-center h-100">
+                <div class="card-body">
+                    <h5 class="card-title text-primary">{{ total_users }}</h5>
+                    <p class="card-text">Users</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-2">
+        <a href="{{ url_for('events.list') }}" class="text-decoration-none">
+            <div class="card text-center h-100">
+                <div class="card-body">
+                    <h5 class="card-title text-primary">{{ total_events }}</h5>
+                    <p class="card-text">Events</p>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <a href="{{ url_for('core_assets.create') }}" class="btn btn-primary w-100 mb-2">
+                            <i class="bi bi-plus-circle"></i> Add Asset
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{{ url_for('locations.create') }}" class="btn btn-secondary w-100 mb-2">
+                            <i class="bi bi-geo-alt"></i> Add Location
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{{ url_for('make_models.create') }}" class="btn btn-info w-100 mb-2">
+                            <i class="bi bi-tag"></i> Add Make/Model
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{{ url_for('asset_types.create') }}" class="btn btn-warning w-100 mb-2">
+                            <i class="bi bi-tag"></i> Add Asset Type
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="row">
+    <!-- Recent Assets -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Recent Assets</h5>
+                    <a href="{{ url_for('core_assets.list') }}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if recent_assets %}
+                <div class="list-group list-group-flush">
+                    {% for asset in recent_assets %}
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">
+                                    <a href="{{ url_for('core_assets.detail', asset_id=asset.id) }}">{{ asset.name }}</a>
+                                </h6>
+                                <small class="text-muted">{{ asset.serial_number }}</small>
+                            </div>
+                            <span class="badge bg-{{ 'success' if asset.status == 'Active' else 'secondary' }}">
+                                {{ asset.status }}
+                            </span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-3">No assets found</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Events -->
+    <div class="col-md-6">
+        <div id="recent-events-container"
+             hx-get="{{ url_for('events.events_card', condensed_view=True, row_count=5) }}"
+             hx-trigger="load"
+             hx-swap="innerHTML">
+            <div class="card">
+                <div class="card-body text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Loading recent events...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Location and Asset Type Summary -->
+<div class="row mt-4">
+    <!-- Assets by Location -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Assets by Location</h5>
+                    <a href="{{ url_for('locations.list') }}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if locations_with_assets %}
+                <div class="list-group list-group-flush">
+                    {% for location_data in locations_with_assets %}
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">
+                                    <a href="{{ url_for('locations.detail', location_id=location_data.location.id) }}">{{ location_data.location.name }}</a>
+                                </h6>
+                                <small class="text-muted">{{ location_data.location.description or 'No description' }}</small>
+                            </div>
+                            <span class="badge bg-primary">{{ location_data.asset_count }} assets</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-3">No locations with assets</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Assets by Type -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Assets by Type</h5>
+                    <a href="{{ url_for('core_assets.list') }}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if asset_types_with_counts %}
+                <div class="list-group list-group-flush">
+                    {% for type_data in asset_types_with_counts %}
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">
+                                    <a href="{{ url_for('core_assets.list', asset_type_id=type_data.asset_type.id) }}">{{ type_data.asset_type.name }}</a>
+                                </h6>
+                                <small class="text-muted">{{ type_data.asset_type.category or 'No category' }}</small>
+                            </div>
+                            <span class="badge bg-info">{{ type_data.asset_count }} assets</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-3">No asset types with assets</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

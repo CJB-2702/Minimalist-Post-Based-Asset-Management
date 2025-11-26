@@ -1,0 +1,41 @@
+{
+  "Essential": {
+    "Users": {
+      "System": {
+        "id": 0,
+        "username": "system",
+        "email": "system@assetmanagement.local",
+        "is_active": true,
+        "is_system": true,
+        "is_admin": false,
+        "password": "system-password-not-for-login"
+      },
+      "Admin": {
+        "id": 1,
+        "username": "admin",
+        "email": "admin@assetmanagement.local",
+        "is_active": true,
+        "is_system": false,
+        "is_admin": true,
+        "password": "admin-password-change-me"
+      }
+    },
+    "Events": {
+      "System_Initialized": {
+        "event_type": "System",
+        "description": "System initialized with core data",
+        "user_username": "system"
+      }
+    }
+  },
+  "Core": {
+    "Asset_Types": {
+      "Vehicle": {
+        "name": "Vehicle",
+        "category": "Transportation",
+        "description": "Motor vehicles for transportation",
+        "is_active": true
+      }
+    }
+  }
+}

@@ -1,0 +1,311 @@
+{% extends "base.html" %}
+
+{% block title %}Log Viewer - Asset Management{% endblock %}
+
+{% block extra_head %}
+<style>
+    .log-entry {
+        font-family: 'Courier New', monospace;
+        font-size: 0.9rem;
+        padding: 8px;
+        margin: 2px 0;
+        border-radius: 4px;
+        border-left: 4px solid #ddd;
+    }
+    
+    .log-entry.DEBUG {
+        background-color: #f8f9fa;
+        border-left-color: #6c757d;
+    }
+    
+    .log-entry.INFO {
+        background-color: #d1ecf1;
+        border-left-color: #17a2b8;
+    }
+    
+    .log-entry.WARNING {
+        background-color: #fff3cd;
+        border-left-color: #ffc107;
+    }
+    
+    .log-entry.ERROR {
+        background-color: #f8d7da;
+        border-left-color: #dc3545;
+    }
+    
+    .log-entry.CRITICAL {
+        background-color: #f5c6cb;
+        border-left-color: #721c24;
+    }
+    
+    .log-timestamp {
+        color: #666;
+        font-size: 0.8rem;
+    }
+    
+    .log-level {
+        font-weight: bold;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 0.8rem;
+    }
+    
+    .log-level.DEBUG { background-color: #6c757d; color: white; }
+    .log-level.INFO { background-color: #17a2b8; color: white; }
+    .log-level.WARNING { background-color: #ffc107; color: black; }
+    .log-level.ERROR { background-color: #dc3545; color: white; }
+    .log-level.CRITICAL { background-color: #721c24; color: white; }
+    
+    .log-logger {
+        color: #007bff;
+        font-weight: bold;
+    }
+    
+    .log-message {
+        margin-top: 4px;
+        word-break: break-word;
+    }
+    
+    .log-details {
+        margin-top: 4px;
+        font-size: 0.8rem;
+        color: #666;
+    }
+    
+    .filters-panel {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    
+    .filter-group {
+        margin-bottom: 10px;
+    }
+    
+    .filter-group label {
+        font-weight: bold;
+        margin-bottom: 5px;
+        display: block;
+    }
+    
+    .stats-panel {
+        background-color: #e9ecef;
+        padding: 10px;
+        border-radius: 4px;
+        margin-bottom: 15px;
+    }
+    
+    .loading {
+        text-align: center;
+        padding: 20px;
+        color: #666;
+    }
+    
+    .error-message {
+        background-color: #f8d7da;
+        color: #721c24;
+        padding: 10px;
+        border-radius: 4px;
+        margin-bottom: 15px;
+    }
+    
+    .refresh-btn {
+        margin-left: 10px;
+    }
+    
+    .log-file-info {
+        background-color: #d4edda;
+        color: #155724;
+        padding: 8px;
+        border-radius: 4px;
+        margin-bottom: 15px;
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid" x-data="logViewer()">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h1><i class="bi bi-journal-text"></i> Log Viewer</h1>
+                <div>
+                    <button @click="refreshLogs()" class="btn btn-primary refresh-btn" :disabled="loading">
+                        <i class="bi bi-arrow-clockwise" :class="{ 'bi-spin': loading }"></i> Refresh
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Filters Panel -->
+            <div class="filters-panel">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="filter-group">
+                            <label>Log Type:</label>
+                            <select x-model="filters.type" @change="refreshLogs()" class="form-select">
+                                <option value="asset_management">Application Logs</option>
+                                <option value="errors">Error Logs</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="filter-group">
+                            <label>Log Level:</label>
+                            <select x-model="filters.level" @change="refreshLogs()" class="form-select">
+                                <option value="">All Levels</option>
+                                <option value="DEBUG">DEBUG</option>
+                                <option value="INFO">INFO</option>
+                                <option value="WARNING">WARNING</option>
+                                <option value="ERROR">ERROR</option>
+                                <option value="CRITICAL">CRITICAL</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="filter-group">
+                            <label>Logger:</label>
+                            <input type="text" x-model="filters.logger" @input.debounce.500ms="refreshLogs()" 
+                                   placeholder="Filter by logger name" class="form-control">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="filter-group">
+                            <label>Search Message:</label>
+                            <input type="text" x-model="filters.search" @input.debounce.500ms="refreshLogs()" 
+                                   placeholder="Search in messages" class="form-control">
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="filter-group">
+                            <label>Limit:</label>
+                            <select x-model="filters.limit" @change="refreshLogs()" class="form-select">
+                                <option value="50">50 entries</option>
+                                <option value="100">100 entries</option>
+                                <option value="200">200 entries</option>
+                                <option value="500">500 entries</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Stats Panel -->
+            <div class="stats-panel" x-show="stats">
+                <div class="row">
+                    <div class="col-md-3">
+                        <strong>Total Entries:</strong> <span x-text="stats.total_entries || 0"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Log File:</strong> <span x-text="stats.log_file || 'N/A'"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Last Updated:</strong> <span x-text="formatTimestamp(stats.timestamp)"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Filtered Entries:</strong> <span x-text="filteredLogs.length"></span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Error Message -->
+            <div class="error-message" x-show="error" x-text="error"></div>
+            
+            <!-- Loading -->
+            <div class="loading" x-show="loading">
+                <i class="bi bi-arrow-clockwise bi-spin"></i> Loading logs...
+            </div>
+            
+            <!-- Log Entries -->
+            <div x-show="!loading && !error">
+                <template x-for="log in filteredLogs" :key="log.line_number">
+                    <div class="log-entry" :class="log.level">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="d-flex align-items-center">
+                                <span class="log-level" :class="log.level" x-text="log.level"></span>
+                                <span class="log-timestamp ms-2" x-text="formatTimestamp(log.timestamp)"></span>
+                                <span class="log-logger ms-2" x-text="log.logger"></span>
+                            </div>
+                            <small class="text-muted">Line: <span x-text="log.line_number"></span></small>
+                        </div>
+                        <div class="log-message" x-text="log.message"></div>
+                        <div class="log-details" x-show="log.module || log.function || log.line">
+                            <span x-show="log.module">Module: <span x-text="log.module"></span></span>
+                            <span x-show="log.function" x-text="' | Function: ' + log.function"></span>
+                            <span x-show="log.line" x-text="' | Line: ' + log.line"></span>
+                        </div>
+                    </div>
+                </template>
+                
+                <!-- No Results -->
+                <div x-show="filteredLogs.length === 0 && !loading" class="text-center text-muted py-4">
+                    <i class="bi bi-inbox"></i> No log entries found matching your filters.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function logViewer() {
+    return {
+        logs: [],
+        filteredLogs: [],
+        stats: null,
+        loading: false,
+        error: null,
+        filters: {
+            type: 'asset_management',
+            level: '',
+            logger: '',
+            search: '',
+            limit: 100
+        },
+        
+        init() {
+            this.refreshLogs();
+        },
+        
+        async refreshLogs() {
+            this.loading = true;
+            this.error = null;
+            
+            try {
+                const params = new URLSearchParams(this.filters);
+                const response = await fetch(`/api/logs?${params}`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    this.error = data.error;
+                    this.logs = [];
+                    this.stats = null;
+                } else {
+                    this.logs = data.logs || [];
+                    this.stats = data;
+                    this.applyFilters();
+                }
+            } catch (err) {
+                this.error = 'Failed to load logs: ' + err.message;
+                this.logs = [];
+                this.stats = null;
+            } finally {
+                this.loading = false;
+            }
+        },
+        
+        applyFilters() {
+            this.filteredLogs = this.logs;
+        },
+        
+        formatTimestamp(timestamp) {
+            if (!timestamp) return 'N/A';
+            const date = new Date(timestamp);
+            return date.toLocaleString();
+        }
+    }
+}
+</script>
+{% endblock %}

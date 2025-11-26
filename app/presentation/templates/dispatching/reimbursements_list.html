@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}Reimbursements{% endblock %}
+{% block content %}
+<div class="container mt-3">
+  <h2>Reimbursements</h2>
+  <table class="table table-sm">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Amount</th>
+        <th>From/To</th>
+        <th>Request</th>
+        <th>Created</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for reimbursement in items %}
+      {% set ctx = contexts[loop.index0] %}
+      <tr>
+        <td>{{ reimbursement.id }}</td>
+        <td>{{ reimbursement.amount }}</td>
+        <td>{{ reimbursement.from_account }} → {{ reimbursement.to_account }}</td>
+        <td><a href="{{ url_for('dispatching.requests_detail', item_id=ctx.request_id) }}">Request #{{ ctx.request_id }}</a></td>
+        <td>{{ reimbursement.created_at.strftime('%Y-%m-%d') if reimbursement.created_at else '' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+

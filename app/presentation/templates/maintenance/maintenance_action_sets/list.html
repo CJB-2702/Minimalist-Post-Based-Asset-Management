@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+
+{% block title %}Maintenance Action Sets - Asset Management System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Maintenance Action Sets</h1>
+            <a href="{{ url_for('maintenance_action_sets.create') }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Create Action Set
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Filters</h5>
+            </div>
+            <div class="card-body">
+                <form method="GET" action="{{ url_for('maintenance_action_sets.list') }}">
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <label for="asset_id" class="form-label">Asset Name</label>
+                            <input type="text" class="form-control" id="asset_id" name="asset_id" 
+                                   value="{{ filters.asset_id or '' }}" placeholder="Starts with... (e.g., Truck)">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="location" class="form-label">Location</label>
+                            <input type="text" class="form-control" id="location" name="location" 
+                                   value="{{ filters.location or '' }}" placeholder="Contains... (e.g., Garage)">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="task_name" class="form-label">Task Name</label>
+                            <input type="text" class="form-control" id="task_name" name="task_name" 
+                                   value="{{ filters.task_name or '' }}" placeholder="Filter by name">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="status" class="form-label">Status</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="">All Statuses</option>
+                                <option value="Planned" {% if filters.status == 'Planned' %}selected{% endif %}>Planned</option>
+                                <option value="In Progress" {% if filters.status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                                <option value="Completed" {% if filters.status == 'Completed' %}selected{% endif %}>Completed</option>
+                                <option value="Cancelled" {% if filters.status == 'Cancelled' %}selected{% endif %}>Cancelled</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label for="priority" class="form-label">Priority</label>
+                            <select class="form-select" id="priority" name="priority">
+                                <option value="">All Priorities</option>
+                                <option value="Low" {% if filters.priority == 'Low' %}selected{% endif %}>Low</option>
+                                <option value="Medium" {% if filters.priority == 'Medium' %}selected{% endif %}>Medium</option>
+                                <option value="High" {% if filters.priority == 'High' %}selected{% endif %}>High</option>
+                                <option value="Critical" {% if filters.priority == 'Critical' %}selected{% endif %}>Critical</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary me-2">
+                                <i class="bi bi-funnel"></i> Apply Filters
+                            </button>
+                            <a href="{{ url_for('maintenance_action_sets.list') }}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Clear
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Results -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Maintenance Action Sets ({{ maintenance_action_sets.total }} total)</h5>
+            </div>
+            <div class="card-body">
+                {% if maintenance_action_sets.items %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Task Name</th>
+                                <th>Asset Name</th>
+                                <th>Location</th>
+                                <th>Status</th>
+                                <th>Priority</th>
+                                <th>Scheduled Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for action_set in maintenance_action_sets.items %}
+                            <tr>
+                                <td>{{ action_set.id }}</td>
+                                <td>
+                                    <a href="{{ url_for('maintenance_action_sets.detail', action_set_id=action_set.id) }}">
+                                        {{ action_set.task_name }}
+                                    </a>
+                                </td>
+                                <td>
+                                    {% if action_set.asset %}
+                                        <a href="{{ url_for('core_assets.detail', asset_id=action_set.asset.id) }}">
+                                            {{ action_set.asset.name }}
+                                        </a>
+                                    {% else %}
+                                        <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if action_set.asset and action_set.asset.major_location %}
+                                        <a href="{{ url_for('locations.detail', location_id=action_set.asset.major_location.id) }}">
+                                            {{ action_set.asset.major_location.name }}
+                                        </a>
+                                    {% else %}
+                                        <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge 
+                                        {% if action_set.status == 'Completed' %}bg-success
+                                        {% elif action_set.status == 'In Progress' %}bg-primary
+                                        {% elif action_set.status == 'Planned' %}bg-info
+                                        {% else %}bg-secondary{% endif %}">
+                                        {{ action_set.status }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge 
+                                        {% if action_set.priority == 'Critical' %}bg-danger
+                                        {% elif action_set.priority == 'High' %}bg-warning
+                                        {% elif action_set.priority == 'Medium' %}bg-info
+                                        {% else %}bg-secondary{% endif %}">
+                                        {{ action_set.priority }}
+                                    </span>
+                                </td>
+                                <td>{{ action_set.scheduled_date.strftime('%Y-%m-%d %H:%M') if action_set.scheduled_date else 'N/A' }}</td>
+                                <td>
+                                    <a href="{{ url_for('maintenance_action_sets.detail', action_set_id=action_set.id) }}" 
+                                       class="btn btn-sm btn-info">View</a>
+                                    <a href="{{ url_for('maintenance_action_sets.edit', action_set_id=action_set.id) }}" 
+                                       class="btn btn-sm btn-warning">Edit</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                {% if maintenance_action_sets.pages > 1 %}
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center">
+                        {% if maintenance_action_sets.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('maintenance_action_sets.list', page=maintenance_action_sets.prev_num) }}">Previous</a>
+                        </li>
+                        {% endif %}
+                        
+                        {% for page_num in maintenance_action_sets.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                            {% if page_num %}
+                                <li class="page-item {% if page_num == maintenance_action_sets.page %}active{% endif %}">
+                                    <a class="page-link" href="{{ url_for('maintenance_action_sets.list', page=page_num) }}">{{ page_num }}</a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled"><span class="page-link">...</span></li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if maintenance_action_sets.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('maintenance_action_sets.list', page=maintenance_action_sets.next_num) }}">Next</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+                {% else %}
+                <p class="text-muted">No maintenance action sets found.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

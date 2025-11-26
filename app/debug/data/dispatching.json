@@ -1,0 +1,80 @@
+{
+  "Dispatching": {
+    "Users": {
+      "cbissett": {
+        "username": "cbissett",
+        "email": "cbissett@assetmanagement.local",
+        "is_active": true,
+        "is_system": false,
+        "is_admin": false,
+        "password": "cbissett"
+      }
+    },
+    "Dispatch_Detail_Table_Sets": {
+      "AssetTypeDispatchDetailTableSet": [
+        {
+          "asset_type_id": 1,
+          "dispatch_detail_table_type": "vehicle_dispatch",
+          "is_active": true
+        }
+      ],
+      "ModelAdditionalDispatchDetailTableSet": [
+        {
+          "make_model_id": 2,
+          "dispatch_detail_table_type": "truck_dispatch_checklist",
+          "is_active": true
+        }
+      ]
+    },
+    "Example_Dispatches": {
+      "Toyota_Corolla_Dispatch": {
+        "dispatch": {
+          "asset_name": "VTC-001",
+          "driver_name": "Sarah Johnson",
+          "destination": "Los Angeles Office",
+          "estimated_duration": "2 hours",
+          "dispatch_date": "2023-08-15",
+          "status": "In Progress",
+          "dispatch_notes": "Regular office delivery route"
+        },
+        "vehicle_dispatch": {
+          "driver_name": "Sarah Johnson",
+          "destination": "Los Angeles Office",
+          "estimated_duration": "2 hours",
+          "dispatch_notes": "Regular route delivery",
+          "vehicle_condition": "Good",
+          "fuel_level": "3/4 tank"
+        }
+      },
+      "Ford_F250_Dispatch": {
+        "dispatch": {
+          "asset_name": "FTK-001",
+          "driver_name": "Mike Wilson",
+          "destination": "Construction Site - Downtown",
+          "estimated_duration": "4 hours",
+          "dispatch_date": "2023-08-16",
+          "status": "Completed",
+          "dispatch_notes": "Equipment delivery to construction site"
+        },
+        "vehicle_dispatch": {
+          "driver_name": "Mike Wilson",
+          "destination": "Construction Site - Downtown",
+          "estimated_duration": "4 hours",
+          "dispatch_notes": "Heavy equipment transport",
+          "vehicle_condition": "Excellent",
+          "fuel_level": "Full tank"
+        },
+        "truck_dispatch_checklist": {
+          "pre_trip_inspection": "Completed",
+          "safety_equipment": "All present and functional",
+          "cargo_verification": "Confirmed - Equipment properly secured",
+          "checklist_notes": "All safety protocols followed",
+          "tire_pressure": "Optimal",
+          "brake_check": "Passed",
+          "lights_check": "All working"
+        }
+      }
+    }
+  }
+}
+

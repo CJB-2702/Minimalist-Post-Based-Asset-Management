@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Fleet Portal - Maintenance{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+        border-left: 4px solid;
+    }
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .stat-card.primary { border-left-color: #0d6efd; }
+    .stat-card.success { border-left-color: #198754; }
+    .stat-card.warning { border-left-color: #ffc107; }
+    .stat-card.danger { border-left-color: #dc3545; }
+    .stat-card.info { border-left-color: #0dcaf0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="bi bi-speedometer2 text-info"></i> Fleet/Admin Portal
+                    </h1>
+                    <p class="text-muted mb-0">Fleet-wide dashboard, analytics, and comprehensive maintenance oversight</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('maintenance.index') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Portals
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card primary">
+                <div class="card-body text-center">
+                    <h6 class="text-muted mb-2">Total Assets</h6>
+                    <h2 class="text-primary mb-0">{{ stats.get('total_assets', 0) }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card warning">
+                <div class="card-body text-center">
+                    <h6 class="text-muted mb-2">Assets Due</h6>
+                    <h2 class="text-warning mb-0">{{ stats.get('assets_due', 0) }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card danger">
+                <div class="card-body text-center">
+                    <h6 class="text-muted mb-2">Overdue</h6>
+                    <h2 class="text-danger mb-0">{{ stats.get('overdue_maintenance', 0) }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card info">
+                <div class="card-body text-center">
+                    <h6 class="text-muted mb-2">Active Maintenance</h6>
+                    <h2 class="text-info mb-0">{{ stats.get('active_maintenance', 0) }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Coming Soon Message -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-speedometer2 display-1 text-muted"></i>
+                    <h4 class="mt-3 text-muted">Fleet/Admin Portal</h4>
+                    <p class="text-muted">Fleet-wide maintenance oversight will be implemented here</p>
+                    <p class="text-muted small">Features: Fleet dashboard, analytics, comprehensive data views, reporting</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,28 @@
+<div class="detail-summary-content">
+    {% if detail.purchase_date %}
+    <p class="mb-1">
+        <strong>Purchase Date:</strong> 
+        <span class="badge bg-info">{{ detail.purchase_date.strftime('%Y-%m-%d') }}</span>
+    </p>
+    {% endif %}
+    
+    {% if detail.purchase_price %}
+    <p class="mb-1">
+        <strong>Price:</strong> 
+        <span class="badge bg-success">${{ "{:,.2f}".format(detail.purchase_price) }}</span>
+    </p>
+    {% endif %}
+    
+    {% if detail.vendor %}
+    <p class="mb-1">
+        <strong>Vendor:</strong> {{ detail.vendor }}
+    </p>
+    {% endif %}
+    
+    {% if detail.warranty_expiry %}
+    <p class="mb-1">
+        <strong>Warranty Expires:</strong> 
+        <span class="badge bg-warning">{{ detail.warranty_expiry.strftime('%Y-%m-%d') }}</span>
+    </p>
+    {% endif %}
+</div> 

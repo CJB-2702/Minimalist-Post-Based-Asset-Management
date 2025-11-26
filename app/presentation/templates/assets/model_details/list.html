@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}{{ config.name }} - Asset Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>
+                    <i class="bi {{ config.icon }}"></i>
+                    {{ config.name }}
+                </h1>
+                <a href="{{ url_for('assets.model_details.create', detail_type=detail_type) }}" 
+                   class="btn btn-primary">
+                    <i class="bi bi-plus"></i> Create New
+                </a>
+            </div>
+            
+            {% if records %}
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    {% for field in config.fields %}
+                                    <th>{{ field.replace('_', ' ').title() }}</th>
+                                    {% endfor %}
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for record in records %}
+                                <tr>
+                                    <td>{{ record.id }}</td>
+                                    {% for field in config.fields %}
+                                    <td>
+                                        {% if field == 'emissions_test_date' or field == 'certification_date' %}
+                                            {{ record[field].strftime('%Y-%m-%d') if record[field] else '-' }}
+                                        {% elif field == 'mpg_city' or field == 'mpg_highway' or field == 'mpg_combined' %}
+                                            {{ "{:.1f} mpg".format(record[field]) if record[field] else '-' }}
+                                        {% elif field == 'co2_emissions' %}
+                                            {{ "{:.1f} g/mi".format(record[field]) if record[field] else '-' }}
+                                        {% elif field == 'cargo_capacity' %}
+                                            {{ "{:.1f} cu ft".format(record[field]) if record[field] else '-' }}
+                                        {% elif field == 'towing_capacity' %}
+                                            {{ "{:,} lbs".format(record[field]) if record[field] else '-' }}
+                                        {% elif field == 'seating_capacity' or field == 'model_year' %}
+                                            {{ record[field] if record[field] else '-' }}
+                                        {% else %}
+                                            {{ record[field] if record[field] else '-' }}
+                                        {% endif %}
+                                    </td>
+                                    {% endfor %}
+                                    <td>{{ record.created_at.strftime('%Y-%m-%d') }}</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{{ url_for('assets.model_details.detail', detail_type=detail_type, id=record.id) }}" 
+                                               class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a href="{{ url_for('assets.model_details.edit', detail_type=detail_type, id=record.id) }}" 
+                                               class="btn btn-sm btn-outline-secondary">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <button type="button" 
+                                                    class="btn btn-sm btn-outline-danger"
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#deleteModal{{ record.id }}">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="bi {{ config.icon }} display-1 text-muted"></i>
+                    <h3 class="text-muted">No {{ config.name }} records found</h3>
+                    <p class="text-muted">Get started by creating your first {{ config.name.lower() }} record.</p>
+                    <a href="{{ url_for('assets.model_details.create', detail_type=detail_type) }}" 
+                       class="btn btn-primary">
+                        <i class="bi bi-plus"></i> Create First Record
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Delete Modals -->
+{% for record in records %}
+<div class="modal fade" id="deleteModal{{ record.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Delete {{ config.name }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this {{ config.name.lower() }} record?</p>
+                <p class="text-muted">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="POST" action="{{ url_for('assets.model_details.delete', detail_type=detail_type, id=record.id) }}" 
+                      style="display: inline;">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %} 

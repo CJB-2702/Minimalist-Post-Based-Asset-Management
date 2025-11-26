@@ -1,0 +1,626 @@
+{% extends "base.html" %}
+
+{% block title %}{{ action_set.task_name }} - Perform Maintenance{% endblock %}
+
+{% block head %}
+<style>
+    .action-card {
+        transition: all 0.3s ease;
+        border-left: 4px solid #dee2e6;
+    }
+    
+    .action-card.not-started {
+        border-left-color: #6c757d;
+    }
+    
+    .action-card.in-progress {
+        border-left-color: #0dcaf0;
+        background-color: #f0f9ff;
+    }
+    
+    .action-card.completed {
+        border-left-color: #198754;
+        background-color: #f0fdf4;
+    }
+    
+    .progress-ring {
+        transform: rotate(-90deg);
+    }
+    
+    .comment-box {
+        background-color: #f8f9fa;
+        border-left: 3px solid #0d6efd;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border-radius: 0.375rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="bi bi-tools text-info"></i>
+                        {{ action_set.task_name }}
+                    </h1>
+                    <p class="text-muted mb-0">
+                        {% if asset %}
+                        Asset: <a href="{{ url_for('core_assets.detail', asset_id=asset.id) }}">{{ asset.name }}</a> ({{ asset.serial_number }})
+                        {% else %}
+                        No asset associated
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('maintenance.index') }}" class="btn btn-secondary">
+                        <i class="bi bi-house"></i> Dashboard
+                    </a>
+                    <a href="{{ url_for('maintenance_action_sets.detail', action_set_id=action_set.id) }}" class="btn btn-outline-info">
+                        <i class="bi bi-info-circle"></i> View Details
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-lg-8">
+            <!-- Progress Overview -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-graph-up"></i>
+                        Progress Overview
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-2">
+                            <h4 class="text-primary">{{ actions|length }}</h4>
+                            <small class="text-muted">Total Actions</small>
+                        </div>
+                        <div class="col-md-2">
+                            <h4 class="text-info">{{ actions|selectattr('status', 'equalto', 'In Progress')|list|length }}</h4>
+                            <small class="text-muted">In Progress</small>
+                        </div>
+                        <div class="col-md-2">
+                            <h4 class="text-success">{{ actions|selectattr('status', 'equalto', 'Completed')|list|length }}</h4>
+                            <small class="text-muted">Completed</small>
+                        </div>
+                        <div class="col-md-2">
+                            <h4 class="text-warning">{{ actions|selectattr('status', 'equalto', 'Skipped')|list|length }}</h4>
+                            <small class="text-muted">Skipped</small>
+                        </div>
+                        <div class="col-md-4">
+                            {% set completed_or_skipped = (actions|selectattr('status', 'equalto', 'Completed')|list|length + actions|selectattr('status', 'equalto', 'Skipped')|list|length) %}
+                            {% set completion_pct = ((completed_or_skipped / actions|length * 100)|round(0)|int) if actions|length > 0 else 0 %}
+                            <h4 class="text-warning">{{ completion_pct }}%</h4>
+                            <small class="text-muted">Complete</small>
+                        </div>
+                    </div>
+                    <div class="progress mt-3" style="height: 25px;">
+                        <div class="progress-bar bg-success" role="progressbar" 
+                             style="width: {{ completion_pct }}%;" 
+                             aria-valuenow="{{ completion_pct }}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100">
+                            {{ completion_pct }}%
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Event Widget (Comments / Attachments / Metadata) -->
+            {% if event %}
+            <div id="event-widget-container"
+                 hx-get="{{ url_for('comments.event_widget', event_id=event.id) }}"
+                 hx-trigger="load"
+                 hx-target="#event-widget-container"
+                 hx-swap="outerHTML">
+                <div class="card mb-4">
+                    <div class="card-body text-center text-muted">
+                        Loading event activity...
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Actions List -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-list-check"></i>
+                        Maintenance Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if actions %}
+                        {% for action in actions %}
+                        <div class="card action-card mb-3 {{ action.status|lower|replace(' ', '-') }}">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <h5 class="card-title">
+                                            <span class="badge bg-secondary">{{ action.sequence_order }}</span>
+                                            {{ action.action_name }}
+                                            <span class="badge 
+                                                {% if action.status == 'Completed' %}bg-success
+                                                {% elif action.status == 'In Progress' %}bg-info
+                                                {% elif action.status == 'Skipped' %}bg-warning
+                                                {% else %}bg-secondary{% endif %}">
+                                                {{ action.status }}
+                                            </span>
+                                        </h5>
+                                        
+                                        {% if action.description %}
+                                        <p class="card-text text-muted">{{ action.description }}</p>
+                                        {% endif %}
+                                        
+                                        {% if action.status == 'In Progress' and action.start_time %}
+                                        <small class="text-muted">
+                                            <i class="bi bi-clock"></i> Started: {{ action.start_time.strftime('%Y-%m-%d %H:%M') }}
+                                        </small>
+                                        {% endif %}
+                                        
+                                        {% if action.status == 'Completed' %}
+                                        <div class="mt-2">
+                                            <small class="text-success">
+                                                <i class="bi bi-check-circle"></i> Completed: {{ action.end_time.strftime('%Y-%m-%d %H:%M') if action.end_time else 'N/A' }}
+                                            </small>
+                                            {% if action.billable_hours %}
+                                            <br><small class="text-muted">Hours: {{ action.billable_hours }}</small>
+                                            {% endif %}
+                                            {% if action.completion_notes %}
+                                            <p class="mt-2 mb-0"><small><strong>Notes:</strong> {{ action.completion_notes }}</small></p>
+                                            {% endif %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="col-md-4 text-end">
+                                        {% if action.status == 'Not Started' %}
+                                        <form method="POST" action="{{ url_for('maintenance.start_action', action_set_id=action_set.id, action_id=action.id) }}" class="mb-2">
+                                            <button type="submit" class="btn btn-info w-100">
+                                                <i class="bi bi-play-circle"></i> Start
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                        
+                                        {% if action.status in ['Not Started', 'In Progress'] %}
+                                        <button type="button" class="btn btn-success w-100 mb-2" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#completeActionModal{{ action.id }}">
+                                            <i class="bi bi-check-circle"></i> Complete
+                                        </button>
+                                        <button type="button" class="btn btn-warning w-100 mb-2" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#skipActionModal{{ action.id }}">
+                                            <i class="bi bi-skip-forward"></i> Skip
+                                        </button>
+                                        {% endif %}
+                                        
+                                        <a href="{{ url_for('actions.detail', action_id=action.id) }}" 
+                                           class="btn btn-outline-secondary w-100 mt-2">
+                                            <i class="bi bi-info-circle"></i> Details
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Complete Action Modal -->
+                        <div class="modal fade" id="completeActionModal{{ action.id }}" tabindex="-1">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Complete Action: {{ action.action_name }}</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <form method="POST" action="{{ url_for('maintenance.complete_action', action_set_id=action_set.id, action_id=action.id) }}">
+                                        <div class="modal-body">
+                                            <div class="mb-3">
+                                                <label for="completion_notes{{ action.id }}" class="form-label">Completion Notes</label>
+                                                <textarea class="form-control" id="completion_notes{{ action.id }}" 
+                                                          name="completion_notes" rows="3" 
+                                                          placeholder="Add any notes about this action..."></textarea>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="billable_hours{{ action.id }}" class="form-label">Billable Hours (optional)</label>
+                                                <input type="number" class="form-control" id="billable_hours{{ action.id }}" 
+                                                       name="billable_hours" step="0.25" min="0" 
+                                                       placeholder="e.g., 1.5">
+                                                <small class="text-muted">Leave blank to auto-calculate from start/end time</small>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <button type="submit" class="btn btn-success">
+                                                <i class="bi bi-check-circle"></i> Mark Complete
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Skip Action Modal -->
+                        <div class="modal fade" id="skipActionModal{{ action.id }}" tabindex="-1">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Skip Action: {{ action.action_name }}</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <form method="POST" action="{{ url_for('maintenance.skip_action', action_set_id=action_set.id, action_id=action.id) }}">
+                                        <div class="modal-body">
+                                            <div class="alert alert-warning">
+                                                <i class="bi bi-exclamation-triangle"></i>
+                                                Skipping this action will mark it as complete for progress calculation purposes.
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="skip_reason{{ action.id }}" class="form-label">Reason for Skipping <span class="text-danger">*</span></label>
+                                                <textarea class="form-control" id="skip_reason{{ action.id }}" 
+                                                          name="skip_reason" rows="3" 
+                                                          placeholder="Please provide a reason for skipping this action..." required></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <button type="submit" class="btn btn-warning">
+                                                <i class="bi bi-skip-forward"></i> Skip Action
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted mb-0">No actions found for this maintenance event.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Completion Status Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-clipboard-check"></i>
+                        Completion Status
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong>Current Status:</strong>
+                        <span class="badge 
+                            {% if action_set.status == 'Completed' %}bg-success
+                            {% elif action_set.status == 'In Progress' %}bg-primary
+                            {% elif action_set.status == 'Delayed' %}bg-warning
+                            {% elif action_set.status == 'Cancelled' %}bg-danger
+                            {% elif action_set.status == 'Planned' %}bg-info
+                            {% else %}bg-secondary{% endif %} ms-2">
+                            {{ action_set.status }}
+                        </span>
+                    </div>
+                    
+                    {% set completed_count = actions|selectattr('status', 'equalto', 'Completed')|list|length %}
+                    {% set skipped_count = actions|selectattr('status', 'equalto', 'Skipped')|list|length %}
+                    {% set all_finished = ((completed_count + skipped_count) == actions|length) if actions|length > 0 else false %}
+                    
+                    {% if all_finished and action_set.status not in ['Completed', 'Cancelled'] %}
+                    <div class="alert alert-success">
+                        <i class="bi bi-check-circle"></i>
+                        All actions are complete or skipped. You can mark this maintenance as complete.
+                    </div>
+                    <button type="button" class="btn btn-success w-100 mb-2" 
+                            data-bs-toggle="modal" 
+                            data-bs-target="#completeMaintenanceModal">
+                        <i class="bi bi-check-circle"></i> Mark Complete
+                    </button>
+                    {% endif %}
+                    
+                    {% if action_set.status not in ['Completed', 'Cancelled'] %}
+                    <div class="d-grid gap-2">
+                        <button type="button" class="btn btn-warning" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#delayMaintenanceModal">
+                            <i class="bi bi-clock-history"></i> Mark as Delayed
+                        </button>
+                        <button type="button" class="btn btn-danger" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#cancelMaintenanceModal">
+                            <i class="bi bi-x-circle"></i> Cancel Maintenance
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Event Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle"></i>
+                        Event Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-5">Status:</dt>
+                        <dd class="col-sm-7">
+                            <span class="badge 
+                                {% if action_set.status == 'Completed' %}bg-success
+                                {% elif action_set.status == 'In Progress' %}bg-primary
+                                {% elif action_set.status == 'Planned' %}bg-info
+                                {% else %}bg-secondary{% endif %}">
+                                {{ action_set.status }}
+                            </span>
+                        </dd>
+
+                        <dt class="col-sm-5">Priority:</dt>
+                        <dd class="col-sm-7">
+                            <span class="badge 
+                                {% if action_set.priority == 'Critical' %}bg-danger
+                                {% elif action_set.priority == 'High' %}bg-warning
+                                {% else %}bg-info{% endif %}">
+                                {{ action_set.priority }}
+                            </span>
+                        </dd>
+
+                        <dt class="col-sm-5">Scheduled:</dt>
+                        <dd class="col-sm-7">{{ action_set.scheduled_date.strftime('%Y-%m-%d %H:%M') if action_set.scheduled_date else 'N/A' }}</dd>
+
+                        <dt class="col-sm-5">Started:</dt>
+                        <dd class="col-sm-7">{{ action_set.start_date.strftime('%Y-%m-%d %H:%M') if action_set.start_date else 'Not started' }}</dd>
+
+                        {% if action_set.end_date %}
+                        <dt class="col-sm-5">Completed:</dt>
+                        <dd class="col-sm-7">{{ action_set.end_date.strftime('%Y-%m-%d %H:%M') }}</dd>
+                        {% endif %}
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Parts Required Section (Phase 6) -->
+            {% if part_demand_info %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-box-seam"></i>
+                        Parts Required ({{ part_demand_info|length }})
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if part_demand_info %}
+                        <div class="list-group list-group-flush">
+                            {% for info in part_demand_info %}
+                            <div class="list-group-item px-0">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">
+                                            {{ info.demand.part.part_name }}
+                                            <small class="text-muted">({{ info.demand.part.part_number }})</small>
+                                        </h6>
+                                        <small class="text-muted">
+                                            For: {{ info.action.action_name }}
+                                        </small>
+                                    </div>
+                                    <span class="badge 
+                                        {% if info.demand.status == 'Received' %}bg-success
+                                        {% elif info.demand.status == 'Planned' %}bg-warning
+                                        {% else %}bg-secondary{% endif %}">
+                                        {{ info.demand.status }}
+                                    </span>
+                                </div>
+                                
+                                <div class="mb-2">
+                                    <strong>Required:</strong> {{ info.demand.quantity_required }} {{ info.demand.part.unit_of_measure or 'units' }}
+                                </div>
+                                
+                                <!-- Inventory Availability Info -->
+                                {% if info.availability %}
+                                    <div class="alert alert-sm mb-2 
+                                        {% if info.availability.can_fulfill_from_preferred %}alert-success
+                                        {% elif info.availability.can_fulfill_from_any %}alert-info
+                                        {% elif info.availability.needs_purchase %}alert-warning
+                                        {% else %}alert-danger{% endif %}" 
+                                        style="padding: 0.5rem; margin-bottom: 0.5rem;">
+                                        
+                                        {% if info.availability.can_fulfill_from_preferred %}
+                                            <i class="bi bi-check-circle"></i>
+                                            <strong>Available at this location</strong><br>
+                                            <small>{{ info.availability.total_available }} units in stock</small>
+                                        {% elif info.availability.can_fulfill_from_any %}
+                                            <i class="bi bi-info-circle"></i>
+                                            <strong>Available at other location</strong><br>
+                                            <small>{{ info.availability.total_available }} units available (transfer needed)</small>
+                                        {% elif info.availability.needs_purchase %}
+                                            <i class="bi bi-exclamation-triangle"></i>
+                                            <strong>Need to purchase</strong><br>
+                                            <small>Only {{ info.availability.total_available }} units available (need {{ info.demand.quantity_required - info.availability.total_available }})</small>
+                                        {% else %}
+                                            <i class="bi bi-x-circle"></i>
+                                            <strong>Out of stock</strong><br>
+                                            <small>Purchase order required</small>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <!-- Action Buttons -->
+                                    <div class="d-grid gap-1">
+                                        {% if info.availability.can_fulfill_from_preferred and info.demand.status != 'Received' %}
+                                            <button class="btn btn-sm btn-success" disabled title="Issue from inventory (coming soon)">
+                                                <i class="bi bi-box-arrow-right"></i> Issue from Inventory
+                                            </button>
+                                        {% elif info.availability.needs_purchase and info.demand.status != 'Received' %}
+                                            <button class="btn btn-sm btn-warning" disabled title="Create purchase order (coming soon)">
+                                                <i class="bi bi-cart-plus"></i> Create Purchase Order
+                                            </button>
+                                        {% endif %}
+                                        
+                                        <button class="btn btn-sm btn-outline-secondary" disabled title="View inventory details (coming soon)">
+                                            <i class="bi bi-eye"></i> View Inventory
+                                        </button>
+                                    </div>
+                                    
+                                    <!-- Location Details -->
+                                    {% if info.availability.location_inventory or info.availability.other_locations %}
+                                        <div class="mt-2">
+                                            <small class="text-muted d-block mb-1"><strong>Inventory Locations:</strong></small>
+                                            {% for loc in info.availability.location_inventory %}
+                                                <small class="text-success d-block">
+                                                    <i class="bi bi-geo-alt"></i> Current location: {{ loc.quantity_available }} available
+                                                </small>
+                                            {% endfor %}
+                                            {% for loc in info.availability.other_locations %}
+                                                <small class="text-info d-block">
+                                                    <i class="bi bi-geo-alt"></i> Other location: {{ loc.quantity_available }} available
+                                                </small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                {% else %}
+                                    <div class="alert alert-secondary alert-sm mb-0" style="padding: 0.5rem;">
+                                        <i class="bi bi-info-circle"></i>
+                                        <small>Inventory information not available</small>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted text-center mb-0">No parts required</p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Quick Links -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-link"></i>
+                        Quick Links
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        {% if asset %}
+                        <a href="{{ url_for('core_assets.detail', asset_id=asset.id) }}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-box"></i> View Asset
+                        </a>
+                        {% endif %}
+                        <a href="{{ url_for('maintenance_action_sets.detail', action_set_id=action_set.id) }}" class="btn btn-sm btn-outline-success">
+                            <i class="bi bi-list-check"></i> View Action Set
+                        </a>
+                        <a href="{{ url_for('maintenance.index') }}" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-house"></i> Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Complete Maintenance Modal -->
+<div class="modal fade" id="completeMaintenanceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Complete Maintenance: {{ action_set.task_name }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('maintenance.complete_maintenance', action_set_id=action_set.id) }}">
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        All actions must be completed or skipped before marking maintenance as complete.
+                    </div>
+                    <div class="mb-3">
+                        <label for="completion_notes" class="form-label">Completion Notes <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="completion_notes" 
+                                  name="completion_notes" rows="4" 
+                                  placeholder="Please provide completion notes..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-circle"></i> Mark Complete
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delay Maintenance Modal -->
+<div class="modal fade" id="delayMaintenanceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Delay Maintenance: {{ action_set.task_name }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('maintenance.delay_maintenance', action_set_id=action_set.id) }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="delay_reason" class="form-label">Reason for Delay <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="delay_reason" 
+                                  name="delay_reason" rows="4" 
+                                  placeholder="Please provide a reason for delaying this maintenance..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="bi bi-clock-history"></i> Mark as Delayed
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Cancel Maintenance Modal -->
+<div class="modal fade" id="cancelMaintenanceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Cancel Maintenance: {{ action_set.task_name }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('maintenance.cancel_maintenance', action_set_id=action_set.id) }}">
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        This action cannot be undone. Please provide a reason for cancellation.
+                    </div>
+                    <div class="mb-3">
+                        <label for="cancel_reason" class="form-label">Cancellation Reason <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="cancel_reason" 
+                                  name="cancel_reason" rows="4" 
+                                  placeholder="Please provide a reason for cancelling this maintenance..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-x-circle"></i> Cancel Maintenance
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

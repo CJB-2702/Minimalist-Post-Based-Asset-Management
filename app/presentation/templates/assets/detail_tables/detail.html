@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+
+{% block title %}{{ config.name }} Details - Asset Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>
+                    <i class="bi {{ config.icon }}"></i>
+                    {{ config.name }} Details
+                </h1>
+                <div class="btn-group" role="group">
+                    <a href="{{ url_for('assets.detail_tables.edit', detail_type=detail_type, id=record.id) }}" 
+                       class="btn btn-primary">
+                        <i class="bi bi-pencil"></i> Edit
+                    </a>
+                    <button type="button" 
+                            class="btn btn-danger"
+                            data-bs-toggle="modal" 
+                            data-bs-target="#deleteModal">
+                        <i class="bi bi-trash"></i> Delete
+                    </button>
+                    <a href="{{ url_for('assets.detail_tables.list', detail_type=detail_type) }}" 
+                       class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to List
+                    </a>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-8">
+                    <!-- Asset and Model Information -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5><i class="bi bi-info-circle"></i> Asset & Model Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Asset ID</label>
+                                    <div class="form-control-plaintext">
+                                        <span class="badge bg-primary fs-6">{{ record.asset_id }}</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Asset Name</label>
+                                    <div class="form-control-plaintext">
+                                        {% if record.asset %}
+                                            <strong>{{ record.asset.name }}</strong>
+                                            <br>
+                                            <small class="text-muted">{{ record.asset.serial_number }}</small>
+                                        {% else %}
+                                            <span class="text-muted">Asset not found</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Model ID</label>
+                                    <div class="form-control-plaintext">
+                                        {% if record.asset and record.asset.make_model %}
+                                            <span class="badge bg-info fs-6">{{ record.asset.make_model_id }}</span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Model</label>
+                                    <div class="form-control-plaintext">
+                                        {% if record.asset and record.asset.make_model %}
+                                            <strong>{{ record.asset.make_model.make }} {{ record.asset.make_model.model }}</strong>
+                                            {% if record.asset.make_model.year %}
+                                                <br>
+                                                <small class="text-muted">{{ record.asset.make_model.year }}</small>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-muted">Model not found</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>{{ config.name }} Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                {% for field in config.fields %}
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">
+                                        {{ field.replace('_', ' ').title() }}
+                                    </label>
+                                    <div class="form-control-plaintext">
+                                        {% if field == 'purchase_date' or field == 'warranty_expiry' or field == 'registration_expiry' or field == 'insurance_expiry' or field == 'service_date' or field == 'certification_date' or field == 'warranty_start_date' or field == 'warranty_end_date' %}
+                                            {% if record[field] %}
+                                                <span class="badge bg-info">{{ record[field].strftime('%B %d, %Y') }}</span>
+                                            {% else %}
+                                                <span class="text-muted">Not specified</span>
+                                            {% endif %}
+                                        {% elif field == 'purchase_price' or field == 'co2_emissions' or field == 'cargo_capacity' %}
+                                            {% if record[field] %}
+                                                <span class="badge bg-success">${{ "{:,.2f}".format(record[field]) }}</span>
+                                            {% else %}
+                                                <span class="text-muted">Not specified</span>
+                                            {% endif %}
+                                        {% elif field == 'fuel_economy_city' or field == 'fuel_economy_highway' or field == 'mpg_city' or field == 'mpg_highway' or field == 'mpg_combined' %}
+                                            {% if record[field] %}
+                                                <span class="badge bg-warning">{{ "{:.1f} mpg".format(record[field]) }}</span>
+                                            {% else %}
+                                                <span class="text-muted">Not specified</span>
+                                            {% endif %}
+                                        {% elif field == 'seating_capacity' or field == 'mileage_at_service' or field == 'warranty_mileage_limit' or field == 'warranty_time_limit_months' %}
+                                            {% if record[field] %}
+                                                <span class="badge bg-primary">{{ record[field] }}</span>
+                                            {% else %}
+                                                <span class="text-muted">Not specified</span>
+                                            {% endif %}
+                                        {% elif field == 'emissions_standard' %}
+                                            {% if record[field] %}
+                                                <span class="badge bg-secondary">{{ record[field] }}</span>
+                                            {% else %}
+                                                <span class="text-muted">Not specified</span>
+                                            {% endif %}
+                                        {% elif field == 'body_style' or field == 'transmission_type' or field == 'service_type' %}
+                                            {% if record[field] %}
+                                                <span class="badge bg-dark">{{ record[field] }}</span>
+                                            {% else %}
+                                                <span class="text-muted">Not specified</span>
+                                            {% endif %}
+                                        {% else %}
+                                            {% if record[field] %}
+                                                {{ record[field] }}
+                                            {% else %}
+                                                <span class="text-muted">Not specified</span>
+                                            {% endif %}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6>Metadata</h6>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled">
+                                <li class="mb-2">
+                                    <strong>ID:</strong> 
+                                    <span class="badge bg-secondary">{{ record.id }}</span>
+                                </li>
+                                <li class="mb-2">
+                                    <strong>Created:</strong><br>
+                                    <small class="text-muted">
+                                        {{ record.created_at.strftime('%B %d, %Y at %I:%M %p') }}
+                                    </small>
+                                </li>
+                                <li class="mb-2">
+                                    <strong>Created By:</strong><br>
+                                    <small class="text-muted">
+                                        {{ record.created_by.username if record.created_by else 'Unknown' }}
+                                    </small>
+                                </li>
+                                {% if record.updated_at != record.created_at %}
+                                <li class="mb-2">
+                                    <strong>Updated:</strong><br>
+                                    <small class="text-muted">
+                                        {{ record.updated_at.strftime('%B %d, %Y at %I:%M %p') }}
+                                    </small>
+                                </li>
+                                <li class="mb-2">
+                                    <strong>Updated By:</strong><br>
+                                    <small class="text-muted">
+                                        {{ record.updated_by.username if record.updated_by else 'Unknown' }}
+                                    </small>
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    {% if record.asset %}
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h6>Related Asset</h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-1">
+                                <strong>{{ record.asset.name }}</strong>
+                            </p>
+                            <p class="mb-1 text-muted">
+                                {{ record.asset.asset_type.name if record.asset.asset_type else 'Unknown Type' }}
+                            </p>
+                            <a href="{{ url_for('core_assets.detail', asset_id=record.asset.id) }}" 
+                               class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i> View Asset
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if record.make_model %}
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h6>Related Model</h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-1">
+                                <strong>{{ record.make_model.make }} {{ record.make_model.model }}</strong>
+                            </p>
+                            <p class="mb-1 text-muted">
+                                {{ record.make_model.year if record.make_model.year else 'Unknown Year' }}
+                            </p>
+                            <a href="{{ url_for('make_models.detail', id=record.make_model.id) }}" 
+                               class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i> View Model
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Delete {{ config.name }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this {{ config.name.lower() }} record?</p>
+                <p class="text-muted">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="POST" action="{{ url_for('assets.detail_tables.delete', detail_type=detail_type, id=record.id) }}" 
+                      style="display: inline;">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

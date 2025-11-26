@@ -1,0 +1,137 @@
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            <i class="bi bi-clock-history"></i> Recent Events
+            {% if filters.event_type or filters.user_id or filters.asset_id or filters.major_location_id %}
+                <small class="text-muted">(Filtered)</small>
+            {% endif %}
+        </h5>
+                    <div class="btn-group btn-group-sm">
+                <a href="{{ url_for('events.list', 
+                                   event_type=filters.event_type or '',
+                                   user_id=filters.user_id or '',
+                                   asset_id=filters.asset_id or '',
+                                   major_location_id=filters.major_location_id or '',
+                                   row_count=events.per_page) }}" 
+                   class="btn btn-outline-primary">
+                    <i class="bi bi-list"></i> View All
+                </a>
+            </div>
+    </div>
+    <div class="card-body p-0">
+        {% if events.items %}
+            <div class="list-group list-group-flush">
+                {% for event in events.items %}
+                <div class="list-group-item">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-items-center mb-1">
+                                <span class="badge bg-{{ 'primary' if event.event_type == 'Asset Created' else 'secondary' }} me-2">
+                                    {{ event.event_type }}
+                                </span>
+                                <small class="text-muted">{{ event.timestamp.strftime('%Y-%m-%d %H:%M') }}</small>
+                                {% if event.user %}
+                                    <small class="text-muted ms-2">by {{ event.user.username }}</small>
+                                {% endif %}
+                            </div>
+                            
+                            <p class="mb-1">{{ event.description }}</p>
+                            
+                            <div class="small text-muted">
+                                {% if event.asset %}
+                                    <i class="bi bi-gear"></i> {{ event.asset.name }}
+                                    {% if event.asset.serial_number %}({{ event.asset.serial_number }}){% endif %}
+                                {% endif %}
+                                {% if event.major_location %}
+                                    {% if event.asset %} • {% endif %}
+                                    <i class="bi bi-geo-alt"></i> {{ event.major_location.name }}
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Comments Summary -->
+                            {% if event.comments %}
+                            <div class="mt-2">
+                                <details class="comments-summary">
+                                    <summary class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-chat-dots"></i> 
+                                        {{ event.comments|length }} comment{{ 's' if event.comments|length != 1 else '' }}
+                                    </summary>
+                                    <div class="mt-2">
+                                        {% for comment in event.comments[:3] %}
+                                        <div class="border-start border-2 border-light ps-2 mb-2">
+                                            <small class="text-muted">
+                                                <strong>{{ comment.created_by.username if comment.created_by else 'System' }}</strong>
+                                                {{ comment.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                            </small>
+                                            <div class="small">{{ comment.content[:100] }}{% if comment.content|length > 100 %}...{% endif %}</div>
+                                        </div>
+                                        {% endfor %}
+                                        {% if event.comments|length > 3 %}
+                                        <div class="text-center">
+                                            <small class="text-muted">
+                                                ... and {{ event.comments|length - 3 }} more comment{{ 's' if (event.comments|length - 3) != 1 else '' }}
+                                            </small>
+                                        </div>
+                                        {% endif %}
+                                        <div class="mt-2">
+                                            <a href="{{ url_for('events.detail', event_id=event.id) }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-eye"></i> View Full Event
+                                            </a>
+                                        </div>
+                                    </div>
+                                </details>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="btn-group btn-group-sm ms-2">
+                            <a href="{{ url_for('events.detail', event_id=event.id) }}" 
+                               class="btn btn-outline-secondary" title="View Event">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-4">
+                <i class="bi bi-inbox text-muted fs-1"></i>
+                <p class="text-muted mt-2">No events found matching your filters</p>
+                <a href="{{ url_for('events.create') }}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Create First Event
+                </a>
+            </div>
+        {% endif %}
+    </div>
+    
+    {% if events.items %}
+    <div class="card-footer text-center">
+        <small class="text-muted">
+            Showing {{ events.items|length }} of {{ events.per_page }} most recent events
+            {% if filters.event_type or filters.user_id or filters.asset_id or filters.major_location_id %}
+                (filtered)
+            {% endif %}
+        </small>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.comments-summary summary {
+    cursor: pointer;
+    list-style: none;
+}
+
+.comments-summary summary::-webkit-details-marker {
+    display: none;
+}
+
+.comments-summary summary:hover {
+    background-color: #f8f9fa;
+}
+
+.comments-summary[open] summary {
+    background-color: #e9ecef;
+}
+</style> 

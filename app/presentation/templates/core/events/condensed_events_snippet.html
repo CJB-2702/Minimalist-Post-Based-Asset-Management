@@ -1,0 +1,44 @@
+<!-- Condensed Events Card Snippet -->
+<!-- Usage: Include this snippet in any template and pass the appropriate parameters -->
+<!-- Parameters: row_count (default: 5), asset_id (optional), major_location_id (optional), user_id (optional) -->
+
+<div id="condensed-events-card-{{ asset_id or major_location_id or user_id or 'general' }}"
+     hx-get="{{ url_for('events.events_card', 
+                        condensed_view=True, 
+                        row_count=row_count or 5,
+                        asset_id=asset_id or '',
+                        major_location_id=major_location_id or '',
+                        user_id=user_id or '') }}"
+     hx-trigger="load"
+     hx-select="#condensed-events-card-{{ asset_id or major_location_id or user_id or 'general' }}">
+    <div class="card">
+        <div class="card-body text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2 text-muted">Loading events...</p>
+        </div>
+    </div>
+</div>
+
+<!-- Example usage:
+{% include 'core/events/condensed_events_snippet.html' with context %}
+-->
+
+<!-- For asset-specific events:
+{% include 'core/events/condensed_events_snippet.html' with context %}
+{% set asset_id = asset.id %}
+{% set row_count = 10 %}
+-->
+
+<!-- For location-specific events:
+{% include 'core/events/condensed_events_snippet.html' with context %}
+{% set major_location_id = location.id %}
+{% set row_count = 8 %}
+-->
+
+<!-- For user-specific events:
+{% include 'core/events/condensed_events_snippet.html' with context %}
+{% set user_id = user.id %}
+{% set row_count = 6 %}
+--> 

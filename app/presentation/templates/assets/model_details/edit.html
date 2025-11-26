@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block title %}Edit {{ config.name }} - Asset Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>
+                    <i class="bi {{ config.icon }}"></i>
+                    Edit {{ config.name }}
+                </h1>
+                <a href="{{ url_for('assets.model_details.detail', detail_type=detail_type, id=record.id) }}" 
+                   class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Details
+                </a>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h5>Edit {{ config.name }} Record</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="row">
+                            {% for field in config.fields %}
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ field }}" class="form-label">
+                                    {{ field.replace('_', ' ').title() }}
+                                </label>
+                                
+                                {% if field == 'event_id' %}
+                                    <input type="number" 
+                                           class="form-control" 
+                                           id="{{ field }}" 
+                                           name="{{ field }}"
+                                           value="{{ record[field] if record[field] else '' }}"
+                                           disabled
+                                           readonly>
+                                    <div class="form-text">This field is automatically set and cannot be changed</div>
+                                
+                                {% elif field == 'certification_date' %}
+                                    <input type="date" 
+                                           class="form-control" 
+                                           id="{{ field }}" 
+                                           name="{{ field }}"
+                                           value="{{ record[field].strftime('%Y-%m-%d') if record[field] else '' }}">
+                                
+                                {% elif field == 'co2_emissions' or field == 'cargo_capacity' %}
+                                    <input type="number" 
+                                           class="form-control" 
+                                           id="{{ field }}" 
+                                           name="{{ field }}"
+                                           step="0.01"
+                                           min="0"
+                                           value="{{ record[field] if record[field] else '' }}"
+                                           placeholder="0.00">
+                                
+                                {% elif field == 'fuel_economy_city' or field == 'fuel_economy_highway' %}
+                                    <input type="number" 
+                                           class="form-control" 
+                                           id="{{ field }}" 
+                                           name="{{ field }}"
+                                           step="0.1"
+                                           min="0"
+                                           value="{{ record[field] if record[field] else '' }}"
+                                           placeholder="0.0">
+                                
+                                {% elif field == 'seating_capacity' %}
+                                    <input type="number" 
+                                           class="form-control" 
+                                           id="{{ field }}" 
+                                           name="{{ field }}"
+                                           min="0"
+                                           value="{{ record[field] if record[field] else '' }}"
+                                           placeholder="0">
+                                
+                                {% elif field == 'emissions_standard' %}
+                                    <select class="form-select" id="{{ field }}" name="{{ field }}">
+                                        <option value="">Select emissions standard</option>
+                                        <option value="EPA Tier 1" {{ 'selected' if record[field] == 'EPA Tier 1' else '' }}>EPA Tier 1</option>
+                                        <option value="EPA Tier 2" {{ 'selected' if record[field] == 'EPA Tier 2' else '' }}>EPA Tier 2</option>
+                                        <option value="EPA Tier 3" {{ 'selected' if record[field] == 'EPA Tier 3' else '' }}>EPA Tier 3</option>
+                                        <option value="CARB LEV I" {{ 'selected' if record[field] == 'CARB LEV I' else '' }}>CARB LEV I</option>
+                                        <option value="CARB LEV II" {{ 'selected' if record[field] == 'CARB LEV II' else '' }}>CARB LEV II</option>
+                                        <option value="Euro 1" {{ 'selected' if record[field] == 'Euro 1' else '' }}>Euro 1</option>
+                                        <option value="Euro 2" {{ 'selected' if record[field] == 'Euro 2' else '' }}>Euro 2</option>
+                                        <option value="Euro 3" {{ 'selected' if record[field] == 'Euro 3' else '' }}>Euro 3</option>
+                                        <option value="Euro 4" {{ 'selected' if record[field] == 'Euro 4' else '' }}>Euro 4</option>
+                                        <option value="Euro 5" {{ 'selected' if record[field] == 'Euro 5' else '' }}>Euro 5</option>
+                                        <option value="Euro 6" {{ 'selected' if record[field] == 'Euro 6' else '' }}>Euro 6</option>
+                                    </select>
+                                
+                                {% elif field == 'body_style' %}
+                                    <select class="form-select" id="{{ field }}" name="{{ field }}">
+                                        <option value="">Select body style</option>
+                                        <option value="Sedan" {{ 'selected' if record[field] == 'Sedan' else '' }}>Sedan</option>
+                                        <option value="SUV" {{ 'selected' if record[field] == 'SUV' else '' }}>SUV</option>
+                                        <option value="Truck" {{ 'selected' if record[field] == 'Truck' else '' }}>Truck</option>
+                                        <option value="Van" {{ 'selected' if record[field] == 'Van' else '' }}>Van</option>
+                                        <option value="Wagon" {{ 'selected' if record[field] == 'Wagon' else '' }}>Wagon</option>
+                                        <option value="Coupe" {{ 'selected' if record[field] == 'Coupe' else '' }}>Coupe</option>
+                                        <option value="Convertible" {{ 'selected' if record[field] == 'Convertible' else '' }}>Convertible</option>
+                                        <option value="Hatchback" {{ 'selected' if record[field] == 'Hatchback' else '' }}>Hatchback</option>
+                                    </select>
+                                
+                                {% elif field == 'transmission_type' %}
+                                    <select class="form-select" id="{{ field }}" name="{{ field }}">
+                                        <option value="">Select transmission type</option>
+                                        <option value="Manual" {{ 'selected' if record[field] == 'Manual' else '' }}>Manual</option>
+                                        <option value="Automatic" {{ 'selected' if record[field] == 'Automatic' else '' }}>Automatic</option>
+                                        <option value="CVT" {{ 'selected' if record[field] == 'CVT' else '' }}>CVT</option>
+                                        <option value="Semi-Automatic" {{ 'selected' if record[field] == 'Semi-Automatic' else '' }}>Semi-Automatic</option>
+                                    </select>
+                                
+                                {% else %}
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="{{ field }}" 
+                                           name="{{ field }}"
+                                           value="{{ record[field] if record[field] else '' }}"
+                                           placeholder="Enter {{ field.replace('_', ' ').lower() }}">
+                                {% endif %}
+                                
+                                <div class="form-text">
+                                    {% if field == 'co2_emissions' or field == 'cargo_capacity' %}
+                                        Enter amount in dollars
+                                    {% elif field == 'fuel_economy_city' or field == 'fuel_economy_highway' %}
+                                        Enter miles per gallon
+                                    {% elif field == 'engine_size' %}
+                                        Enter engine size (e.g., 2.5L, V6)
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="form-actions mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check"></i> Update {{ config.name }}
+                            </button>
+                            <a href="{{ url_for('assets.model_details.detail', detail_type=detail_type, id=record.id) }}" 
+                               class="btn btn-secondary">
+                                <i class="bi bi-x"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

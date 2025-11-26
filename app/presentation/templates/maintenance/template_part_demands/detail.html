@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Template Part Demand - {{ part.part_name if part else 'N/A' }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Template Part Demand: {{ part.part_name if part else 'N/A' }}</h1>
+            <div>
+                <a href="{{ url_for('template_part_demands.list') }}" class="btn btn-secondary">Back to List</a>
+                <a href="{{ url_for('template_part_demands.edit', template_part_demand_id=template_part_demand.id) }}" class="btn btn-warning">Edit</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Template Part Demand Details</h5>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-4">ID:</dt>
+                    <dd class="col-sm-8">{{ template_part_demand.id }}</dd>
+
+                    <dt class="col-sm-4">Part:</dt>
+                    <dd class="col-sm-8">{{ part.part_name if part else 'N/A' }}</dd>
+
+                    <dt class="col-sm-4">Quantity Required:</dt>
+                    <dd class="col-sm-8">{{ template_part_demand.quantity_required }}</dd>
+
+                    <dt class="col-sm-4">Expected Cost:</dt>
+                    <dd class="col-sm-8">{{ '${:.2f}'.format(template_part_demand.expected_cost) if template_part_demand.expected_cost else 'N/A' }}</dd>
+
+                    <dt class="col-sm-4">Optional:</dt>
+                    <dd class="col-sm-8">
+                        <span class="badge bg-{{ 'secondary' if template_part_demand.is_optional else 'success' }}">
+                            {{ 'Optional' if template_part_demand.is_optional else 'Required' }}
+                        </span>
+                    </dd>
+
+                    <dt class="col-sm-4">Sequence Order:</dt>
+                    <dd class="col-sm-8">{{ template_part_demand.sequence_order }}</dd>
+
+                    <dt class="col-sm-4">Notes:</dt>
+                    <dd class="col-sm-8">{{ template_part_demand.notes or 'N/A' }}</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

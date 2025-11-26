@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% block title %}Help - Asset Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="h3 mb-4">Help & Documentation</h1>
+            
+            <!-- Quick Start Guide -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-lightning"></i> Quick Start Guide
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Getting Started</h6>
+                            <ol>
+                                <li>Start with <strong>Core Management</strong> to set up your system foundation</li>
+                                <li>Create <strong>Asset Types</strong> and <strong>Make/Models</strong></li>
+                                <li>Add <strong>Locations</strong> where assets are stored</li>
+                                <li>Create <strong>Assets</strong> and assign them to locations</li>
+                                <li>Use <strong>Asset Management</strong> for detailed asset tracking</li>
+                            </ol>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Key Features</h6>
+                            <ul>
+                                <li><strong>Asset Tracking:</strong> Complete lifecycle management</li>
+                                <li><strong>Detail Tables:</strong> Asset-specific information storage</li>
+                                <li><strong>Event Logging:</strong> Track all asset activities</li>
+                                <li><strong>Search:</strong> Global search across all entities</li>
+                                <li><strong>User Management:</strong> Role-based access control</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Functional Areas -->
+            <div class="row">
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-gear"></i> Core Management
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Purpose:</strong> System administration and foundation data</p>
+                            <ul>
+                                <li><strong>Users:</strong> Manage system users and permissions</li>
+                                <li><strong>Locations:</strong> Define where assets are stored</li>
+                                <li><strong>Asset Types:</strong> Categorize different types of assets</li>
+                                <li><strong>Make/Models:</strong> Define specific asset models</li>
+                                <li><strong>Assets:</strong> Core asset records and basic information</li>
+                                <li><strong>Events:</strong> Track all system activities</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-box-seam"></i> Asset Management
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Purpose:</strong> Detailed asset lifecycle and tracking</p>
+                            <ul>
+                                <li><strong>Asset Overview:</strong> Dashboard and statistics</li>
+                                <li><strong>Asset Details:</strong> Purchase info, registration, warranty</li>
+                                <li><strong>Model Details:</strong> Technical specifications</li>
+                                <li><strong>Asset Dashboard:</strong> Comprehensive asset analytics</li>
+                                <li><strong>Quick Actions:</strong> Common asset operations</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detail Tables -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-card-list"></i> Asset Detail Tables
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h6>Purchase Information</h6>
+                            <p>Track purchase dates, prices, vendors, and warranty information for assets.</p>
+                            <ul>
+                                <li>Purchase date and price</li>
+                                <li>Vendor information</li>
+                                <li>Warranty details</li>
+                                <li>Purchase documentation</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-4">
+                            <h6>Vehicle Registration</h6>
+                            <p>Manage vehicle registration details, license plates, and registration dates.</p>
+                            <ul>
+                                <li>License plate numbers</li>
+                                <li>Registration dates</li>
+                                <li>Registration documents</li>
+                                <li>Vehicle identification</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-4">
+                            <h6>Toyota Warranty Receipt</h6>
+                            <p>Track Toyota warranty information, receipt details, and warranty periods.</p>
+                            <ul>
+                                <li>Warranty periods</li>
+                                <li>Receipt information</li>
+                                <li>Service history</li>
+                                <li>Warranty claims</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Future Features -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-tools"></i> Future Features
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h6>Dispatching</h6>
+                            <p>Work order management and dispatch operations</p>
+                            <ul>
+                                <li>Work order creation</li>
+                                <li>Dispatch scheduling</li>
+                                <li>Resource allocation</li>
+                                <li>Progress tracking</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-4">
+                            <h6>Maintenance</h6>
+                            <p>Maintenance planning, scheduling, and history</p>
+                            <ul>
+                                <li>Preventive maintenance</li>
+                                <li>Maintenance schedules</li>
+                                <li>Service history</li>
+                                <li>Maintenance costs</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-4">
+                            <h6>Supply</h6>
+                            <p>Inventory management and parts tracking</p>
+                            <ul>
+                                <li>Parts inventory</li>
+                                <li>Stock levels</li>
+                                <li>Reordering</li>
+                                <li>Supplier management</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contact Support -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-question-circle"></i> Need More Help?
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p>If you need additional assistance or have questions about the system:</p>
+                    <ul>
+                        <li>Check the system documentation</li>
+                        <li>Contact your system administrator</li>
+                        <li>Review the about page for system information</li>
+                        <li>Use the search function to find specific information</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

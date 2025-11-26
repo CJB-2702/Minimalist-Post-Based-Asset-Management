@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "disable_existing_loggers": true,
+  "formatters": {
+    "json_formatter": {
+      "()": "app.logger.JsonFormatter",
+      "fmt_dict": {
+        "timestamp": "asctime",
+        "level": "levelname",
+        "logger": "name",
+        "module": "module",
+        "function": "funcName",
+        "line": "lineno",
+        "message": "message"
+      },
+      "time_format": "%Y-%m-%dT%H:%M:%S",
+      "msec_format": "%s.%03dZ"
+    }
+  },
+  "handlers": {
+    "console_handler": {
+      "class": "logging.StreamHandler",
+      "level": "DEBUG",
+      "formatter": "json_formatter",
+      "stream": "ext://sys.stdout"
+    },
+    "file_handler": {
+      "()": "app.logger.TimestampedFileHandler",
+      "level": "INFO",
+      "formatter": "json_formatter",
+      "filename_template": "logs/asset_management_{timestamp}.log",
+      "encoding": "utf-8"
+    },
+    "error_file_handler": {
+      "()": "app.logger.TimestampedFileHandler",
+      "level": "ERROR",
+      "formatter": "json_formatter",
+      "filename_template": "logs/errors_{timestamp}.log",
+      "encoding": "utf-8"
+    }
+  },
+  "loggers": {
+    "asset_management": {
+      "level": "DEBUG",
+      "handlers": ["console_handler", "file_handler", "error_file_handler"],
+      "propagate": false
+    },
+    "app": {
+      "level": "DEBUG",
+      "handlers": ["console_handler", "file_handler", "error_file_handler"],
+      "propagate": false
+    },
+    "werkzeug": {
+      "level": "INFO",
+      "handlers": ["file_handler"],
+      "propagate": false
+    },
+    "sqlalchemy": {
+      "level": "WARNING",
+      "handlers": ["file_handler"],
+      "propagate": false
+    }
+  },
+  "root": {
+    "level": "INFO",
+    "handlers": ["console_handler", "file_handler"]
+  }
+}

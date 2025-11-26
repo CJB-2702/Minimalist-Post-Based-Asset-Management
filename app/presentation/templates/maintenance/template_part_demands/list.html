@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Template Part Demands - Asset Management System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Template Part Demands</h1>
+            <a href="{{ url_for('template_part_demands.create') }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Create Template Part Demand
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Template Part Demands ({{ template_part_demands.total }} total)</h5>
+            </div>
+            <div class="card-body">
+                {% if template_part_demands.items %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Action</th>
+                                <th>Part</th>
+                                <th>Quantity Required</th>
+                                <th>Expected Cost</th>
+                                <th>Optional</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for demand in template_part_demands.items %}
+                            <tr>
+                                <td>{{ demand.id }}</td>
+                                <td>
+                                    {% if demand.template_action_item %}
+                                    <a href="{{ url_for('proto_action_items.detail', template_action_item_id=demand.template_action_item.id) }}">
+                                        {{ demand.template_action_item.action_name }}
+                                    </a>
+                                    {% else %}
+                                    N/A
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if demand.part %}
+                                    {{ demand.part.part_name }}
+                                    {% else %}
+                                    N/A
+                                    {% endif %}
+                                </td>
+                                <td>{{ demand.quantity_required }}</td>
+                                <td>{{ '${:.2f}'.format(demand.expected_cost) if demand.expected_cost else 'N/A' }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'secondary' if demand.is_optional else 'success' }}">
+                                        {{ 'Optional' if demand.is_optional else 'Required' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('template_part_demands.detail', template_part_demand_id=demand.id) }}" 
+                                       class="btn btn-sm btn-info">View</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">No template part demands found.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

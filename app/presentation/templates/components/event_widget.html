@@ -1,0 +1,301 @@
+<div class="card mb-4" id="event-widget-card">
+    <div class="card-header">
+        <h5 class="mb-0 d-flex justify-content-between align-items-center">
+            <span>
+                <i class="bi bi-activity"></i>
+                Event Activity
+            </span>
+            <small class="text-muted">
+                {{ event.event_type }} · {{ event.timestamp.strftime('%Y-%m-%d %H:%M') if event.timestamp else 'No timestamp' }}
+            </small>
+        </h5>
+    </div>
+    <div class="card-body">
+        <!-- Tabs -->
+        <ul class="nav nav-tabs mb-3" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="event-comments-tab"
+                        data-bs-toggle="tab" data-bs-target="#event-comments-pane"
+                        type="button" role="tab" aria-controls="event-comments-pane"
+                        aria-selected="true">
+                    Comments ({{ comments|length }})
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="event-attachments-tab"
+                        data-bs-toggle="tab" data-bs-target="#event-attachments-pane"
+                        type="button" role="tab" aria-controls="event-attachments-pane"
+                        aria-selected="false">
+                    Attachments
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="event-metadata-tab"
+                        data-bs-toggle="tab" data-bs-target="#event-metadata-pane"
+                        type="button" role="tab" aria-controls="event-metadata-pane"
+                        aria-selected="false">
+                    Metadata
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+            <!-- Comments tab -->
+            <div class="tab-pane fade show active" id="event-comments-pane"
+                 role="tabpanel" aria-labelledby="event-comments-tab">
+                <details open>
+                    <summary class="mb-3" style="cursor: pointer;">
+                        <strong>Show / Hide Comments</strong>
+                    </summary>
+
+                    <!-- Filter and Add Comment Section -->
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            {% if filter_human_only|default(false) %}
+                                <a href="{{ url_for('comments.event_widget', event_id=event.id) }}"
+                                   class="btn btn-sm btn-outline-secondary"
+                                   hx-get="{{ url_for('comments.event_widget', event_id=event.id) }}"
+                                   hx-target="#event-widget-card"
+                                   hx-swap="outerHTML"
+                                   id="human-filter-btn-{{ event.id }}">
+                                    <i class="bi bi-funnel-fill"></i> Show All Comments
+                                </a>
+                            {% else %}
+                                <a href="{{ url_for('comments.event_widget', event_id=event.id, human_only='true') }}"
+                                   class="btn btn-sm btn-outline-secondary"
+                                   hx-get="{{ url_for('comments.event_widget', event_id=event.id, human_only='true') }}"
+                                   hx-target="#event-widget-card"
+                                   hx-swap="outerHTML"
+                                   id="human-filter-btn-{{ event.id }}">
+                                    <i class="bi bi-funnel"></i> Show Human Comments Only
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Add Comment Form -->
+                    <form method="POST"
+                          action="{{ url_for('comments.create', event_id=event.id) }}"
+                          hx-post="{{ url_for('comments.create', event_id=event.id) }}{% if filter_human_only|default(false) %}?human_only=true{% endif %}"
+                          hx-target="#event-widget-card"
+                          hx-swap="outerHTML"
+                          enctype="multipart/form-data"
+                          class="mb-3">
+                        <div class="mb-2">
+                            <label for="comment-content-{{ event.id }}" class="form-label">Comment</label>
+                            <textarea class="form-control"
+                                      id="comment-content-{{ event.id }}"
+                                      name="content"
+                                      rows="3"
+                                      placeholder="Add a comment..." required></textarea>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label">Attachments (optional)</label>
+                            <input type="file" name="attachments" multiple class="form-control form-control-sm">
+                            <small class="text-muted">You can attach documents, images, or other files.</small>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" name="is_private" id="comment-private-{{ event.id }}">
+                            <label class="form-check-label" for="comment-private-{{ event.id }}">
+                                Private (visible only to you and admins)
+                            </label>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm w-100">
+                            <i class="bi bi-plus-circle"></i> Add Comment
+                        </button>
+                    </form>
+
+                    <hr>
+
+                    <!-- Comments List -->
+                    <div style="max-height: 400px; overflow-y: auto;">
+                        {% if comments %}
+                            {% for comment in comments %}
+                            <div class="comment-box">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <strong>{{ comment.created_by.username if comment.created_by else 'Unknown' }}</strong>
+                                        {% if comment.is_private %}
+                                            <span class="badge bg-secondary ms-1">Private</span>
+                                        {% endif %}
+                                        {% if comment.is_human_made %}
+                                            <span class="badge bg-primary ms-1" title="Human-made comment">
+                                                <i class="bi bi-person"></i> Human
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-info ms-1" title="Machine-generated comment">
+                                                <i class="bi bi-robot"></i> Auto
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                    <small class="text-muted">
+                                        {{ comment.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                        {% if comment.is_edited %}
+                                            <span title="Edited">*</span>
+                                        {% endif %}
+                                    </small>
+                                </div>
+                                <p class="mb-2">{{ comment.content }}</p>
+
+                                {% if comment.comment_attachments %}
+                                <div class="comment-attachments mt-2">
+                                    <small class="text-muted d-block mb-2"><strong>Attachments:</strong></small>
+                                    <div class="row">
+                                        {% for ca in comment.comment_attachments %}
+                                        {% set att = ca.attachment %}
+                                        <div class="col-6 col-md-4 mb-2">
+                                            <div class="card attachment-mini-card">
+                                                {% if att.is_image() %}
+                                                    <a href="{{ url_for('attachments.view', attachment_id=att.id) }}"
+                                                       target="_blank"
+                                                       class="d-flex justify-content-center">
+                                                        <img src="{{ url_for('attachments.view', attachment_id=att.id) }}"
+                                                             class="img-thumbnail"
+                                                             alt="{{ att.filename }}"
+                                                             style="width: 100px; height: 100px; object-fit: cover;">
+                                                    </a>
+                                                {% elif att.is_viewable_as_text() %}
+                                                    <div class="card-img-top bg-light" style="height: 100px; overflow: hidden;">
+                                                        <div class="p-2">
+                                                            <div class="d-flex justify-content-between align-items-start mb-1">
+                                                                <i class="bi {{ att.get_file_icon() }} text-muted"></i>
+                                                                <small class="text-muted">{{ att.get_file_size_display() }}</small>
+                                                            </div>
+                                                            <div class="text-preview"
+                                                                 hx-get="{{ url_for('attachments.preview', attachment_id=att.id) }}"
+                                                                 hx-trigger="load"
+                                                                 hx-swap="innerHTML"
+                                                                 style="font-size: 0.7rem; line-height: 1.2; max-height: 70px; overflow: hidden;">
+                                                                <div class="text-center text-muted">
+                                                                    <i class="bi bi-hourglass-split"></i> Loading preview...
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                {% else %}
+                                                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center"
+                                                         style="height: 100px;">
+                                                        <i class="bi {{ att.get_file_icon() }} fs-3 text-muted"></i>
+                                                    </div>
+                                                {% endif %}
+                                                <div class="card-body p-2">
+                                                    <h6 class="card-title text-truncate small mb-1">{{ att.filename }}</h6>
+                                                    <p class="card-text small text-muted mb-1">
+                                                        {{ att.get_file_size_display() }}
+                                                    </p>
+                                                    <div class="btn-group btn-group-sm w-100" role="group">
+                                                        <a href="{{ url_for('attachments.download', attachment_id=att.id) }}"
+                                                           class="btn btn-outline-primary btn-sm">
+                                                            <i class="bi bi-download"></i>
+                                                        </a>
+                                                        {% if att.is_image() or att.is_viewable_as_text() %}
+                                                        <a href="{{ url_for('attachments.view', attachment_id=att.id) }}"
+                                                           class="btn btn-outline-secondary btn-sm" target="_blank">
+                                                            <i class="bi bi-eye"></i>
+                                                        </a>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted text-center mb-0">No comments yet</p>
+                        {% endif %}
+                    </div>
+                </details>
+            </div>
+
+            <!-- Attachments tab -->
+            <div class="tab-pane fade" id="event-attachments-pane"
+                 role="tabpanel" aria-labelledby="event-attachments-tab">
+                {% set has_attachments = false %}
+                <div class="list-group" style="max-height: 400px; overflow-y: auto;">
+                    {% for comment in comments %}
+                        {% for ca in comment.comment_attachments %}
+                            {% set has_attachments = true %}
+                            {% set att = ca.attachment %}
+                            <div class="list-group-item d-flex justify-content-between align-items-start">
+                                <div class="ms-2 me-auto">
+                                    <div class="fw-bold">
+                                        <i class="bi bi-paperclip"></i> {{ att.filename }}
+                                    </div>
+                                    <small class="text-muted">
+                                        From comment by {{ comment.created_by.username if comment.created_by else 'Unknown' }}
+                                        on {{ comment.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                    </small>
+                                </div>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{{ url_for('attachments.view', attachment_id=att.id) }}"
+                                       class="btn btn-outline-secondary" target="_blank">
+                                        View
+                                    </a>
+                                    <a href="{{ url_for('attachments.download', attachment_id=att.id) }}"
+                                       class="btn btn-outline-primary">
+                                        Download
+                                    </a>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% endfor %}
+                    {% if not has_attachments %}
+                        <p class="text-muted text-center mb-0">No attachments for this event.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Metadata tab -->
+            <div class="tab-pane fade" id="event-metadata-pane"
+                 role="tabpanel" aria-labelledby="event-metadata-tab">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Event ID:</dt>
+                    <dd class="col-sm-8"><code>{{ event.id }}</code></dd>
+
+                    <dt class="col-sm-4">Type:</dt>
+                    <dd class="col-sm-8">{{ event.event_type }}</dd>
+
+                    <dt class="col-sm-4">Description:</dt>
+                    <dd class="col-sm-8">{{ event.description }}</dd>
+
+                    <dt class="col-sm-4">Created:</dt>
+                    <dd class="col-sm-8">
+                        {{ event.created_at.strftime('%Y-%m-%d %H:%M') if event.created_at else 'N/A' }}
+                    </dd>
+
+                    <dt class="col-sm-4">Created By:</dt>
+                    <dd class="col-sm-8">
+                        {{ event.created_by.username if event.created_by else 'System' }}
+                    </dd>
+
+                    <dt class="col-sm-4">Asset:</dt>
+                    <dd class="col-sm-8">
+                        {% if event.asset %}
+                            <a href="{{ url_for('core_assets.detail', asset_id=event.asset.id) }}">
+                                {{ event.asset.name }}
+                            </a>
+                        {% else %}
+                            <span class="text-muted">None</span>
+                        {% endif %}
+                    </dd>
+
+                    <dt class="col-sm-4">Location:</dt>
+                    <dd class="col-sm-8">
+                        {% if event.major_location %}
+                            <a href="{{ url_for('locations.detail', location_id=event.major_location.id) }}">
+                                {{ event.major_location.name }}
+                            </a>
+                        {% else %}
+                            <span class="text-muted">None</span>
+                        {% endif %}
+                    </dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+

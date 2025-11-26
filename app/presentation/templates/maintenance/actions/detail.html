@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}{{ action.action_name }} - Action{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>{{ action.action_name }}</h1>
+            <div>
+                <a href="{{ url_for('actions.list') }}" class="btn btn-secondary">Back to List</a>
+                <a href="{{ url_for('actions.edit', action_id=action.id) }}" class="btn btn-warning">Edit</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Action Details</h5>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-4">ID:</dt>
+                    <dd class="col-sm-8">{{ action.id }}</dd>
+
+                    <dt class="col-sm-4">Action Name:</dt>
+                    <dd class="col-sm-8">{{ action.action_name }}</dd>
+
+                    <dt class="col-sm-4">Description:</dt>
+                    <dd class="col-sm-8">{{ action.description or 'N/A' }}</dd>
+
+                    <dt class="col-sm-4">Status:</dt>
+                    <dd class="col-sm-8">
+                        <span class="badge bg-{{ 'success' if action.status == 'Completed' else 'secondary' }}">
+                            {{ action.status }}
+                        </span>
+                    </dd>
+
+                    <dt class="col-sm-4">Start Time:</dt>
+                    <dd class="col-sm-8">{{ action.start_time.strftime('%Y-%m-%d %H:%M') if action.start_time else 'N/A' }}</dd>
+
+                    <dt class="col-sm-4">End Time:</dt>
+                    <dd class="col-sm-8">{{ action.end_time.strftime('%Y-%m-%d %H:%M') if action.end_time else 'N/A' }}</dd>
+
+                    <dt class="col-sm-4">Billable Hours:</dt>
+                    <dd class="col-sm-8">{{ action.billable_hours or 'N/A' }}</dd>
+
+                    <dt class="col-sm-4">Maintenance Action Set:</dt>
+                    <dd class="col-sm-8">
+                        {% if action.maintenance_action_set %}
+                        <a href="{{ url_for('maintenance_action_sets.detail', action_set_id=action.maintenance_action_set.id) }}">
+                            {{ action.maintenance_action_set.task_name }}
+                        </a>
+                        {% else %}
+                        N/A
+                        {% endif %}
+                    </dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                {% if action.status == 'Not Started' %}
+                <form method="POST" action="{{ url_for('actions.start_action', action_id=action.id) }}" class="mb-2">
+                    <button type="submit" class="btn btn-success w-100">Start Action</button>
+                </form>
+                {% endif %}
+
+                {% if action.status in ['Not Started', 'In Progress'] %}
+                <form method="POST" action="{{ url_for('actions.complete_action', action_id=action.id) }}" class="mb-2">
+                    <button type="submit" class="btn btn-primary w-100">Complete</button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <!-- Part Demands Section -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Part Demands ({{ part_demands|length }})</h5>
+            </div>
+            <div class="card-body">
+                {% if part_demands %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Part</th>
+                                <th>Quantity Required</th>
+                                <th>Status</th>
+                                <th>Sequence</th>
+                                <th>Notes</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for demand in part_demands %}
+                            <tr>
+                                <td>
+                                    {% if demand.part %}
+                                    {{ demand.part.part_name }}
+                                    {% else %}
+                                    N/A
+                                    {% endif %}
+                                </td>
+                                <td>{{ demand.quantity_required }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if demand.status == 'Fulfilled' else 'secondary' }}">
+                                        {{ demand.status }}
+                                    </span>
+                                </td>
+                                <td>{{ demand.sequence_order }}</td>
+                                <td>{{ demand.notes[:50] + '...' if demand.notes and demand.notes|length > 50 else (demand.notes or '') }}</td>
+                                <td>
+                                    <a href="{{ url_for('part_demands.detail', part_demand_id=demand.id) }}" 
+                                       class="btn btn-sm btn-info">View</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">No part demands defined for this action.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

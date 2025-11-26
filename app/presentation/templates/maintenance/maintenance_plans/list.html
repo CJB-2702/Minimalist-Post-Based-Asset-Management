@@ -1,0 +1,283 @@
+{% extends "base.html" %}
+
+{% block title %}Maintenance Plans - Asset Management System{% endblock %}
+
+{% block head %}
+<script src="https://unpkg.com/htmx.org@1.9.10"></script>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Maintenance Plans</h1>
+            <a href="{{ url_for('maintenance_plans.create') }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Create Plan
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Filters</h5>
+            </div>
+            <div class="card-body">
+                <form method="GET" action="{{ url_for('maintenance_plans.list') }}">
+                    <div class="row">
+                        <div class="col-md-2">
+                            <label for="name" class="form-label">Name</label>
+                            <input type="text" class="form-control" id="name" name="name" 
+                                   value="{{ request.args.get('name', '') }}" placeholder="Filter by name">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="asset_type_id" class="form-label">Asset Type</label>
+                            <select class="form-select" id="asset_type_id" name="asset_type_id">
+                                <option value="">All Asset Types</option>
+                                {% for asset_type in asset_types %}
+                                <option value="{{ asset_type.id }}" {% if current_filters.asset_type_id == asset_type.id %}selected{% endif %}>
+                                    {{ asset_type.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="model_id" class="form-label">Make/Model</label>
+                            <select class="form-select" id="model_id" name="model_id">
+                                <option value="">All Make/Models</option>
+                                {% for make_model in make_models %}
+                                <option value="{{ make_model.id }}" {% if current_filters.model_id == make_model.id %}selected{% endif %}>
+                                    {{ make_model.make }} {{ make_model.model }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="status" class="form-label">Status</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="">All Status</option>
+                                <option value="Active" {% if current_filters.status == 'Active' %}selected{% endif %}>Active</option>
+                                <option value="Inactive" {% if current_filters.status == 'Inactive' %}selected{% endif %}>Inactive</option>
+                                <option value="Archived" {% if current_filters.status == 'Archived' %}selected{% endif %}>Archived</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="frequency_type" class="form-label">Frequency Type</label>
+                            <select class="form-select" id="frequency_type" name="frequency_type">
+                                <option value="">All Frequency Types</option>
+                                <option value="Time-based" {% if current_filters.frequency_type == 'Time-based' %}selected{% endif %}>Time-based</option>
+                                <option value="Mileage-based" {% if current_filters.frequency_type == 'Mileage-based' %}selected{% endif %}>Mileage-based</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">&nbsp;</label>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-funnel"></i> Apply Filters
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Maintenance Plans Table -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Maintenance Plans ({{ maintenance_plans.total }} total)</h5>
+            </div>
+            <div class="card-body">
+                {% if maintenance_plans.items %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Asset Type</th>
+                                <th>Make/Model</th>
+                                <th>Frequency</th>
+                                <th>Status</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for plan in maintenance_plans.items %}
+                            <tr>
+                                <td>
+                                    <small class="text-muted">
+                                        <code>{{ plan.id }}</code>
+                                    </small>
+                                </td>
+                                <td>
+                                    <strong>{{ plan.name }}</strong>
+                                    {% if plan.description %}
+                                    <br>
+                                    <small class="text-muted">{{ plan.description[:50] }}{% if plan.description|length > 50 %}...{% endif %}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if plan.asset_type %}
+                                        <span class="badge bg-info">{{ plan.asset_type.name }}</span>
+                                    {% else %}
+                                        <span class="badge bg-light text-dark">No Type</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if plan.model %}
+                                        <div>
+                                            <strong>{{ plan.model.make }}</strong>
+                                            <br>
+                                            <small class="text-muted">{{ plan.model.model }}</small>
+                                        </div>
+                                    {% else %}
+                                        <span class="text-muted">All Models</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="small">
+                                        <strong>{{ plan.frequency_type }}</strong>
+                                        {% if plan.frequency_type == 'Time-based' and plan.delta_hours %}
+                                            <br>
+                                            <span class="text-muted">{{ plan.delta_hours }} hours</span>
+                                        {% elif plan.frequency_type == 'Mileage-based' %}
+                                            <br>
+                                            <span class="text-muted">
+                                                {% if plan.delta_m1 %}M1: {{ plan.delta_m1 }}{% endif %}
+                                                {% if plan.delta_m2 %} M2: {{ plan.delta_m2 }}{% endif %}
+                                                {% if plan.delta_m3 %} M3: {{ plan.delta_m3 }}{% endif %}
+                                                {% if plan.delta_m4 %} M4: {{ plan.delta_m4 }}{% endif %}
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if plan.status == 'Active' %}
+                                        <span class="badge bg-success">Active</span>
+                                    {% elif plan.status == 'Inactive' %}
+                                        <span class="badge bg-warning">Inactive</span>
+                                    {% elif plan.status == 'Archived' %}
+                                        <span class="badge bg-secondary">Archived</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ plan.status }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small class="text-muted">
+                                        {{ plan.created_at.strftime('%Y-%m-%d %H:%M:%S') if plan.created_at else 'N/A' }}
+                                    </small>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="{{ url_for('maintenance_plans.detail', plan_id=plan.id) }}"
+                                           class="btn btn-outline-primary" title="View Details">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a href="{{ url_for('maintenance_plans.edit', plan_id=plan.id) }}"
+                                           class="btn btn-outline-secondary" title="Edit">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-outline-danger" 
+                                                title="Delete" onclick="confirmDelete({{ plan.id }}, '{{ plan.name }}')">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                {% if maintenance_plans.pages > 1 %}
+                <nav aria-label="Maintenance plans pagination">
+                    <ul class="pagination justify-content-center">
+                        {% if maintenance_plans.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('maintenance_plans.list', page=maintenance_plans.prev_num, **request.args) }}">Previous</a>
+                        </li>
+                        {% endif %}
+                        
+                        {% for page_num in maintenance_plans.iter_pages() %}
+                            {% if page_num %}
+                                {% if page_num != maintenance_plans.page %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('maintenance_plans.list', page=page_num, **request.args) }}">{{ page_num }}</a>
+                                </li>
+                                {% else %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ page_num }}</span>
+                                </li>
+                                {% endif %}
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if maintenance_plans.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('maintenance_plans.list', page=maintenance_plans.next_num, **request.args) }}">Next</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+                
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-gear display-1 text-muted"></i>
+                    <h3 class="mt-3">No Maintenance Plans Found</h3>
+                    <p class="text-muted">No maintenance plans match the current filters.</p>
+                    <a href="{{ url_for('maintenance_plans.create') }}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Create First Plan
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete maintenance plan <strong id="deletePlanName"></strong>?</p>
+                <p class="text-danger"><small>This action cannot be undone. Plans with events cannot be deleted.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">Delete Plan</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmDelete(planId, planName) {
+    document.getElementById('deletePlanName').textContent = planName;
+    document.getElementById('deleteForm').action = "{{ url_for('maintenance_plans.delete', plan_id=0) }}".replace('0', planId);
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+</script>
+{% endblock %}
+

@@ -1,0 +1,18 @@
+{% if preview %}
+    <div class="text-preview-content">
+        <pre style="font-size: 0.7rem; line-height: 1.2; margin: 0; white-space: pre-wrap; word-wrap: break-word; color: #6c757d;">{{ preview }}</pre>
+        <div class="text-center mt-1">
+            <small class="text-muted">
+                Showing {{ preview_lines }} of {{ line_count }} lines
+                <button class="btn btn-sm btn-outline-primary ms-2" 
+                        onclick="window.open('{{ url_for('attachments.view', attachment_id=attachment_id) }}', '_blank')">
+                    <i class="bi bi-eye"></i> View Full
+                </button>
+            </small>
+        </div>
+    </div>
+{% else %}
+    <div class="text-center text-muted">
+        <i class="bi bi-exclamation-triangle"></i> Unable to load preview
+    </div>
+{% endif %} 

@@ -1,0 +1,332 @@
+{
+  "Maintenance": {
+    "template_actions": [
+      {
+        "task_name": "Toyota Corolla Oil Change Procedure",
+        "description": "Standard oil change procedure for Toyota Corolla vehicles",
+        "estimated_duration": 0.5,
+        "staff_count": 1,
+        "labor_hours": 0.5,
+        "safety_review_required": false,
+        "revision": "1.0"
+      },
+      {
+        "task_name": "Brake Inspection Procedure",
+        "description": "Standard brake inspection procedure for trucks",
+        "estimated_duration": 0.75,
+        "staff_count": 1,
+        "labor_hours": 0.75,
+        "safety_review_required": true,
+        "revision": "1.0"
+      }
+    ],
+    "template_action_items": [
+      {
+        "action_name": "Drain Oil",
+        "description": "Drain old oil from engine",
+        "sequence_order": 1,
+        "estimated_duration": 0.25,
+        "expected_billable_hours": 0.25,
+        "safety_notes": "Use proper oil pan and dispose of oil safely",
+        "template_action_set_task_name": "Toyota Corolla Oil Change Procedure",
+        "proto_action_item_action_name": "Drain Oil",
+        "is_required": true,
+        "minimum_staff_count": 1
+      },
+      {
+        "action_name": "Replace Oil Filter",
+        "description": "Remove old filter and install new one",
+        "sequence_order": 2,
+        "estimated_duration": 0.17,
+        "expected_billable_hours": 0.17,
+        "safety_notes": "Ensure filter is properly sealed",
+        "template_action_set_task_name": "Toyota Corolla Oil Change Procedure",
+        "is_required": true,
+        "minimum_staff_count": 1
+      },
+      {
+        "action_name": "Add Engine Oil 5W-30",
+        "description": "Add fresh 5W-30 engine oil to engine",
+        "sequence_order": 3,
+        "estimated_duration": 0.08,
+        "expected_billable_hours": 0.08,
+        "template_action_set_task_name": "Toyota Corolla Oil Change Procedure",
+        "proto_action_item_action_name": "Add Engine Oil 5W-30",
+        "is_required": true,
+        "minimum_staff_count": 1
+      },
+      {
+        "action_name": "Check Brake Pads",
+        "description": "Inspect brake pad thickness and condition",
+        "sequence_order": 1,
+        "estimated_duration": 0.33,
+        "expected_billable_hours": 0.33,
+        "safety_notes": "Use proper jack stands and safety equipment",
+        "template_action_set_task_name": "Brake Inspection Procedure",
+        "is_required": true,
+        "minimum_staff_count": 1
+      },
+      {
+        "action_name": "Test Brake System",
+        "description": "Test brake pedal feel and response",
+        "sequence_order": 2,
+        "estimated_duration": 0.25,
+        "expected_billable_hours": 0.25,
+        "safety_notes": "Test in safe environment at low speeds",
+        "template_action_set_task_name": "Brake Inspection Procedure",
+        "is_required": true,
+        "minimum_staff_count": 1
+      }
+    ],
+    "proto_action_items": [
+      {
+        "action_name": "Drain Oil",
+        "description": "Drain old oil from engine",
+        "estimated_duration": 0.25,
+        "expected_billable_hours": 0.25,
+        "safety_notes": "Use proper oil pan and dispose of oil safely",
+        "is_required": true,
+        "minimum_staff_count": 1
+      },
+      {
+        "action_name": "Replace Oil Filter",
+        "description": "Remove old filter and install new one",
+        "estimated_duration": 0.17,
+        "expected_billable_hours": 0.17,
+        "safety_notes": "Ensure filter is properly sealed",
+        "is_required": true,
+        "minimum_staff_count": 1
+      },
+      {
+        "action_name": "Add Engine Oil 5W-30",
+        "description": "Add fresh 5W-30 engine oil to engine",
+        "estimated_duration": 0.08,
+        "expected_billable_hours": 0.08,
+        "is_required": true,
+        "minimum_staff_count": 1
+      },
+      {
+        "action_name": "Check Brake Pads",
+        "description": "Inspect brake pad thickness and condition",
+        "estimated_duration": 0.33,
+        "expected_billable_hours": 0.33,
+        "safety_notes": "Use proper jack stands and safety equipment",
+        "is_required": true,
+        "minimum_staff_count": 1
+      },
+      {
+        "action_name": "Test Brake System",
+        "description": "Test brake pedal feel and response",
+        "estimated_duration": 0.25,
+        "expected_billable_hours": 0.25,
+        "safety_notes": "Test in safe environment at low speeds",
+        "is_required": true,
+        "minimum_staff_count": 1
+      }
+    ],
+    "proto_part_demands": [
+      {
+        "part_number": "OIL-001",
+        "quantity_required": 1.0,
+        "proto_action_item_action_name": "Add Engine Oil 5W-30",
+        "is_optional": false,
+        "sequence_order": 1
+      }
+    ],
+    "proto_action_tools": [
+      {
+        "tool_name": "Oil Drain Pan",
+        "proto_action_item_action_name": "Drain Oil",
+        "is_required": true,
+        "quantity_required": 1,
+        "sequence_order": 1
+      },
+      {
+        "tool_name": "Oil Filter Wrench",
+        "proto_action_item_action_name": "Replace Oil Filter",
+        "is_required": true,
+        "quantity_required": 1,
+        "sequence_order": 1
+      },
+      {
+        "tool_name": "Jack",
+        "proto_action_item_action_name": "Check Brake Pads",
+        "is_required": true,
+        "quantity_required": 1,
+        "sequence_order": 1
+      },
+      {
+        "tool_name": "Jack Stands",
+        "proto_action_item_action_name": "Check Brake Pads",
+        "is_required": true,
+        "quantity_required": 2,
+        "sequence_order": 2
+      }
+    ],
+    "template_part_demands": [
+      {
+        "part_number": "OIL-001",
+        "quantity_required": 10.0,
+        "template_action_item_action_name": "Add Engine Oil 5W-30",
+        "is_optional": false,
+        "sequence_order": 1
+      },
+      {
+        "part_number": "FIL-001",
+        "quantity_required": 1.0,
+        "template_action_item_action_name": "Replace Oil Filter",
+        "is_optional": false,
+        "sequence_order": 1
+      }
+    ],
+    "template_action_tools": [
+      {
+        "tool_name": "Oil Drain Pan",
+        "template_action_item_action_name": "Drain Oil",
+        "is_required": true,
+        "quantity_required": 1,
+        "sequence_order": 1
+      },
+      {
+        "tool_name": "Oil Filter Wrench",
+        "template_action_item_action_name": "Replace Oil Filter",
+        "is_required": true,
+        "quantity_required": 1,
+        "sequence_order": 1
+      },
+      {
+        "tool_name": "Jack",
+        "template_action_item_action_name": "Check Brake Pads",
+        "is_required": true,
+        "quantity_required": 1,
+        "sequence_order": 1
+      },
+      {
+        "tool_name": "Jack Stands",
+        "template_action_item_action_name": "Check Brake Pads",
+        "is_required": true,
+        "quantity_required": 2,
+        "sequence_order": 2
+      }
+    ],
+    "maintenance_plans": [
+      {
+        "name": "Vehicle Oil Change",
+        "description": "Regular oil change maintenance for all vehicles",
+        "asset_type_name": "Vehicle",
+        "status": "Active",
+        "frequency_type": "Time-based",
+        "delta_hours": 2160.0,
+        "template_action_set_task_name": "Toyota Corolla Oil Change Procedure"
+      },
+      {
+        "name": "Truck Brake Inspection",
+        "description": "Brake system inspection for trucks",
+        "asset_type_name": "Vehicle",
+        "status": "Active",
+        "frequency_type": "Time-based",
+        "delta_hours": 4320.0,
+        "template_action_set_task_name": "Brake Inspection Procedure"
+      }
+    ],
+    "maintenance_events": [
+      {
+        "task_name": "Oil Change for VTC-002",
+        "description": "In progress oil change for VTC-002",
+        "maintenance_plan_name": "Vehicle Oil Change",
+        "asset_name": "VTC-002",
+        "planned_start_datetime": "2024-01-15 08:00:00",
+        "start_date": "2024-01-15 08:30:00",
+        "status": "In Progress",
+        "priority": "Medium",
+        "actions": [
+          {
+            "action_name": "Drain Oil",
+            "description": "Drain old oil from engine",
+            "sequence_order": 1,
+            "estimated_duration": 0.25,
+            "expected_billable_hours": 0.25,
+            "safety_notes": "Use proper oil pan and dispose of oil safely",
+            "status": "Completed",
+            "start_time": "2024-01-15 08:30:00",
+            "end_time": "2024-01-15 08:45:00",
+            "part_demands": []
+          },
+          {
+            "action_name": "Replace Oil Filter",
+            "description": "Remove old filter and install new one",
+            "sequence_order": 2,
+            "estimated_duration": 0.17,
+            "expected_billable_hours": 0.17,
+            "safety_notes": "Ensure filter is properly sealed",
+            "status": "In Progress",
+            "start_time": "2024-01-15 08:45:00",
+            "part_demands": [
+              {
+                "part_number": "FIL-001",
+                "quantity_required": 1.0,
+                "status": "Approved",
+                "sequence_order": 1,
+                "priority": "Medium"
+              }
+            ]
+          },
+          {
+            "action_name": "Add Engine Oil 5W-30",
+            "description": "Add fresh 5W-30 engine oil to engine",
+            "sequence_order": 3,
+            "estimated_duration": 0.08,
+            "expected_billable_hours": 0.08,
+            "status": "Not Started",
+            "part_demands": [
+              {
+                "part_number": "OIL-001",
+                "quantity_required": 5.0,
+                "status": "Planned",
+                "sequence_order": 1,
+                "priority": "Medium"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "task_name": "Brake Inspection for FTK-001",
+        "description": "In progress brake inspection for FTK-001",
+        "maintenance_plan_name": "Truck Brake Inspection",
+        "asset_name": "FTK-001",
+        "planned_start_datetime": "2024-01-16 09:00:00",
+        "start_date": "2024-01-16 09:15:00",
+        "status": "In Progress",
+        "priority": "High",
+        "actions": [
+          {
+            "action_name": "Check Brake Pads",
+            "description": "Inspect brake pad thickness and condition",
+            "sequence_order": 1,
+            "estimated_duration": 0.33,
+            "expected_billable_hours": 0.33,
+            "safety_notes": "Use proper jack stands and safety equipment",
+            "status": "Completed",
+            "start_time": "2024-01-16 09:15:00",
+            "end_time": "2024-01-16 09:35:00",
+            "completion_notes": "Front pads at 60%, rear pads at 75%",
+            "part_demands": []
+          },
+          {
+            "action_name": "Test Brake System",
+            "description": "Test brake pedal feel and response",
+            "sequence_order": 2,
+            "estimated_duration": 0.25,
+            "expected_billable_hours": 0.25,
+            "safety_notes": "Test in safe environment at low speeds",
+            "status": "In Progress",
+            "start_time": "2024-01-16 09:35:00",
+            "part_demands": []
+          }
+        ]
+      }
+    ]
+  }
+}
+

@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}{{ template_action_item.action_name }} - Template Action Item{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>{{ template_action_item.action_name }}</h1>
+            <div>
+                <a href="{{ url_for('proto_action_items.list') }}" class="btn btn-secondary">Back to List</a>
+                <a href="{{ url_for('proto_action_items.edit', template_action_item_id=template_action_item.id) }}" class="btn btn-warning">Edit</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Template Action Item Details</h5>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-4">ID:</dt>
+                    <dd class="col-sm-8">{{ template_action_item.id }}</dd>
+
+                    <dt class="col-sm-4">Action Name:</dt>
+                    <dd class="col-sm-8">{{ template_action_item.action_name }}</dd>
+
+                    <dt class="col-sm-4">Description:</dt>
+                    <dd class="col-sm-8">{{ template_action_item.description or 'N/A' }}</dd>
+
+                    <dt class="col-sm-4">Required:</dt>
+                    <dd class="col-sm-8">
+                        <span class="badge bg-{{ 'success' if template_action_item.is_required else 'secondary' }}">
+                            {{ 'Required' if template_action_item.is_required else 'Optional' }}
+                        </span>
+                    </dd>
+
+                    <dt class="col-sm-4">Minimum Staff:</dt>
+                    <dd class="col-sm-8">{{ template_action_item.minimum_staff_count }}</dd>
+
+                    <dt class="col-sm-4">Instructions:</dt>
+                    <dd class="col-sm-8">{{ template_action_item.instructions or 'N/A' }}</dd>
+
+                    <dt class="col-sm-4">Required Skills:</dt>
+                    <dd class="col-sm-8">{{ template_action_item.required_skills or 'N/A' }}</dd>
+
+                    <dt class="col-sm-4">Estimated Hours:</dt>
+                    <dd class="col-sm-8">{{ template_action_item.estimated_duration_hours or 'N/A' }}</dd>
+                </dl>
+            </div>
+        </div>
+
+        <!-- Part Demands Section -->
+        <div class="card mt-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Part Demands ({{ template_part_demands|length }})</h5>
+                <a href="{{ url_for('template_part_demands.create', template_action_item_id=template_action_item.id) }}" 
+                   class="btn btn-sm btn-primary">
+                    <i class="bi bi-plus-circle"></i> Add Part Demand
+                </a>
+            </div>
+            <div class="card-body">
+                {% if template_part_demands %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Part</th>
+                                <th>Quantity</th>
+                                <th>Expected Cost</th>
+                                <th>Optional</th>
+                                <th>Sequence</th>
+                                <th>Notes</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for demand in template_part_demands %}
+                            <tr>
+                                <td>
+                                    {% if demand.part %}
+                                    {{ demand.part.part_name }}
+                                    {% else %}
+                                    N/A
+                                    {% endif %}
+                                </td>
+                                <td>{{ demand.quantity_required }}</td>
+                                <td>{{ '${:.2f}'.format(demand.expected_cost) if demand.expected_cost else 'N/A' }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'secondary' if demand.is_optional else 'success' }}">
+                                        {{ 'Optional' if demand.is_optional else 'Required' }}
+                                    </span>
+                                </td>
+                                <td>{{ demand.sequence_order }}</td>
+                                <td>{{ demand.notes[:50] + '...' if demand.notes and demand.notes|length > 50 else (demand.notes or '') }}</td>
+                                <td>
+                                    <a href="{{ url_for('template_part_demands.detail', template_part_demand_id=demand.id) }}" 
+                                       class="btn btn-sm btn-info">View</a>
+                                    <a href="{{ url_for('template_part_demands.edit', template_part_demand_id=demand.id) }}" 
+                                       class="btn btn-sm btn-warning">Edit</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">No part demands defined for this action item.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

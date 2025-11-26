@@ -1,0 +1,248 @@
+{
+  "Core": {
+    "Users": {
+      "Generic_User": {
+        "id": 2,
+        "username": "Generic_User",
+        "email": "Generic_User@assetmanagement.local",
+        "is_active": true,
+        "is_system": false,
+        "is_admin": false,
+        "password": "Generic_User"
+      }
+    },
+    "Locations": {
+      "San_Diego_HQ": {
+        "name": "SanDiegoHQ",
+        "description": "Main office location",
+        "address": "San Diego, CA",
+        "is_active": true
+      },
+      "Los_Angeles_Office": {
+        "name": "LosAngelesOffice",
+        "description": "Los Angeles branch office",
+        "address": "Los Angeles, CA",
+        "is_active": true
+      }
+    },
+    "Make_Models": {
+      "Toyota_Corolla": {
+        "make": "Toyota",
+        "model": "Corolla",
+        "year": 2023,
+        "description": "Toyota Corolla 2023 model",
+        "asset_type_name": "Vehicle",
+        "is_active": true
+      },
+      "Ford_F250": {
+        "make": "Ford",
+        "model": "F-250",
+        "year": 2023,
+        "description": "Ford F-250 2023 model",
+        "asset_type_name": "Vehicle",
+        "is_active": true
+      }
+    },
+    "Assets": {
+      "VTC_001": {
+        "name": "VTC-001",
+        "serial_number": "VTC0012023001",
+        "make": "Toyota",
+        "model": "Corolla",
+        "status": "Active",
+        "major_location_name": "SanDiegoHQ"
+      }
+    },
+    "Supply": {
+      "parts": [
+        {
+          "part_number": "OIL-001",
+          "part_name": "Engine Oil 5W-30",
+          "description": "Synthetic engine oil for modern vehicles",
+          "category": "Lubricants",
+          "manufacturer": "Mobil",
+          "supplier": "AutoZone",
+          "unit_cost": 8.99,
+          "current_stock_level": 50.0,
+          "minimum_stock_level": 10.0,
+          "maximum_stock_level": 100.0,
+          "unit_of_measure": "quarts",
+          "location": "Warehouse A - Shelf 1",
+          "status": "Active"
+        },
+        {
+          "part_number": "FIL-001",
+          "part_name": "Oil Filter",
+          "description": "High-quality oil filter for Toyota vehicles",
+          "category": "Filters",
+          "manufacturer": "Fram",
+          "supplier": "NAPA Auto Parts",
+          "unit_cost": 12.50,
+          "current_stock_level": 25.0,
+          "minimum_stock_level": 5.0,
+          "maximum_stock_level": 50.0,
+          "unit_of_measure": "each",
+          "location": "Warehouse A - Shelf 2",
+          "status": "Active"
+        },
+        {
+          "part_number": "BRAKE-001",
+          "part_name": "Brake Pads - Front",
+          "description": "Ceramic brake pads for front wheels",
+          "category": "Brakes",
+          "manufacturer": "Wagner",
+          "supplier": "O'Reilly Auto Parts",
+          "unit_cost": 45.00,
+          "current_stock_level": 8.0,
+          "minimum_stock_level": 4.0,
+          "maximum_stock_level": 20.0,
+          "unit_of_measure": "sets",
+          "location": "Warehouse B - Shelf 3",
+          "status": "Active"
+        },
+        {
+          "part_number": "BAT-001",
+          "part_name": "12V Car Battery",
+          "description": "Heavy-duty car battery with 3-year warranty",
+          "category": "Electrical",
+          "manufacturer": "DieHard",
+          "supplier": "Sears Auto Center",
+          "unit_cost": 89.99,
+          "current_stock_level": 3.0,
+          "minimum_stock_level": 2.0,
+          "maximum_stock_level": 10.0,
+          "unit_of_measure": "each",
+          "location": "Warehouse A - Battery Section",
+          "status": "Active"
+        },
+        {
+          "part_number": "TIRE-001",
+          "part_name": "All-Season Tires",
+          "description": "P205/55R16 all-season tires",
+          "category": "Tires",
+          "manufacturer": "Michelin",
+          "supplier": "Discount Tire",
+          "unit_cost": 125.00,
+          "current_stock_level": 12.0,
+          "minimum_stock_level": 8.0,
+          "maximum_stock_level": 24.0,
+          "unit_of_measure": "each",
+          "location": "Warehouse C - Tire Rack",
+          "status": "Active"
+        }
+      ],
+      "tools": [
+        {
+          "tool_name": "Socket Set",
+          "description": "Complete metric and standard socket set",
+          "tool_type": "Hand Tools",
+          "manufacturer": "Craftsman",
+          "model_number": "CS-123",
+          "serial_number": "TOOL-001",
+          "location": "Tool Room A",
+          "status": "Available",
+          "last_calibration_date": "2023-01-15",
+          "next_calibration_date": "2024-01-15"
+        },
+        {
+          "tool_name": "Torque Wrench",
+          "description": "Digital torque wrench 10-150 ft-lbs",
+          "tool_type": "Precision Tools",
+          "manufacturer": "Snap-on",
+          "model_number": "TW-456",
+          "serial_number": "TOOL-002",
+          "location": "Tool Room A",
+          "status": "In Use",
+          "last_calibration_date": "2023-03-20",
+          "next_calibration_date": "2024-03-20",
+          "assigned_to_id": 2
+        },
+        {
+          "tool_name": "OBD-II Scanner",
+          "description": "Professional diagnostic scanner",
+          "tool_type": "Diagnostic Tools",
+          "manufacturer": "Autel",
+          "model_number": "MS906",
+          "serial_number": "TOOL-003",
+          "location": "Tool Room B",
+          "status": "Available",
+          "last_calibration_date": "2023-06-10",
+          "next_calibration_date": "2024-06-10"
+        },
+        {
+          "tool_name": "Floor Jack",
+          "description": "3-ton hydraulic floor jack",
+          "tool_type": "Lifting Equipment",
+          "manufacturer": "Harbor Freight",
+          "model_number": "FJ-789",
+          "serial_number": "TOOL-004",
+          "location": "Bay 1",
+          "status": "Available",
+          "last_calibration_date": "2023-02-28",
+          "next_calibration_date": "2024-02-28"
+        },
+        {
+          "tool_name": "Air Compressor",
+          "description": "Portable air compressor 6-gallon",
+          "tool_type": "Air Tools",
+          "manufacturer": "DeWalt",
+          "model_number": "AC-101",
+          "serial_number": "TOOL-005",
+          "location": "Tool Room C",
+          "status": "Out for Repair",
+          "last_calibration_date": "2023-04-15",
+          "next_calibration_date": "2024-04-15"
+        },
+        {
+          "tool_name": "Oil Drain Pan",
+          "description": "Heavy-duty oil drain pan for engine oil changes",
+          "tool_type": "Maintenance Equipment",
+          "manufacturer": "Lisle",
+          "model_number": "ODP-001",
+          "serial_number": "TOOL-006",
+          "location": "Tool Room A",
+          "status": "Available",
+          "last_calibration_date": "2023-01-01",
+          "next_calibration_date": "2024-01-01"
+        },
+        {
+          "tool_name": "Oil Filter Wrench",
+          "description": "Adjustable oil filter wrench for various filter sizes",
+          "tool_type": "Hand Tools",
+          "manufacturer": "Craftsman",
+          "model_number": "OFW-001",
+          "serial_number": "TOOL-007",
+          "location": "Tool Room A",
+          "status": "Available",
+          "last_calibration_date": "2023-01-01",
+          "next_calibration_date": "2024-01-01"
+        },
+        {
+          "tool_name": "Jack",
+          "description": "Hydraulic floor jack for vehicle lifting",
+          "tool_type": "Lifting Equipment",
+          "manufacturer": "Harbor Freight",
+          "model_number": "JACK-001",
+          "serial_number": "TOOL-008",
+          "location": "Bay 1",
+          "status": "Available",
+          "last_calibration_date": "2023-02-28",
+          "next_calibration_date": "2024-02-28"
+        },
+        {
+          "tool_name": "Jack Stands",
+          "description": "Pair of 3-ton jack stands for vehicle support",
+          "tool_type": "Lifting Equipment",
+          "manufacturer": "Harbor Freight",
+          "model_number": "JS-001",
+          "serial_number": "TOOL-009",
+          "location": "Bay 1",
+          "status": "Available",
+          "last_calibration_date": "2023-02-28",
+          "next_calibration_date": "2024-02-28"
+        }
+      ]
+    }
+  }
+}
+

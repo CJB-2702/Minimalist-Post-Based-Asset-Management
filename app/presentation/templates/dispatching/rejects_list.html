@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}Rejected Requests{% endblock %}
+{% block content %}
+<div class="container mt-3">
+  <h2>Rejected Dispatch Requests</h2>
+  <div class="mb-2">
+    <a class="btn btn-secondary" href="{{ url_for('dispatching.index') }}">Back to Console</a>
+  </div>
+  <table class="table table-sm table-hover">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Request</th>
+        <th>Category</th>
+        <th>Reason</th>
+        <th>Can Resubmit</th>
+        <th>Created</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in items %}
+      {% set ctx = contexts[loop.index0] %}
+      <tr>
+        <td>{{ item.id }}</td>
+        <td>
+          <a href="{{ url_for('dispatching.requests_detail', item_id=ctx.request_id) }}">
+            Request #{{ ctx.request_id }}
+          </a>
+        </td>
+        <td>
+          <span class="badge bg-secondary">{{ item.rejection_category or 'N/A' }}</span>
+        </td>
+        <td>
+          <small>{{ item.reason[:50] }}{% if item.reason|length > 50 %}...{% endif %}</small>
+        </td>
+        <td>
+          {% if item.can_resubmit %}
+          <span class="badge bg-success">Yes</span>
+          {% if item.resubmit_after %}
+          <br><small class="text-muted">After {{ item.resubmit_after.strftime('%Y-%m-%d') }}</small>
+          {% endif %}
+          {% else %}
+          <span class="badge bg-danger">No</span>
+          {% endif %}
+        </td>
+        <td>{{ item.created_at.strftime('%Y-%m-%d') if item.created_at else 'N/A' }}</td>
+        <td>
+          <a href="{{ url_for('dispatching.requests_detail', item_id=ctx.request_id) }}" 
+             class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-eye"></i> View Request
+          </a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% if not items %}
+  <div class="alert alert-info">
+    <i class="bi bi-info-circle"></i> No rejected requests found.
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
