@@ -22,9 +22,26 @@
     
     .hero-section {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 4rem 0;
+        border-radius: 12px;
+        padding: 2rem 0;
+        margin: 2rem;
         margin-bottom: 3rem;
+    }
+    
+    .title-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        color: white !important;
+        border-radius: 12px !important;
+        padding: 2rem !important;
+        margin-bottom: 2rem !important;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    .title-card .icon-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
     }
     
     .feature-grid {
@@ -49,21 +66,34 @@
 <!-- Hero Section -->
 <div class="hero-section">
     <div class="container">
-        <div class="row align-items-center">
-            <div class="col-md-8">
-                <h1 class="display-4 fw-bold mb-3">Asset Management System</h1>
-                <p class="lead mb-4">Comprehensive fleet and asset management solution for modern operations</p>
-                <div class="d-flex gap-3">
-                    <a href="{{ url_for('main.asset_management') }}" class="btn btn-light btn-lg">
-                        <i class="bi bi-gear"></i> Get Started
-                    </a>
-                    <a href="{{ url_for('main.help') }}" class="btn btn-outline-light btn-lg">
-                        <i class="bi bi-question-circle"></i> Learn More
-                    </a>
+        <div 
+        class="title-card main-page-title"
+        style="
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            color: rgb(230, 230, 230) !important;
+            border-radius: 12px !important;
+            padding: 2rem !important;
+            margin-bottom: 2rem !important;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+        ">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="display-4 fw-bold mb-3">Event Based<br>Asset Managment System</h1>
+                    <p class="lead mb-4">Comprehensive fleet and asset management solution for modern operations</p>
+                    <div class="d-flex gap-3">
+                        <a href="{{ url_for('main.asset_management') }}" class="btn btn-light btn-lg">
+                            <i class="bi bi-gear"></i> Get Started
+                        </a>
+                        <a href="{{ url_for('main.help') }}" class="btn btn-outline-light btn-lg">
+                            <i class="bi bi-question-circle"></i> Learn More
+                        </a>
+                    </div>
                 </div>
-            </div>
-            <div class="col-md-4 text-center">
-                <i class="bi bi-tools" style="font-size: 6rem; opacity: 0.8;"></i>
+                <div class="col-md-4">
+                    <div class="icon-container">
+                        <i class="bi bi-tools" style="font-size: 6rem; opacity: 0.8;"></i>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

@@ -1,0 +1,352 @@
+================================================================================
+ORIGINAL ROUTES AND FUNCTIONS
+================================================================================
+File: app/presentation/routes/maintenance/maintenance_event.py
+Blueprint: maintenance_event_bp
+URL Prefix: /maintenance/maintenance-event
+
+ROUTES (27 total):
+--------------------------------------------------------------------------------
+1.  @maintenance_event_bp.route('/<int:event_id>')
+2.  @maintenance_event_bp.route('/<int:event_id>/view')
+    Function: view_maintenance_event(event_id)
+
+3.  @maintenance_event_bp.route('/<int:event_id>/assign', methods=['GET', 'POST'])
+    Function: assign_event(event_id)
+
+4.  @maintenance_event_bp.route('/api/technicians')
+    Function: api_technicians()
+
+5.  @maintenance_event_bp.route('/<int:event_id>/edit', methods=['GET', 'POST'])
+    Function: edit_maintenance_event(event_id)
+
+6.  @maintenance_event_bp.route('/<int:event_id>/work')
+    Function: work_maintenance_event(event_id)
+
+7.  @maintenance_event_bp.route('/<int:event_id>/action/<int:action_id>/update-status', methods=['POST'])
+    Function: update_action_status(event_id, action_id)
+
+8.  @maintenance_event_bp.route('/<int:event_id>/action/<int:action_id>/update', methods=['POST'])
+    Function: edit_action(event_id, action_id)
+
+9.  @maintenance_event_bp.route('/<int:event_id>/action/<int:action_id>/update-billable-hours', methods=['POST'])
+    Function: update_action_billable_hours(event_id, action_id)
+
+10. @maintenance_event_bp.route('/<int:event_id>/update-datetime', methods=['POST'])
+    Function: update_maintenance_datetime(event_id)
+
+11. @maintenance_event_bp.route('/<int:event_id>/update-billable-hours', methods=['POST'])
+    Function: update_maintenance_billable_hours(event_id)
+
+12. @maintenance_event_bp.route('/<int:event_id>/complete', methods=['POST'])
+    Function: complete_maintenance(event_id)
+
+13. @maintenance_event_bp.route('/<int:event_id>/action/<int:action_id>/part-demand/create', methods=['POST'])
+    Function: create_part_demand(event_id, action_id)
+
+14. @maintenance_event_bp.route('/<int:event_id>/part-demand/<int:part_demand_id>/issue', methods=['POST'])
+    Function: issue_part_demand(event_id, part_demand_id)
+
+15. @maintenance_event_bp.route('/<int:event_id>/part-demand/<int:part_demand_id>/cancel', methods=['POST'])
+    Function: cancel_part_demand(event_id, part_demand_id)
+
+16. @maintenance_event_bp.route('/<int:event_id>/part-demand/<int:part_demand_id>/undo', methods=['POST'])
+    Function: undo_part_demand(event_id, part_demand_id)
+
+17. @maintenance_event_bp.route('/<int:event_id>/part-demand/<int:part_demand_id>/update', methods=['POST'])
+    Function: update_part_demand(event_id, part_demand_id)
+
+18. @maintenance_event_bp.route('/<int:event_id>/action/<int:action_id>/tool/create', methods=['POST'])
+    Function: create_action_tool(event_id, action_id)
+
+19. @maintenance_event_bp.route('/<int:event_id>/action/<int:action_id>/tool/<int:tool_id>/update', methods=['POST'])
+    Function: update_action_tool(event_id, action_id, tool_id)
+
+20. @maintenance_event_bp.route('/<int:event_id>/action/<int:action_id>/tool/<int:tool_id>/delete', methods=['POST'])
+    Function: delete_action_tool(event_id, action_id, tool_id)
+
+21. @maintenance_event_bp.route('/<int:event_id>/delay/create', methods=['POST'])
+    Function: create_delay(event_id)
+
+22. @maintenance_event_bp.route('/<int:event_id>/delay/<int:delay_id>/end', methods=['POST'])
+    Function: end_delay(event_id, delay_id)
+
+23. @maintenance_event_bp.route('/<int:event_id>/delay/<int:delay_id>/update', methods=['POST'])
+    Function: update_delay(event_id, delay_id)
+
+24. @maintenance_event_bp.route('/<int:event_id>/action/create', methods=['POST'])
+    Function: create_action(event_id)
+
+25. @maintenance_event_bp.route('/<int:event_id>/action/<int:action_id>/delete', methods=['POST'])
+    Function: delete_action(event_id, action_id)
+
+26. @maintenance_event_bp.route('/<int:event_id>/action/<int:action_id>/move-up', methods=['POST'])
+    Function: move_action_up(event_id, action_id)
+
+27. @maintenance_event_bp.route('/<int:event_id>/action/<int:action_id>/move-down', methods=['POST'])
+    Function: move_action_down(event_id, action_id)
+
+
+FUNCTIONS (26 total):
+--------------------------------------------------------------------------------
+1.  view_maintenance_event(event_id)
+2.  assign_event(event_id)
+3.  api_technicians()
+4.  edit_maintenance_event(event_id)
+5.  work_maintenance_event(event_id)
+6.  update_action_status(event_id, action_id)
+7.  edit_action(event_id, action_id)
+8.  update_action_billable_hours(event_id, action_id)
+9.  update_maintenance_datetime(event_id)
+10. update_maintenance_billable_hours(event_id)
+11. complete_maintenance(event_id)
+12. create_part_demand(event_id, action_id)
+13. issue_part_demand(event_id, part_demand_id)
+14. cancel_part_demand(event_id, part_demand_id)
+15. undo_part_demand(event_id, part_demand_id)
+16. update_part_demand(event_id, part_demand_id)
+17. create_action_tool(event_id, action_id)
+18. update_action_tool(event_id, action_id, tool_id)
+19. delete_action_tool(event_id, action_id, tool_id)
+20. create_delay(event_id)
+21. end_delay(event_id, delay_id)
+22. update_delay(event_id, delay_id)
+23. create_action(event_id)
+24. delete_action(event_id, action_id)
+25. move_action_up(event_id, action_id)
+26. move_action_down(event_id, action_id)
+
+
+================================================================================
+NEW ROUTES AND FUNCTIONS (from core directory)
+================================================================================
+
+--------------------------------------------------------------------------------
+File: app/presentation/routes/maintenance/core/maintenance_event.py
+Blueprint: maintenance_event_bp
+URL Prefix: /maintenance/maintenance-event
+
+ROUTES (9 total):
+--------------------------------------------------------------------------------
+1.  @maintenance_event_bp.route('/<int:event_id>')
+2.  @maintenance_event_bp.route('/<int:event_id>/view')
+    Function: view_maintenance_event(event_id)
+
+3.  @maintenance_event_bp.route('/<int:event_id>/assign', methods=['GET', 'POST'])
+    Function: assign_event(event_id)
+
+4.  @maintenance_event_bp.route('/<int:event_id>/edit', methods=['GET', 'POST'])
+    Function: edit_maintenance_event(event_id)
+
+5.  @maintenance_event_bp.route('/<int:event_id>/work')
+    Function: work_maintenance_event(event_id)
+
+6.  @maintenance_event_bp.route('/<int:event_id>/update-datetime', methods=['POST'])
+    Function: update_maintenance_datetime(event_id)
+
+7.  @maintenance_event_bp.route('/<int:event_id>/update-billable-hours', methods=['POST'])
+    Function: update_maintenance_billable_hours(event_id)
+
+8.  @maintenance_event_bp.route('/<int:event_id>/complete', methods=['POST'])
+    Function: complete_maintenance(event_id)
+
+
+FUNCTIONS (8 total):
+--------------------------------------------------------------------------------
+1.  view_maintenance_event(event_id)
+2.  assign_event(event_id)
+3.  edit_maintenance_event(event_id)
+4.  work_maintenance_event(event_id)
+5.  update_maintenance_datetime(event_id)
+6.  update_maintenance_billable_hours(event_id)
+7.  complete_maintenance(event_id)
+
+
+--------------------------------------------------------------------------------
+File: app/presentation/routes/maintenance/core/action_managment.py
+Blueprint: maintenance_bp
+URL Prefix: /maintenance
+
+ROUTES (11 total):
+--------------------------------------------------------------------------------
+1.  @maintenance_bp.route('/action/<int:action_id>/update-status', methods=['POST'])
+    Function: update_action_status(action_id)
+
+2.  @maintenance_bp.route('/action/<int:action_id>/update', methods=['POST'])
+    Function: edit_action(action_id)
+
+3.  @maintenance_bp.route('/action/<int:action_id>/update-billable-hours', methods=['POST'])
+    Function: update_action_billable_hours(action_id)
+
+4.  @maintenance_bp.route('/action/<int:action_id>/part-demand/create', methods=['POST'])
+    Function: create_part_demand(action_id)
+
+5.  @maintenance_bp.route('/action/<int:action_id>/tool/create', methods=['POST'])
+    Function: create_action_tool(action_id)
+
+6.  @maintenance_bp.route('/action/<int:action_id>/tool/<int:tool_id>/update', methods=['POST'])
+    Function: update_action_tool(action_id, tool_id)
+
+7.  @maintenance_bp.route('/action/<int:action_id>/tool/<int:tool_id>/delete', methods=['POST'])
+    Function: delete_action_tool(action_id, tool_id)
+
+8.  @maintenance_bp.route('/action/create', methods=['POST'])
+    Function: create_action()
+
+9.  @maintenance_bp.route('/action/<int:action_id>/delete', methods=['POST'])
+    Function: delete_action(action_id)
+
+10. @maintenance_bp.route('/action/<int:action_id>/move-up', methods=['POST'])
+    Function: move_action_up(action_id)
+
+11. @maintenance_bp.route('/action/<int:action_id>/move-down', methods=['POST'])
+    Function: move_action_down(action_id)
+
+
+FUNCTIONS (11 total):
+--------------------------------------------------------------------------------
+1.  update_action_status(action_id)
+2.  edit_action(action_id)
+3.  update_action_billable_hours(action_id)
+4.  create_part_demand(action_id)
+5.  create_action_tool(action_id)
+6.  update_action_tool(action_id, tool_id)
+7.  delete_action_tool(action_id, tool_id)
+8.  create_action()
+9.  delete_action(action_id)
+10. move_action_up(action_id)
+11. move_action_down(action_id)
+
+
+--------------------------------------------------------------------------------
+File: app/presentation/routes/maintenance/core/tool.py
+Blueprint: maintenance_bp
+URL Prefix: /maintenance
+
+ROUTES (2 total):
+--------------------------------------------------------------------------------
+1.  @maintenance_bp.route('/action/<int:action_id>/tool/<int:tool_id>/update', methods=['POST'])
+    Function: update_action_tool(action_id, tool_id)
+
+2.  @maintenance_bp.route('/action/<int:action_id>/tool/<int:tool_id>/delete', methods=['POST'])
+    Function: delete_action_tool(action_id, tool_id)
+
+
+FUNCTIONS (2 total):
+--------------------------------------------------------------------------------
+1.  update_action_tool(action_id, tool_id)
+2.  delete_action_tool(action_id, tool_id)
+
+
+--------------------------------------------------------------------------------
+File: app/presentation/routes/maintenance/core/part_demand.py
+Blueprint: maintenance_bp
+URL Prefix: /maintenance
+
+ROUTES (4 total):
+--------------------------------------------------------------------------------
+1.  @maintenance_bp.route('/part-demand/<int:part_demand_id>/issue', methods=['POST'])
+    Function: issue_part_demand(part_demand_id)
+
+2.  @maintenance_bp.route('/part-demand/<int:part_demand_id>/cancel', methods=['POST'])
+    Function: cancel_part_demand(part_demand_id)
+
+3.  @maintenance_bp.route('/part-demand/<int:part_demand_id>/undo', methods=['POST'])
+    Function: undo_part_demand(part_demand_id)
+
+4.  @maintenance_bp.route('/part-demand/<int:part_demand_id>/update', methods=['POST'])
+    Function: update_part_demand(part_demand_id)
+
+
+FUNCTIONS (4 total):
+--------------------------------------------------------------------------------
+1.  issue_part_demand(part_demand_id)
+2.  cancel_part_demand(part_demand_id)
+3.  undo_part_demand(part_demand_id)
+4.  update_part_demand(part_demand_id)
+
+
+--------------------------------------------------------------------------------
+File: app/presentation/routes/maintenance/core/delays.py
+Blueprint: maintenance_bp
+URL Prefix: /maintenance
+
+ROUTES (2 total):
+--------------------------------------------------------------------------------
+1.  @maintenance_bp.route('/delay/<int:delay_id>/end', methods=['POST'])
+    Function: end_delay(delay_id)
+
+2.  @maintenance_bp.route('/delay/<int:delay_id>/update', methods=['POST'])
+    Function: update_delay(delay_id)
+
+
+FUNCTIONS (2 total):
+--------------------------------------------------------------------------------
+1.  end_delay(delay_id)
+2.  update_delay(delay_id)
+
+
+================================================================================
+COMPARISON SUMMARY
+================================================================================
+
+ORIGINAL FILE:
+- Routes: 27
+- Functions: 26
+
+NEW FILES (core directory):
+- maintenance_event.py: 9 routes, 8 functions
+- action_managment.py: 11 routes, 11 functions
+- tool.py: 2 routes, 2 functions
+- part_demand.py: 4 routes, 4 functions
+- delays.py: 2 routes, 2 functions
+- TOTAL: 28 routes, 27 functions
+
+NOTE: Some routes/functions may appear in multiple files (e.g., tool.py and 
+action_managment.py both have update_action_tool and delete_action_tool).
+
+MISSING FROM NEW FILES (SAVED VERSION):
+--------------------------------------------------------------------------------
+1.  @maintenance_event_bp.route('/api/technicians')
+    Function: api_technicians()
+    STATUS: NOT FOUND in core directory (completely missing)
+
+2.  @maintenance_event_bp.route('/<int:event_id>/delay/create', methods=['POST'])
+    Function: create_delay(event_id)
+    STATUS: NOT FOUND in saved core/maintenance_event.py
+    NOTE: Exists in unsaved version but not in saved version
+    NOTE: delays.py has end_delay and update_delay but NOT create_delay
+
+3.  @maintenance_event_bp.route('/<int:event_id>/action/create', methods=['POST'])
+    Function: create_action(event_id)
+    STATUS: NOT FOUND in saved core/maintenance_event.py
+    NOTE: Exists in unsaved version but not in saved version
+    NOTE: action_managment.py has create_action() but with different signature (no event_id parameter)
+
+ROUTE SIGNATURE CHANGES:
+--------------------------------------------------------------------------------
+- create_action: Changed from create_action(event_id) to create_action() 
+  (event_id removed from function signature, may be in request/form data now)
+
+- create_delay: In delays.py, but not in core/maintenance_event.py
+  (may need to check if this was intentionally moved or if it's missing)
+
+- All action-related routes: Changed from requiring event_id in URL to just action_id
+  (e.g., /<int:event_id>/action/<int:action_id>/update -> /action/<int:action_id>/update)
+
+- All part-demand routes: Changed from requiring event_id in URL to just part_demand_id
+  (e.g., /<int:event_id>/part-demand/<int:part_demand_id>/issue -> /part-demand/<int:part_demand_id>/issue)
+
+- All delay routes: Changed from requiring event_id in URL to just delay_id
+  (e.g., /<int:event_id>/delay/<int:delay_id>/end -> /delay/<int:delay_id>/end)
+
+- All tool routes: Changed from requiring event_id in URL to just action_id and tool_id
+  (e.g., /<int:event_id>/action/<int:action_id>/tool/<int:tool_id>/update -> /action/<int:action_id>/tool/<int:tool_id>/update)
+
+POTENTIAL DUPLICATES:
+--------------------------------------------------------------------------------
+- update_action_tool and delete_action_tool appear in both:
+  * action_managment.py
+  * tool.py
+  (This may be intentional if tool.py is a separate module, or one may need to be removed)
+

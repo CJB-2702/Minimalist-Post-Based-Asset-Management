@@ -7,6 +7,7 @@ from .major_location import MajorLocation
 from .asset_info.asset_type import AssetType
 from .asset_info.make_model import MakeModel
 from .asset_info.asset import Asset
+from .asset_info.meter_history import MeterHistory
 from .event_info.event import Event, EventDetailVirtual
 from .event_info.attachment import Attachment
 from .event_info.comment import Comment, CommentAttachment
@@ -20,6 +21,7 @@ __all__ = [
     'AssetType',
     'MakeModel',
     'Asset',
+    'MeterHistory',
     'Event',
     'EventDetailVirtual',
     'Attachment',

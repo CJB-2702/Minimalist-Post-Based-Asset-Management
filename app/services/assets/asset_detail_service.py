@@ -11,7 +11,7 @@ Handles:
 
 from typing import Dict, List, Optional, Tuple, Any
 from flask import Request
-from app.buisness.assets.asset_details.asset_details_struct import AssetDetailsStruct
+from app.buisness.assets.asset_type_details.asset_details_struct import AssetDetailsStruct
 from app.buisness.assets.model_details.model_details_struct import ModelDetailsStruct
 from app.data.assets.detail_table_templates.asset_details_from_asset_type import AssetDetailTemplateByAssetType
 from app.data.assets.detail_table_templates.asset_details_from_model_type import AssetDetailTemplateByModelType
@@ -165,13 +165,13 @@ class AssetDetailService:
         details_dict = struct.asdict()
         
         details_by_type = {}
-        for class_name, record in details_dict.items():
-            if record is not None:
-                # Use table name as key
-                key = record.__tablename__
-                if key not in details_by_type:
-                    details_by_type[key] = []
-                details_by_type[key].append(record)
+        for class_name, records in details_dict.items():
+            # records is now a list
+            if records:
+                # Get table name from first record
+                key = records[0].__tablename__
+                # Add all records for this type
+                details_by_type[key] = records
         
         return details_by_type
     
@@ -253,4 +253,46 @@ class AssetDetailService:
             'assets': assets,  # Raw list for flexibility
             'make_models': make_models
         }
+    
+    @staticmethod
+    def get_available_asset_detail_types() -> List[Dict[str, Any]]:
+        """
+        Get all available asset detail table types from registry.
+        
+        Returns:
+            List of dictionaries with type, name, and is_asset_detail for each detail type
+        """
+        from app.buisness.assets.factories.detail_factory import DetailFactory
+        
+        registry = DetailFactory.DETAIL_TABLE_REGISTRY
+        return [
+            {
+                'type': key,
+                'name': key.replace('_', ' ').title(),
+                'is_asset_detail': registry[key]['is_asset_detail']
+            }
+            for key, value in registry.items()
+            if value['is_asset_detail']
+        ]
+    
+    @staticmethod
+    def get_available_model_detail_types() -> List[Dict[str, Any]]:
+        """
+        Get all available model detail table types from registry.
+        
+        Returns:
+            List of dictionaries with type and name for each model detail type
+        """
+        from app.buisness.assets.factories.detail_factory import DetailFactory
+        
+        registry = DetailFactory.DETAIL_TABLE_REGISTRY
+        return [
+            {
+                'type': key,
+                'name': key.replace('_', ' ').title(),
+                'is_asset_detail': registry[key]['is_asset_detail']
+            }
+            for key, value in registry.items()
+            if not value['is_asset_detail']
+        ]
 

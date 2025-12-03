@@ -425,6 +425,42 @@ class BuildAction:
         result['attachments'] = [att.to_dict() for att in self._attachments]
         return result
     
+    def update_from_dict(self, updates: Dict[str, Any]) -> None:
+        """
+        Update internal data from a dictionary, filtering to valid fields and coercing types.
+        """
+        if not updates:
+            return
+        valid_fields = self._get_valid_fields()
+        for key, value in updates.items():
+            if key not in valid_fields:
+                continue
+            # Type coercion for some known fields
+            if key in ('sequence_order', 'minimum_staff_count', 'prior_revision_id', 'proto_action_item_id'):
+                if value is None or value == '':
+                    self._data.pop(key, None)
+                else:
+                    try:
+                        self._data[key] = int(value)
+                    except (ValueError, TypeError):
+                        continue
+            elif key in ('estimated_duration', 'expected_billable_hours'):
+                if value is None or value == '':
+                    self._data.pop(key, None)
+                else:
+                    try:
+                        self._data[key] = float(value)
+                    except (ValueError, TypeError):
+                        continue
+            elif key in ('is_required',):
+                self._data[key] = bool(value)
+            else:
+                # Strings and other pass-through fields
+                if value is None or value == '':
+                    self._data.pop(key, None)
+                else:
+                    self._data[key] = value
+    
     def __repr__(self):
         action_name = self.action_name or 'Unnamed'
         seq = self.sequence_order or '?'

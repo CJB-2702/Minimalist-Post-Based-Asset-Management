@@ -61,15 +61,29 @@
                             </select>
                         </div>
                         <div class="col-md-2">
-                            <label for="make_model_id" class="form-label">Make/Model</label>
-                            <select class="form-select" id="make_model_id" name="make_model_id">
-                                <option value="">All Make/Models</option>
-                                {% for make_model in make_models %}
-                                <option value="{{ make_model.id }}" {% if current_filters.make_model_id == make_model.id %}selected{% endif %}>
-                                    {{ make_model.make }} {{ make_model.model }}
-                                </option>
-                                {% endfor %}
-                            </select>
+                            <label for="make_model_search" class="form-label">Make/Model</label>
+                            <div class="position-relative">
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="make_model_search" 
+                                       name="make_model_search"
+                                       placeholder="Search make/model..." 
+                                       autocomplete="off"
+                                       value="{% if current_filters.make_model_id %}{% for mm in make_models %}{% if mm.id == current_filters.make_model_id %}{{ mm.make }} {{ mm.model }}{% if mm.year %} ({{ mm.year }}){% endif %}{% endif %}{% endfor %}{% else %}{{ request.args.get('make_model_search', '') }}{% endif %}"
+                                       hx-get="{{ url_for('searchutils.searchbar_make_models') }}"
+                                       hx-include="[name='asset_type_id']"
+                                       hx-trigger="input changed delay:300ms, focus"
+                                       hx-target="#make_model_results"
+                                       hx-swap="innerHTML">
+                                <input type="hidden" id="make_model_id" name="make_model_id" value="{{ current_filters.make_model_id or '' }}">
+                                <div class="dropdown-menu w-100" id="make_model_dropdown" style="max-height: 300px; overflow-y: auto; display: none; position: absolute; z-index: 1000;">
+                                    <div id="make_model_results"
+                                         hx-get="{{ url_for('searchutils.searchbar_make_models') }}"
+                                         hx-include="[name='asset_type_id']"
+                                         hx-trigger="load"
+                                         hx-swap="innerHTML"></div>
+                                </div>
+                            </div>
                         </div>
                         <div class="col-md-2">
                             <label for="status" class="form-label">Status</label>
@@ -352,6 +366,34 @@
 .asset-row .btn-group .btn {
     pointer-events: auto;
 }
+
+/* Search dropdown styles */
+.search-dropdown-item {
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.search-dropdown-item:hover {
+    background-color: #f8f9fa;
+}
+
+.search-dropdown-item.selected {
+    background-color: #0d6efd;
+    color: white;
+}
+
+.search-dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.search-match-count {
+    padding: 0.5rem 1rem;
+    background-color: #e9ecef;
+    font-size: 0.875rem;
+    color: #6c757d;
+    border-top: 1px solid #dee2e6;
+}
 </style>
 
 <script>
@@ -371,6 +413,43 @@ document.addEventListener('DOMContentLoaded', function() {
                 e.stopPropagation();
             });
         });
+    });
+    
+    // Make/Model searchbar handlers
+    const makeModelSearch = document.getElementById('make_model_search');
+    const makeModelIdInput = document.getElementById('make_model_id');
+    const makeModelDropdown = document.getElementById('make_model_dropdown');
+    
+    // Global function for make/model selection (called from HTMX-loaded results)
+    window.selectMakeModel = function(id, displayName) {
+        makeModelSearch.value = displayName;
+        makeModelIdInput.value = id;
+        makeModelDropdown.style.display = 'none';
+    };
+    
+    // Also set as generic selectItem for the simple_results template
+    window.selectItem = window.selectMakeModel;
+    
+    // Show dropdown when HTMX updates results
+    document.body.addEventListener('htmx:afterSwap', function(event) {
+        if (event.detail.target.id === 'make_model_results' && event.detail.target.innerHTML.trim()) {
+            makeModelDropdown.style.display = 'block';
+        }
+    });
+    
+    // Handle empty search input
+    makeModelSearch.addEventListener('input', function() {
+        if (!this.value.trim()) {
+            makeModelIdInput.value = '';
+            makeModelDropdown.style.display = 'none';
+        }
+    });
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        if (makeModelSearch && !makeModelSearch.contains(e.target) && !makeModelDropdown.contains(e.target)) {
+            makeModelDropdown.style.display = 'none';
+        }
     });
 });
 </script>

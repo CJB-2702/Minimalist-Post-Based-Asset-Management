@@ -100,10 +100,11 @@ def _insert_detail_table_templates(templates_data, system_user_id):
                 template = AssetDetailTemplateByAssetType(
                     asset_type_id=asset_type.id,
                     detail_table_type=config_data['detail_table_type'],
+                    many_to_one=config_data.get('many_to_one', False),
                     created_by_id=system_user_id
                 )
                 db.session.add(template)
-                logger.debug(f"Created asset type template: {asset_type_name} -> {config_data['detail_table_type']}")
+                logger.debug(f"Created asset type template: {asset_type_name} -> {config_data['detail_table_type']} (many_to_one={config_data.get('many_to_one', False)})")
     
     # Insert Asset_details_from_model_type
     if 'Asset_details_from_model_type' in templates_data:
@@ -126,10 +127,11 @@ def _insert_detail_table_templates(templates_data, system_user_id):
                 template = AssetDetailTemplateByModelType(
                     make_model_id=make_model.id,
                     detail_table_type=config_data['detail_table_type'],
+                    many_to_one=config_data.get('many_to_one', False),
                     created_by_id=system_user_id
                 )
                 db.session.add(template)
-                logger.debug(f"Created model type template: {make} {model} -> {config_data['detail_table_type']}")
+                logger.debug(f"Created model type template: {make} {model} -> {config_data['detail_table_type']} (many_to_one={config_data.get('many_to_one', False)})")
     
     # Insert Model_detail_table_template
     if 'Model_detail_table_template' in templates_data:

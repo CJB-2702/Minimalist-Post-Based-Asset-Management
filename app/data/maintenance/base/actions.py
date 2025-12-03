@@ -29,6 +29,7 @@ class Action(VirtualActionItem):
     
     # Assignment tracking
     assigned_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    completed_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     assigned_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     
     # Relationships
@@ -40,6 +41,7 @@ class Action(VirtualActionItem):
     # User relationships
     assigned_user = relationship('User', foreign_keys=[assigned_user_id], backref='assigned_actions')
     assigned_by = relationship('User', foreign_keys=[assigned_by_id], backref='assigned_actions_by_me')
+    completed_by = relationship('User', foreign_keys=[completed_by_id], backref='completed_actions')
     
     def __repr__(self):
         return f'<Action {self.id}: {self.action_name} - {self.status}>'

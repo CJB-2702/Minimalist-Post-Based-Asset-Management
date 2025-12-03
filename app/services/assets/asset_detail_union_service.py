@@ -14,10 +14,10 @@ Now uses AssetDetailsStruct internally for structured access to detail records.
 """
 
 from app import db
-from app.data.assets.asset_details import PurchaseInfo, VehicleRegistration, ToyotaWarrantyReceipt
+from app.data.assets.asset_type_details import PurchaseInfo, VehicleRegistration, ToyotaWarrantyReceipt
 from app.data.assets.asset_detail_virtual import AssetDetailVirtual
 from app.data.core.user_created_base import UserCreatedBase
-from app.buisness.assets.asset_details.asset_details_struct import AssetDetailsStruct
+from app.buisness.assets.asset_type_details.asset_details_struct import AssetDetailsStruct
 from sqlalchemy import text, union_all
 from typing import List, Dict, Any, Optional
 from datetime import datetime
@@ -57,16 +57,18 @@ class AssetDetailUnionService:
         
         results = []
         
-        # Convert struct to list format (for backward compatibility)
-        for class_name, record in details_dict.items():
-            if record is not None:
-                detail_data = cls._extract_common_fields(record)
-                detail_data.update({
-                    'table_name': record.__tablename__,
-                    'table_class': class_name,
-                    'record': record
-                })
-                results.append(detail_data)
+        # Convert struct to list format (records are now lists)
+        for class_name, records in details_dict.items():
+            # records is now a list
+            if records:
+                for record in records:
+                    detail_data = cls._extract_common_fields(record)
+                    detail_data.update({
+                        'table_name': record.__tablename__,
+                        'table_class': class_name,
+                        'record': record
+                    })
+                    results.append(detail_data)
         
         # Sort by global ID for consistent ordering
         return sorted(results, key=lambda x: x['all_asset_detail_id'])
@@ -129,15 +131,18 @@ class AssetDetailUnionService:
             struct = AssetDetailsStruct(asset_id)
             details_dict = struct.asdict()
             
-            for class_name, record in details_dict.items():
-                if record is not None and cls._record_matches_search(record, search_term_lower):
-                    detail_data = cls._extract_common_fields(record)
-                    detail_data.update({
-                        'table_name': record.__tablename__,
-                        'table_class': class_name,
-                        'record': record
-                    })
-                    results.append(detail_data)
+            for class_name, records in details_dict.items():
+                # records is now a list
+                if records:
+                    for record in records:
+                        if cls._record_matches_search(record, search_term_lower):
+                            detail_data = cls._extract_common_fields(record)
+                            detail_data.update({
+                                'table_name': record.__tablename__,
+                                'table_class': class_name,
+                                'record': record
+                            })
+                            results.append(detail_data)
         else:
             # Search across all assets - need to query each table
             for table_class in cls.ASSET_DETAIL_TABLES:
@@ -179,17 +184,19 @@ class AssetDetailUnionService:
             struct = AssetDetailsStruct(asset_id)
             details_dict = struct.asdict()
             
-            for class_name, record in details_dict.items():
-                if record is not None:
-                    # Check if record falls within date range
-                    if start_date <= record.created_at <= end_date:
-                        detail_data = cls._extract_common_fields(record)
-                        detail_data.update({
-                            'table_name': record.__tablename__,
-                            'table_class': class_name,
-                            'record': record
-                        })
-                        results.append(detail_data)
+            for class_name, records in details_dict.items():
+                # records is now a list
+                if records:
+                    for record in records:
+                        # Check if record falls within date range
+                        if start_date <= record.created_at <= end_date:
+                            detail_data = cls._extract_common_fields(record)
+                            detail_data.update({
+                                'table_name': record.__tablename__,
+                                'table_class': class_name,
+                                'record': record
+                            })
+                            results.append(detail_data)
         else:
             # Query across all assets - need to query each table
             for table_class in cls.ASSET_DETAIL_TABLES:
@@ -232,15 +239,18 @@ class AssetDetailUnionService:
             struct = AssetDetailsStruct(asset_id)
             details_dict = struct.asdict()
             
-            for class_name, record in details_dict.items():
-                if record is not None and record.created_by_id == user_id:
-                    detail_data = cls._extract_common_fields(record)
-                    detail_data.update({
-                        'table_name': record.__tablename__,
-                        'table_class': class_name,
-                        'record': record
-                    })
-                    results.append(detail_data)
+            for class_name, records in details_dict.items():
+                # records is now a list
+                if records:
+                    for record in records:
+                        if record.created_by_id == user_id:
+                            detail_data = cls._extract_common_fields(record)
+                            detail_data.update({
+                                'table_name': record.__tablename__,
+                                'table_class': class_name,
+                                'record': record
+                            })
+                            results.append(detail_data)
         else:
             # Query across all assets - need to query each table
             for table_class in cls.ASSET_DETAIL_TABLES:

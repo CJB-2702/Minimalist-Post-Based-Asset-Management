@@ -2,7 +2,6 @@ from app.data.core.user_created_base import UserCreatedBase
 from app.logger import get_logger
 logger = get_logger("asset_management.models.core")
 from app import db
-from sqlalchemy import event
 
 class Asset(UserCreatedBase):
     __tablename__ = 'assets'
@@ -12,7 +11,8 @@ class Asset(UserCreatedBase):
     serial_number = db.Column(db.String(100), unique=True, nullable=False)
     status = db.Column(db.String(50), default='Active')
     major_location_id = db.Column(db.Integer, db.ForeignKey('major_locations.id'), nullable=True)
-    make_model_id = db.Column(db.Integer, db.ForeignKey('make_models.id'))
+    make_model_id = db.Column(db.Integer, db.ForeignKey('make_models.id'),nullable=False)
+    asset_type_id = db.Column(db.Integer, db.ForeignKey('asset_types.id'),nullable=False)
     meter1 = db.Column(db.Float, nullable=True)
     meter2 = db.Column(db.Float, nullable=True)
     meter3 = db.Column(db.Float, nullable=True)
@@ -22,33 +22,44 @@ class Asset(UserCreatedBase):
     # Relationships
     major_location = db.relationship('MajorLocation', overlaps="assets")
     make_model = db.relationship('MakeModel', overlaps="assets")
+    asset_type = db.relationship('AssetType', backref='assets')
     events = db.relationship('Event', backref='asset_ref', lazy='dynamic')
+    is_active = db.Column(db.Boolean, default=True)
 
 
     
-    @property
-    def asset_type_id(self):
-        """Get the asset type ID through the make_model relationship"""
-        if self.make_model_id:
-            # Use direct query to avoid relationship loading issues in event listeners
-            # Do NOT CHANGE THIS. this was a nightmare to fix.
-            from app.data.core.asset_info.make_model import MakeModel
-            make_model = MakeModel.query.get(self.make_model_id)
-            if make_model:
-                return make_model.asset_type_id
-        return None
+
     
-    
-    def get_asset_type_id(self, force_reload=False):
-        """Get the asset type ID with optional force reload"""
-        if force_reload or not hasattr(self, '_cached_asset_type_id'):
-            if self.make_model_id:
-                from app.data.core.asset_info.make_model import MakeModel
-                make_model = MakeModel.query.get(self.make_model_id)
-                self._cached_asset_type_id = make_model.asset_type_id if make_model else None
-            else:
-                self._cached_asset_type_id = None
-        return self._cached_asset_type_id
+    def refresh_asset_type_id(self):
+        """Refresh the asset_type_id by querying for the model and verifying the asset type exists"""
+        from app.data.core.asset_info.make_model import MakeModel
+        from app.data.core.asset_info.asset_type import AssetType
+        
+        if not self.make_model_id:
+            logger.warning(f"Asset {self.id} has no make_model_id, cannot refresh asset_type_id")
+            return None
+        
+        # Query for the model
+        make_model = MakeModel.query.get(self.make_model_id)
+        if not make_model:
+            logger.warning(f"MakeModel with id {self.make_model_id} not found for Asset {self.id}")
+            return None
+        
+        # Get the asset_type_id from the model
+        asset_type_id = make_model.asset_type_id
+        if not asset_type_id:
+            logger.warning(f"MakeModel {self.make_model_id} has no asset_type_id")
+            return None
+        
+        # Verify the asset type exists
+        asset_type = AssetType.query.get(asset_type_id)
+        if not asset_type:
+            raise ValueError(f"AssetType with id {asset_type_id} not found for MakeModel {self.make_model_id}")
+        
+        # Update the asset's asset_type_id
+        self.asset_type_id = asset_type_id
+        logger.debug(f"Refreshed asset_type_id for Asset {self.id} to {asset_type_id}")
+        return asset_type_id
     
 
     @classmethod

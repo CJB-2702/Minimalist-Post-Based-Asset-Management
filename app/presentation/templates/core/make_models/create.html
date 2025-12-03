@@ -15,7 +15,7 @@
 </div>
 
 <div class="row">
-    <div class="col-md-8 mx-auto">
+    <div class="col-md-8">
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">Make/Model Information</h5>
@@ -94,8 +94,6 @@
                         <div class="form-text">Inactive make/models cannot be assigned to new assets.</div>
                     </div>
                     
-                    <hr>
-                    
                     <div class="d-flex justify-content-between">
                         <a href="{{ url_for('make_models.list') }}" class="btn btn-outline-secondary">
                             <i class="bi bi-x-circle"></i> Cancel
@@ -108,5 +106,74 @@
             </div>
         </div>
     </div>
+
+    <div class="col-md-4">
+        <!-- Detail Template Configuration Section -->
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-gear"></i>
+                    Detail Table Auto-Create Configuration
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small">
+                    Configure which detail tables should be added to the model information for the selected asset type.
+                    These detail tables will be automatically created for ALL FUTURE assets of this asset type.
+                </p>
+                
+                <div id="config_button_container" style="display: none;" class="mt-3">
+                    <a href="#" id="configure_model_detail_template_link" class="btn btn-sm btn-primary w-100" target="_blank">
+                        <i class="bi bi-gear"></i> Configure Model Detail Templates
+                    </a>
+                </div>
+                
+                <div id="no_asset_type_message" class="text-muted small mt-3">
+                    <em>Select an Asset Type above to configure templates</em>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const assetTypeSelect = document.getElementById('asset_type_id');
+    const configButtonContainer = document.getElementById('config_button_container');
+    const configureModelDetailTemplateLink = document.getElementById('configure_model_detail_template_link');
+    const noAssetTypeMessage = document.getElementById('no_asset_type_message');
+    
+    // Asset type data from template
+    const assetTypes = {
+        {% for asset_type in asset_types %}
+        {{ asset_type.id }}: {
+            id: {{ asset_type.id }},
+            name: "{{ asset_type.name }}"
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    };
+    
+    assetTypeSelect.addEventListener('change', function() {
+        const assetTypeId = this.value;
+        
+        if (assetTypeId && assetTypes[assetTypeId]) {
+            // Show configuration button and hide message
+            configButtonContainer.style.display = 'block';
+            noAssetTypeMessage.style.display = 'none';
+            
+            // Update link to configure model detail templates for this asset type
+            configureModelDetailTemplateLink.href = '{{ url_for("assets.detail_template_config.configure_model_detail_template", asset_type_id=0) }}'.replace('0', assetTypeId) + '?redirect_to=create_make_model';
+        } else {
+            // Hide configuration button and show message
+            configButtonContainer.style.display = 'none';
+            noAssetTypeMessage.style.display = 'block';
+        }
+    });
+    
+    // Trigger change on page load if asset type is already selected
+    if (assetTypeSelect.value) {
+        assetTypeSelect.dispatchEvent(new Event('change'));
+    }
+});
+</script>
 {% endblock %} 

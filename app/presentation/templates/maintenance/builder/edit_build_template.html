@@ -1,0 +1,1206 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Template Builder - {{ builder.metadata.task_name or builder.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .builder-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 12px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    .action-card {
+        transition: all 0.3s ease;
+        border-left: 4px solid #dee2e6;
+    }
+    .action-card.not-started {
+        border-left-color: #6c757d;
+    }
+    .action-card.in-progress {
+        border-left-color: #0dcaf0;
+        background-color: #f0f9ff;
+    }
+    .action-card.completed {
+        border-left-color: #198754;
+        background-color: #f0fdf4;
+    }
+    .detail-row {
+        border-bottom: 1px solid #e9ecef;
+        padding: 0.5rem 0;
+    }
+    .detail-row:last-child {
+        border-bottom: none;
+    }
+    .action-item {
+        transition: all 0.2s ease;
+    }
+    .action-item:hover {
+        background-color: #e9ecef;
+        cursor: pointer;
+    }
+    .action-item.selected {
+        background-color: #cfe2ff;
+        border-left: 4px solid #0d6efd;
+    }
+    /* Responsive borders for Action Editor Panel */
+    @media (min-width: 992px) {
+        .action-editor-panel .border-responsive {
+            border-right: 1px solid #dee2e6 !important;
+            border-bottom: none !important;
+        }
+    }
+    @media (max-width: 991.98px) {
+        .action-editor-panel .border-responsive {
+            border-right: none !important;
+            border-bottom: 1px solid #dee2e6 !important;
+        }
+    }
+    .comment-box {
+        background-color: #f8f9fa;
+        border-left: 3px solid #0d6efd;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border-radius: 0.375rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Builder Header -->
+    <div class="builder-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="h3 mb-2">
+                    <i class="bi bi-tools"></i> Edit Template Builder
+                </h1>
+                <p class="mb-0 opacity-75">
+                    <span class="badge bg-light text-dark me-2" style="font-size: 1.1rem; padding: 0.5rem 0.75rem;">
+                        {{ builder.build_status }}
+                    </span>
+                    <span>{{ builder.metadata.task_name or builder.name or 'Template Builder' }}</span>
+                    {% if builder.is_revision %}
+                    <span class="badge bg-info ms-2">Revision</span>
+                    {% endif %}
+                </p>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('manager_portal.build_maintenance') }}" class="btn btn-light">
+                    <i class="bi bi-arrow-left"></i> Back to Build Templates
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Template Callout -->
+    {% if builder.build_status != 'Submitted' %}
+    <div class="alert alert-success d-flex align-items-center justify-content-between mb-4" style="border-left: 5px solid #198754; font-size: 1.1rem;">
+        <div>
+            <i class="bi bi-info-circle-fill me-2"></i>
+            <strong>Ready to create your template?</strong>
+            <span class="ms-2">Once you're satisfied with your template builder, click below to create the final template.</span>
+        </div>
+        <form method="POST" action="{{ url_for('template_builder.submit_template', builder_id=builder.builder_id) }}" class="d-inline ms-3" onsubmit="return confirm('Are you sure you want to create the template? This will finalize the template and you won\'t be able to edit it through the builder.')">
+            <button type="submit" id="createTemplateBtn" class="btn btn-success btn-lg px-4 py-3">
+                <i class="bi bi-check-circle-fill"></i> Create Template from Build
+            </button>
+        </form>
+    </div>
+    {% endif %}
+
+    <!-- Upper Content Panels -->
+    <div class="row mb-4">
+        <!-- Left Panel: Template Builder Metadata -->
+        <div class="col-lg-8 col-md-8">
+            <div class="row">
+                <!-- Template Metadata -->
+                <div class="col-12">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-info-circle"></i> Template Builder Metadata</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="metadataForm" method="POST" action="{{ url_for('template_builder.update_metadata', builder_id=builder.builder_id) }}">
+                                <!-- Builder ID (Disabled) -->
+                                <div class="mb-3">
+                                    <label for="builder_id" class="form-label text-muted">Builder ID</label>
+                                    <input type="text"
+                                           class="form-control"
+                                           id="builder_id"
+                                           name="builder_id"
+                                           value="{{ builder.builder_id }}"
+                                           disabled
+                                           style="background-color: #e9ecef; cursor: not-allowed;">
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="task_name" class="form-label">Task Name <span class="text-danger">*</span></label>
+                                        <input type="text"
+                                               class="form-control"
+                                               id="task_name"
+                                               name="task_name"
+                                               value="{{ builder.metadata.task_name or '' }}"
+                                               {% if builder.is_revision %}disabled{% else %}required{% endif %}
+                                               style="{% if builder.is_revision %}background-color: #e9ecef; cursor: not-allowed;{% endif %}">
+                                        {% if builder.is_revision %}
+                                        <small class="text-muted">Task name cannot be changed for revisions</small>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="estimated_duration" class="form-label">Estimated Duration (hours)</label>
+                                        <input type="number"
+                                               step="any"
+                                               class="form-control"
+                                               id="estimated_duration"
+                                               name="estimated_duration"
+                                               value="{{ builder.metadata.estimated_duration or '' }}">
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="description" class="form-label">Description</label>
+                                    <textarea class="form-control"
+                                              id="description"
+                                              name="description"
+                                              rows="3"
+                                              placeholder="Describe this maintenance template...">{{ builder.metadata.description or '' }}</textarea>
+                                </div>
+
+                                {% if builder.metadata.revision %}
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">Revision</label>
+                                    <input type="text"
+                                           class="form-control"
+                                           value="{{ builder.metadata.revision }}"
+                                           disabled
+                                           style="background-color: #e9ecef; cursor: not-allowed;">
+                                </div>
+                                {% endif %}
+
+                                <details class="mb-3">
+                                    <summary class="fw-bold mb-3" style="cursor: pointer;">
+                                        <i class="bi bi-chevron-down"></i> Additional Details
+                                    </summary>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" 
+                                                   type="checkbox" 
+                                                   id="safety_review_required" 
+                                                   name="safety_review_required"
+                                                   {% if builder.metadata.safety_review_required %}checked{% endif %}>
+                                            <label class="form-check-label" for="safety_review_required">
+                                                Safety Review Required
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-4 mb-3">
+                                            <label for="staff_count" class="form-label">Staff Count</label>
+                                            <input type="number"
+                                                   class="form-control"
+                                                   id="staff_count"
+                                                   name="staff_count"
+                                                   value="{{ builder.metadata.staff_count or '' }}">
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label for="labor_hours" class="form-label">Labor Hours</label>
+                                            <input type="number"
+                                                   step="any"
+                                                   class="form-control"
+                                                   id="labor_hours"
+                                                   name="labor_hours"
+                                                   value="{{ builder.metadata.labor_hours or '' }}">
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label for="parts_cost" class="form-label">Parts Cost</label>
+                                            <input type="number"
+                                                   step="any"
+                                                   class="form-control"
+                                                   id="parts_cost"
+                                                   name="parts_cost"
+                                                   value="{{ builder.metadata.parts_cost or '' }}">
+                                        </div>
+                                    </div>
+                                </details>
+
+                                <div class="d-flex justify-content-between">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-save"></i> Save Metadata
+                                    </button>
+                                    <a href="{{ url_for('manager_portal.build_maintenance') }}" class="btn btn-outline-secondary">
+                                        Cancel
+                                    </a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel: Builder Summary -->
+        <div class="col-lg-4 col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> Builder Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label text-muted small">Builder ID</label>
+                        <p class="mb-0">
+                            <span class="badge bg-info">#{{ builder.builder_id }}</span>
+                        </p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small">Build Status</label>
+                        <p class="mb-0">
+                            <span class="badge bg-{% if builder.build_status == 'Draft' %}secondary{% elif builder.build_status == 'In Progress' %}primary{% elif builder.build_status == 'Ready for Review' %}warning{% else %}success{% endif %}">
+                                {{ builder.build_status }}
+                            </span>
+                        </p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small">Build Type</label>
+                        <p class="mb-0">
+                            {% if builder.build_type %}
+                            <span class="badge bg-secondary">{{ builder.build_type }}</span>
+                            {% else %}
+                            <span class="text-muted">—</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small">Total Actions</label>
+                        <p class="mb-0">
+                            <span class="badge bg-primary">{{ builder.total_actions }}</span>
+                        </p>
+                    </div>
+                    {% if builder.is_revision %}
+                    <div class="mb-3">
+                        <label class="form-label text-muted small">Revision Source</label>
+                        <p class="mb-0">
+                            {% if builder.src_revision_id %}
+                            Template #{{ builder.src_revision_id }}
+                            {% if builder.src_revision_number %}
+                            (Rev. {{ builder.src_revision_number }})
+                            {% endif %}
+                            {% else %}
+                            <span class="text-muted">—</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ACTION EDITOR PANEL -->
+    <div class="row">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-pencil-square"></i> ACTION EDITOR PANEL</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="row g-0 action-editor-panel" style="min-height: 500px;">
+                    <!-- Left Panel: Condensed Action List -->
+                    <div class="col-lg-4 col-md-12 border-responsive">
+                        <div class="p-3">
+                            <h6 class="fw-bold mb-3"><i class="bi bi-list-ul"></i> Action Details</h6>
+                            <div class="list-group list-group-flush">
+                                {% for action in builder.actions %}
+                                <div class="list-group-item action-item px-2 py-2 {% if selected_action_index == action.index %}selected{% elif not selected_action_index and loop.index0 == 0 %}selected{% endif %}" 
+                                     style="cursor: pointer;" 
+                                     onclick="selectAction({{ action.index }})"
+                                     data-action-index="{{ action.index }}">
+                                    <div class="d-flex align-items-center">
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex align-items-center mb-1">
+                                                <span class="badge bg-secondary me-2">#{{ action.sequence_order }}</span>
+                                                <strong class="small">{{ action.action_name }}</strong>
+                                            </div>
+                                            {% if action.estimated_duration %}
+                                            <small class="text-muted">Est: {{ action.estimated_duration }}h</small>
+                                            {% endif %}
+                                        </div>
+                                        <div class="btn-group-vertical btn-group-sm ms-2">
+                                            <form method="POST" action="{{ url_for('template_builder.move_action', builder_id=builder.builder_id, action_index=action.index) }}" class="d-inline">
+                                                <input type="hidden" name="direction" value="up">
+                                                <button type="submit" class="btn btn-sm btn-outline-secondary" {% if action.index == 0 %}disabled{% endif %} style="padding: 2px 6px;">
+                                                    <i class="bi bi-arrow-up" style="font-size: 0.7rem;"></i>
+                                                </button>
+                                            </form>
+                                            <form method="POST" action="{{ url_for('template_builder.move_action', builder_id=builder.builder_id, action_index=action.index) }}" class="d-inline">
+                                                <input type="hidden" name="direction" value="down">
+                                                <button type="submit" class="btn btn-sm btn-outline-secondary" {% if action.index == builder.actions|length - 1 %}disabled{% endif %} style="padding: 2px 6px;">
+                                                    <i class="bi bi-arrow-down" style="font-size: 0.7rem;"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <hr class="my-3">
+                        </div>
+                    </div>
+
+                    <!-- Middle Panel: Action Edit Form -->
+                    <div class="col-lg-4 col-md-12 border-responsive">
+                        <div class="p-3">
+                            <h6 class="fw-bold mb-3"><i class="bi bi-pencil-square"></i> Action Form Details</h6>
+                            {% if selected_action %}
+                            <form id="actionEditForm" method="POST" action="{{ url_for('template_builder.update_template_action', builder_id=builder.builder_id, action_index=selected_action_index) }}">
+                                <div class="mb-3">
+                                    <label for="editActionName" class="form-label">Action Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="editActionName" name="action_name" value="{{ selected_action.action_name }}" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="editActionDescription" class="form-label">Description</label>
+                                    <textarea class="form-control" id="editActionDescription" name="description" rows="3">{{ selected_action.description or '' }}</textarea>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="editSequenceOrder" class="form-label">Sequence Order</label>
+                                        <input type="number" min="1" class="form-control" id="editSequenceOrder" name="sequence_order" value="{{ selected_action.sequence_order }}">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="editEstimatedDuration" class="form-label">Estimated Duration (hours)</label>
+                                        <input type="number" step="any" class="form-control" id="editEstimatedDuration" name="estimated_duration" 
+                                               value="{{ selected_action.estimated_duration or '' }}">
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="editExpectedBillableHours" class="form-label">Expected Billable Hours</label>
+                                        <input type="number" step="any" class="form-control" id="editExpectedBillableHours" name="expected_billable_hours" 
+                                               value="{{ selected_action.expected_billable_hours or '' }}">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="editMinimumStaffCount" class="form-label">Minimum Staff Count</label>
+                                        <input type="number" min="1" class="form-control" id="editMinimumStaffCount" name="minimum_staff_count" 
+                                               value="{{ selected_action.minimum_staff_count or '' }}">
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="editInstructions" class="form-label">Instructions</label>
+                                    <textarea class="form-control" id="editInstructions" name="instructions" rows="3">{{ selected_action.instructions or '' }}</textarea>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="editRequiredSkills" class="form-label">Required Skills</label>
+                                    <input type="text" class="form-control" id="editRequiredSkills" name="required_skills" value="{{ selected_action.required_skills or '' }}">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="editSafetyNotes" class="form-label">Safety Notes</label>
+                                    <textarea class="form-control" id="editSafetyNotes" name="safety_notes" rows="2">{{ selected_action.safety_notes or '' }}</textarea>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="editNotes" class="form-label">Notes</label>
+                                    <textarea class="form-control" id="editNotes" name="notes" rows="2">{{ selected_action.notes or '' }}</textarea>
+                                </div>
+                                
+                                <div class="d-flex justify-content-start gap-2 mt-4">
+                                    <button type="button" class="btn btn-danger" style="width: 25%;" onclick="deleteAction({{ selected_action_index }})">
+                                        <i class="bi bi-trash"></i> Delete
+                                    </button>
+                                    <button type="submit" class="btn btn-primary" style="width: 75%;">
+                                        <i class="bi bi-check-circle"></i> Submit
+                                    </button>
+                                </div>
+                            </form>
+                            <!-- Delete form (separate from edit form) -->
+                            <form id="deleteActionForm{{ selected_action_index }}" method="POST" action="{{ url_for('template_builder.delete_action', builder_id=builder.builder_id, action_index=selected_action_index) }}" style="display: none;">
+                            </form>
+                            {% else %}
+                            <p class="text-muted">Select an action from the list to edit it.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Right Panel: Part Demands and Tools -->
+                    <div class="col-lg-4 col-md-12">
+                        <div class="p-3">
+                            {% if selected_action %}
+                            <!-- Part Demands Section -->
+                            <div class="card mb-3 border-info">
+                                <div class="card-header bg-info bg-opacity-10">
+                                    <h6 class="mb-0">
+                                        <i class="bi bi-box-seam"></i> Part Demands
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <!-- Part Demands List -->
+                                    <div class="list-group list-group-flush mb-3">
+                                        {% for part_demand in selected_action.part_demands %}
+                                        <div class="list-group-item px-0 py-2">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <div class="flex-grow-1">
+                                                    <div class="d-flex align-items-center mb-1">
+                                                        <strong>
+                                                            {% if part_demand.part %}
+                                                                {{ part_demand.part.part_name }}
+                                                            {% else %}
+                                                                Part #{{ part_demand.part_id }}
+                                                            {% endif %}
+                                                        </strong>
+                                                    </div>
+                                                    <div class="small text-muted">
+                                                        {% if part_demand.part %}
+                                                        {% if part_demand.part.part_number %}
+                                                        <div><i class="bi bi-upc"></i> Part #: {{ part_demand.part.part_number }}</div>
+                                                        {% endif %}
+                                                        {% if part_demand.part.category %}
+                                                        <div><i class="bi bi-tag"></i> Category: {{ part_demand.part.category }}</div>
+                                                        {% endif %}
+                                                        {% if part_demand.part.manufacturer %}
+                                                        <div><i class="bi bi-building"></i> Manufacturer: {{ part_demand.part.manufacturer }}</div>
+                                                        {% endif %}
+                                                        {% endif %}
+                                                        <div><i class="bi bi-123"></i> Quantity: {{ part_demand.quantity_required }} units</div>
+                                                        {% if part_demand.expected_cost %}
+                                                        <div><i class="bi bi-currency-dollar"></i> Expected Cost: ${{ "%.2f"|format(part_demand.expected_cost) }}</div>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                                <div class="d-flex gap-1">
+                                                    <button type="button" class="btn btn-sm btn-link p-0" onclick="togglePartDemandEdit({{ loop.index0 }})" style="color: #ffc107;">
+                                                        <i class="bi bi-pencil-fill"></i>
+                                                    </button>
+                                                    <form method="POST" action="{{ url_for('template_builder.delete_part_demand', builder_id=builder.builder_id, action_index=selected_action_index, part_index=loop.index0) }}" 
+                                                          class="d-inline" 
+                                                          onsubmit="return confirm('Delete this part demand?')">
+                                                        <button type="submit" class="btn btn-sm btn-link p-0" style="color: #dc3545;">
+                                                            <i class="bi bi-trash-fill"></i>
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                            <!-- Dropdown Edit Panel -->
+                                            <div id="partDemandEditPanel{{ loop.index0 }}" class="mt-2 p-2 border rounded" style="display: none; background-color: #fff3cd;">
+                                                <form method="POST" action="{{ url_for('template_builder.update_part_demand', builder_id=builder.builder_id, action_index=selected_action_index, part_index=loop.index0) }}">
+                                                    <div class="mb-2">
+                                                        <label class="form-label small">Part ID (read-only)</label>
+                                                        <input type="number" class="form-control form-control-sm" value="{{ part_demand.part_id }}" disabled>
+                                                        <small class="text-muted">To change the part, delete this demand and create a new one.</small>
+                                                    </div>
+                                                    <div class="mb-2">
+                                                        <label class="form-label small">Quantity</label>
+                                                        <input type="number" step="any" min="0.1" class="form-control form-control-sm" name="quantity_required" value="{{ part_demand.quantity_required }}" required>
+                                                    </div>
+                                                    <div class="mb-2">
+                                                        <label class="form-label small">Expected Cost</label>
+                                                        <input type="number" step="any" min="0" class="form-control form-control-sm" name="expected_cost" value="{{ part_demand.expected_cost or '' }}">
+                                                    </div>
+                                                    <div class="mb-2">
+                                                        <label class="form-label small">Notes</label>
+                                                        <textarea class="form-control form-control-sm" name="notes" rows="2">{{ part_demand.notes or '' }}</textarea>
+                                                    </div>
+                                                    <div class="d-flex gap-2">
+                                                        <button type="submit" class="btn btn-sm btn-primary">
+                                                            <i class="bi bi-check-circle"></i> Submit
+                                                        </button>
+                                                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="togglePartDemandEdit({{ loop.index0 }})">
+                                                            Cancel
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                    
+                                    <!-- Add Part Demand Form -->
+                                    <div class="border-top pt-3">
+                                        <details style="background-color: #d1e7dd; padding: 0.5rem; border-radius: 0.25rem;">
+                                            <summary class="small fw-bold mb-2" style="cursor: pointer;">
+                                                <i class="bi bi-plus-circle"></i> Add Part Demand
+                                            </summary>
+                                            <div class="mt-2">
+                                                <form method="POST" action="{{ url_for('template_builder.add_part_demand', builder_id=builder.builder_id, action_index=selected_action_index) }}">
+                                                    <div class="mb-2">
+                                                        <label class="form-label small">Part ID</label>
+                                                        <div class="input-group input-group-sm">
+                                                            <select class="form-select" name="part_id" required>
+                                                                <option value="">-- Select Part --</option>
+                                                                {% for part in parts %}
+                                                                <option value="{{ part.id }}">{{ part.part_name }}{% if part.part_number %} ({{ part.part_number }}){% endif %}</option>
+                                                                {% endfor %}
+                                                            </select>
+                                                            <a href="{{ url_for('core_supply_parts.list') }}" target="_blank" class="btn btn-outline-secondary" title="Open Parts Lookup">
+                                                                <i class="bi bi-search"></i>
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                    <div class="mb-2">
+                                                        <label class="form-label small">Quantity</label>
+                                                        <input type="number" step="any" min="0.1" class="form-control form-control-sm" name="quantity_required" placeholder="Quantity" required>
+                                                    </div>
+                                                    <div class="mb-2">
+                                                        <label class="form-label small">Notes</label>
+                                                        <textarea class="form-control form-control-sm" name="notes" rows="2" placeholder="Optional notes..."></textarea>
+                                                    </div>
+                                                    <button type="submit" class="btn btn-sm btn-primary w-100">
+                                                        <i class="bi bi-plus-circle"></i> Submit
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </details>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Tools Section -->
+                            <div class="card mb-3 border-primary">
+                                <div class="card-header bg-primary bg-opacity-10">
+                                    <h6 class="mb-0">
+                                        <i class="bi bi-tools"></i> Tools
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <!-- Tools List -->
+                                    <div class="list-group list-group-flush mb-3">
+                                        {% for action_tool in selected_action.tools %}
+                                        <div class="list-group-item px-0 py-2">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <div class="flex-grow-1">
+                                                    <div class="d-flex align-items-center mb-1">
+                                                        <strong>
+                                                            {% if action_tool.tool %}
+                                                                {{ action_tool.tool.tool_name }}
+                                                            {% else %}
+                                                                Tool #{{ action_tool.tool_id }}
+                                                            {% endif %}
+                                                        </strong>
+                                                    </div>
+                                                    <div class="small text-muted">
+                                                        {% if action_tool.tool %}
+                                                        {% if action_tool.tool.category %}
+                                                        <div><i class="bi bi-tag"></i> {{ action_tool.tool.category }}</div>
+                                                        {% endif %}
+                                                        {% if action_tool.tool.manufacturer %}
+                                                        <div><i class="bi bi-building"></i> {{ action_tool.tool.manufacturer }}</div>
+                                                        {% endif %}
+                                                        {% if action_tool.tool.model_number %}
+                                                        <div><i class="bi bi-upc"></i> Model: {{ action_tool.tool.model_number }}</div>
+                                                        {% endif %}
+                                                        {% endif %}
+                                                        <div><i class="bi bi-123"></i> Quantity: {{ action_tool.quantity_required }}</div>
+                                                    </div>
+                                                </div>
+                                                <div class="d-flex gap-1">
+                                                    <button type="button" class="btn btn-sm btn-link p-0" onclick="toggleToolEdit({{ loop.index0 }})" style="color: #ffc107;">
+                                                        <i class="bi bi-pencil-fill"></i>
+                                                    </button>
+                                                    <form method="POST" action="{{ url_for('template_builder.delete_tool', builder_id=builder.builder_id, action_index=selected_action_index, tool_index=loop.index0) }}" 
+                                                          class="d-inline" 
+                                                          onsubmit="return confirm('Delete this tool requirement?')">
+                                                        <button type="submit" class="btn btn-sm btn-link p-0" style="color: #dc3545;">
+                                                            <i class="bi bi-trash-fill"></i>
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                            <!-- Tool Edit Panel -->
+                                            <div id="toolEditPanel{{ loop.index0 }}" style="display: none; background-color: #fff3cd; padding: 0.75rem; border-radius: 0.25rem; margin-top: 0.5rem;">
+                                                <form method="POST" action="{{ url_for('template_builder.update_tool', builder_id=builder.builder_id, action_index=selected_action_index, tool_index=loop.index0) }}">
+                                                    <div class="mb-2">
+                                                        <label class="form-label small">Tool ID</label>
+                                                        <select class="form-select form-select-sm" name="tool_id" required>
+                                                            {% for tool in tools %}
+                                                            <option value="{{ tool.id }}" {% if action_tool.tool_id == tool.id %}selected{% endif %}>{{ tool.tool_name }}</option>
+                                                            {% endfor %}
+                                                        </select>
+                                                    </div>
+                                                    <div class="mb-2">
+                                                        <label class="form-label small">Quantity</label>
+                                                        <input type="number" class="form-control form-control-sm" name="quantity_required" value="{{ action_tool.quantity_required }}" min="1" required>
+                                                    </div>
+                                                    <div class="mb-2">
+                                                        <label class="form-label small">Notes</label>
+                                                        <textarea class="form-control form-control-sm" name="notes" rows="2">{{ action_tool.notes or '' }}</textarea>
+                                                    </div>
+                                                    <div class="d-flex gap-2">
+                                                        <button type="submit" class="btn btn-sm btn-primary">
+                                                            <i class="bi bi-check-circle"></i> Submit
+                                                        </button>
+                                                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleToolEdit({{ loop.index0 }})">
+                                                            Cancel
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                    
+                                    <!-- Add Tool Form -->
+                                    <div class="border-top pt-3">
+                                        <details style="background-color: #d1e7dd; padding: 0.5rem; border-radius: 0.25rem;">
+                                            <summary class="small fw-bold mb-2" style="cursor: pointer;">
+                                                <i class="bi bi-plus-circle"></i> Add Tool
+                                            </summary>
+                                            <div class="mt-2">
+                                                <form method="POST" action="{{ url_for('template_builder.add_tool', builder_id=builder.builder_id, action_index=selected_action_index) }}">
+                                                    <div class="mb-2">
+                                                        <label class="form-label small">Tool ID</label>
+                                                        <select class="form-select form-select-sm" name="tool_id" required>
+                                                            <option value="">-- Select Tool --</option>
+                                                            {% for tool in tools %}
+                                                            <option value="{{ tool.id }}">{{ tool.tool_name }}</option>
+                                                            {% endfor %}
+                                                        </select>
+                                                    </div>
+                                                    <button type="submit" class="btn btn-sm btn-primary w-100">
+                                                        <i class="bi bi-plus-circle"></i> Submit
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </details>
+                                    </div>
+                                </div>
+                            </div>
+                            {% else %}
+                            <p class="text-muted">No actions available. Use the Action Creator Portal below to add actions.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Creator Portal -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <!-- Debug button/link for manual testing -->
+            <div class="mb-3">
+                <a href="{{ url_for('template_builder.template_action_creator_portal', builder_id=builder.builder_id) }}" 
+                   target="_blank" 
+                   class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-box-arrow-up-right"></i> Debug: Open Action Creator Portal in New Tab
+                </a>
+                <button type="button" 
+                        class="btn btn-sm btn-outline-primary"
+                        hx-get="{{ url_for('template_builder.template_action_creator_portal', builder_id=builder.builder_id) }}"
+                        hx-target="#action-creator-portal-container"
+                        hx-select="#action-creator-portal-wrapper"
+                        hx-swap="innerHTML">
+                    <i class="bi bi-arrow-clockwise"></i> Reload Action Creator Portal
+                </button>
+            </div>
+            
+            <!-- HTMX container for Action Creator Portal -->
+            <div id="action-creator-portal-container"
+                 hx-get="{{ url_for('template_builder.template_action_creator_portal', builder_id=builder.builder_id) }}"
+                 hx-trigger="load"
+                 hx-target="this"
+                 hx-select="#action-creator-portal-wrapper"
+                 hx-swap="innerHTML">
+                <!-- Loading placeholder -->
+                <div class="card mb-4 border-info">
+                    <div class="card-header bg-info bg-opacity-10">
+                        <h5 class="mb-0">
+                            <i class="bi bi-plus-circle text-info"></i> Action Creator Portal
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-info" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="text-muted mt-2">Loading Action Creator Portal...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Before Insert Modal -->
+    <div class="modal fade" id="editBeforeInsertModal" tabindex="-1" aria-labelledby="editBeforeInsertModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editBeforeInsertModalLabel">
+                        <i class="bi bi-pencil-square"></i> Edit Action Before Insert
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="actionInsertForm" method="POST" action="">
+                        <!-- Hidden fields for source -->
+                        <input type="hidden" id="template_action_item_id" name="template_action_item_id" value="">
+                        <input type="hidden" id="proto_action_item_id" name="proto_action_item_id" value="">
+                        <input type="hidden" id="action_type" name="action_type" value="">
+                        
+                        <!-- Action Preview/Edit Section -->
+                        <div class="card mb-3 border-primary">
+                            <div class="card-header bg-primary bg-opacity-10">
+                                <h6 class="mb-0">Action Details</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="actionName" class="form-label">Action Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="actionName" name="actionName" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="actionDescription" class="form-label">Description</label>
+                                    <textarea class="form-control" id="actionDescription" name="actionDescription" rows="3"></textarea>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="estimatedDuration" class="form-label">Estimated Duration (hours)</label>
+                                        <input type="number" step="any" class="form-control" id="estimatedDuration" name="estimatedDuration">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="expectedBillableHours" class="form-label">Expected Billable Hours</label>
+                                        <input type="number" step="any" class="form-control" id="expectedBillableHours" name="expectedBillableHours">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="safetyNotes" class="form-label">Safety Notes</label>
+                                    <textarea class="form-control" id="safetyNotes" name="safetyNotes" rows="2"></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="notes" class="form-label">Notes</label>
+                                    <textarea class="form-control" id="notes" name="notes" rows="2"></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Configuration Options -->
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h6 class="mb-0">
+                                    <i class="bi bi-gear"></i> Configuration Options
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Copy Options</label>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="copyPartDemands" name="copyPartDemands" value="true" checked>
+                                        <label class="form-check-label" for="copyPartDemands">
+                                            Copy part demands from source
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="copyTools" name="copyTools" value="true" checked>
+                                        <label class="form-check-label" for="copyTools">
+                                            Copy tool requirements from source
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Insert Position</label>
+                                    <select class="form-select" id="insertPosition" name="insertPosition">
+                                        <option value="end" selected>At the end (after last action)</option>
+                                        <option value="beginning">At the beginning (before first action)</option>
+                                        <option value="after">After specific action</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3" id="afterActionSelect" style="display: none;">
+                                    <label class="form-label fw-bold">After Which Action?</label>
+                                    <select class="form-select" id="afterActionIndex" name="afterActionIndex">
+                                        <option value="">-- Select Action --</option>
+                                        {% for action in builder.actions %}
+                                        <option value="{{ action.index }}">#{{ action.sequence_order }} - {{ action.action_name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="submitActionInsertForm()">
+                        <i class="bi bi-plus-circle"></i> Insert Action
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Track metadata form changes to disable create template button
+    document.addEventListener('DOMContentLoaded', function() {
+        const metadataForm = document.getElementById('metadataForm');
+        const createTemplateBtn = document.getElementById('createTemplateBtn');
+        let hasUnsavedChanges = false;
+        
+        if (metadataForm && createTemplateBtn) {
+            // Store initial form values
+            const initialValues = {};
+            const formFields = metadataForm.querySelectorAll('input, textarea, select');
+            formFields.forEach(field => {
+                if (field.type === 'checkbox') {
+                    initialValues[field.id || field.name] = field.checked;
+                } else if (!field.disabled && field.name) {
+                    initialValues[field.id || field.name] = field.value;
+                }
+            });
+            
+            // Function to check if form has changed
+            function checkForChanges() {
+                hasUnsavedChanges = false;
+                formFields.forEach(field => {
+                    if (field.disabled || !field.name) return;
+                    
+                    const fieldKey = field.id || field.name;
+                    let currentValue;
+                    
+                    if (field.type === 'checkbox') {
+                        currentValue = field.checked;
+                    } else {
+                        currentValue = field.value || '';
+                    }
+                    
+                    const initialValue = initialValues[fieldKey];
+                    if (currentValue !== initialValue) {
+                        hasUnsavedChanges = true;
+                    }
+                });
+                
+                // Update button state
+                if (hasUnsavedChanges) {
+                    createTemplateBtn.disabled = true;
+                    createTemplateBtn.title = 'Please save metadata changes before creating template';
+                    createTemplateBtn.classList.add('opacity-50');
+                } else {
+                    createTemplateBtn.disabled = false;
+                    createTemplateBtn.title = '';
+                    createTemplateBtn.classList.remove('opacity-50');
+                }
+            }
+            
+            // Listen for form changes
+            formFields.forEach(field => {
+                field.addEventListener('input', checkForChanges);
+                field.addEventListener('change', checkForChanges);
+            });
+            
+            // Note: When form submits successfully, page will reload
+            // On reload, initialValues will be set to match current form values automatically
+            // So no reset logic needed - changes are cleared on successful submit via page reload
+            
+            // Initial check
+            checkForChanges();
+        }
+    });
+    
+    // Handle insert position change
+    document.addEventListener('DOMContentLoaded', function() {
+        const insertPosition = document.getElementById('insertPosition');
+        if (insertPosition) {
+            insertPosition.addEventListener('change', function() {
+                const afterSelect = document.getElementById('afterActionSelect');
+                if (this.value === 'after') {
+                    afterSelect.style.display = 'block';
+                } else {
+                    afterSelect.style.display = 'none';
+                }
+            });
+        }
+    });
+
+    // Handle action selection (for action editor panel)
+    function selectAction(actionIndex) {
+        // Reload the page with the selected action index
+        const url = new URL(window.location.href);
+        url.searchParams.set('action_index', actionIndex);
+        window.location.href = url.toString();
+    }
+
+    // Toggle part demand edit panel
+    function togglePartDemandEdit(partDemandId) {
+        const panel = document.getElementById('partDemandEditPanel' + partDemandId);
+        if (panel) {
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        }
+    }
+
+    // Toggle delay edit panel
+    function toggleDelayEdit(delayId) {
+        const panel = document.getElementById('delayEditPanel' + delayId);
+        if (panel) {
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        }
+    }
+
+    // Toggle tool edit panel
+    function toggleToolEdit(toolId) {
+        const panel = document.getElementById('toolEditPanel' + toolId);
+        if (panel) {
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        }
+    }
+
+    // Set create mode for action creator
+    let createMode = 'blank';
+    let sourceActionId = null;
+    
+    function setCreateMode(mode, actionId = null) {
+        createMode = mode;
+        sourceActionId = actionId;
+        
+        // Clear form fields
+        document.getElementById('actionName').value = '';
+        document.getElementById('actionDescription').value = '';
+        document.getElementById('estimatedDuration').value = '';
+        document.getElementById('expectedBillableHours').value = '';
+        document.getElementById('safetyNotes').value = '';
+        document.getElementById('notes').value = '';
+        
+        // Clear source IDs
+        document.getElementById('template_action_item_id').value = '';
+        document.getElementById('proto_action_item_id').value = '';
+        document.getElementById('source_action_id').value = '';
+        
+        // Load source action data if duplicating
+        if (mode === 'current' && actionId) {
+            // In real implementation, load via AJAX
+            // For now, set the source_action_id hidden field
+            document.getElementById('source_action_id').value = actionId;
+            
+            // Try to find action data from the page
+            {% for action_struct in actions %}
+            if ({{ action_struct.action_id }} === actionId) {
+                document.getElementById('actionName').value = '{{ action_struct.action_name|e }}';
+                {% if action_struct.description %}
+                document.getElementById('actionDescription').value = '{{ action_struct.description|e }}';
+                {% endif %}
+                {% if action_struct.action.estimated_duration %}
+                document.getElementById('estimatedDuration').value = '{{ action_struct.action.estimated_duration }}';
+                {% endif %}
+                {% if action_struct.action.expected_billable_hours %}
+                document.getElementById('expectedBillableHours').value = '{{ action_struct.action.expected_billable_hours }}';
+                {% endif %}
+                {% if action_struct.action.safety_notes %}
+                document.getElementById('safetyNotes').value = '{{ action_struct.action.safety_notes|e }}';
+                {% endif %}
+                {% if action_struct.action.notes %}
+                document.getElementById('notes').value = '{{ action_struct.action.notes|e }}';
+                {% endif %}
+            }
+            {% endfor %}
+        }
+    }
+
+    // Submit action insert form
+    function submitActionInsertForm() {
+        const form = document.getElementById('actionInsertForm');
+        const builderId = {{ builder.builder_id }};
+        
+        // Set the correct endpoint based on create mode
+        let endpoint = '';
+        if (createMode === 'blank') {
+            endpoint = `/template-builder/${builderId}/add-blank-action`;
+        } else if (createMode === 'template' && document.getElementById('template_action_item_id').value) {
+            const templateActionId = document.getElementById('template_action_item_id').value;
+            endpoint = `/template-builder/${builderId}/add-action-from-template-action/${templateActionId}`;
+        } else if (createMode === 'proto' && document.getElementById('proto_action_item_id').value) {
+            const protoId = document.getElementById('proto_action_item_id').value;
+            endpoint = `/template-builder/${builderId}/add-action-from-proto/${protoId}`;
+        } else {
+            // Default to blank action
+            endpoint = `/template-builder/${builderId}/add-blank-action`;
+        }
+        
+        form.action = endpoint;
+        
+        if (form.checkValidity()) {
+            form.submit();
+        } else {
+            form.reportValidity();
+        }
+    }
+
+    // Delete action with confirmation
+    function deleteAction(actionId) {
+        if (confirm('Are you sure you want to delete this action? This cannot be undone.\n\nIf you are a technician doing work, always prefer to use the work portal. It\'s preferred to mark an action as skipped for analytics purposes.')) {
+            const form = document.getElementById('deleteActionForm' + actionId);
+            if (form) {
+                form.submit();
+            }
+        }
+    }
+
+    // Action Creator Portal JavaScript functions
+    // Template Action Set selection
+    function selectTemplateActionSet(templateSetId, builderId) {
+        // Remove selected class from all items
+        document.querySelectorAll('[data-template-set-id]').forEach(item => {
+            item.classList.remove('selected');
+            item.style.backgroundColor = '';
+        });
+        
+        // Add selected class
+        const selectedItem = document.querySelector(`[data-template-set-id="${templateSetId}"]`);
+        if (selectedItem) {
+            selectedItem.classList.add('selected');
+            selectedItem.style.backgroundColor = '#cfe2ff';
+        }
+        
+        // Load template action items via HTMX
+        const container = document.getElementById('template-action-items-container');
+        const list = document.getElementById('template-action-items-list');
+        
+        if (container && list) {
+            const url = `/template-builder/list-template-action-items/${templateSetId}?builder_id=${builderId}`;
+            htmx.ajax('GET', url, {
+                target: list,
+                swap: 'innerHTML'
+            }).then(() => {
+                container.style.display = 'block';
+            });
+        }
+    }
+
+    // Action selection handlers - open pre-rendered modals
+    function selectTemplateAction(templateActionId, maintenanceActionSetId) {
+        const modalElement = document.getElementById(`templateActionModal${templateActionId}`);
+        if (modalElement) {
+            const modal = new bootstrap.Modal(modalElement);
+            modal.show();
+        }
+    }
+
+    function selectProtoAction(protoActionId, maintenanceActionSetId) {
+        const modalElement = document.getElementById(`protoActionModal${protoActionId}`);
+        if (modalElement) {
+            const modal = new bootstrap.Modal(modalElement);
+            modal.show();
+        }
+    }
+
+    function selectCurrentAction(sourceActionId, maintenanceActionSetId) {
+        const modalElement = document.getElementById(`currentActionModal${sourceActionId}`);
+        if (modalElement) {
+            const modal = new bootstrap.Modal(modalElement);
+            modal.show();
+        }
+    }
+
+    function selectBlankAction() {
+        const modalElement = document.getElementById('blankActionModal');
+        if (modalElement) {
+            const modal = new bootstrap.Modal(modalElement);
+            modal.show();
+        }
+    }
+
+    // JavaScript filtering for current actions
+    function filterCurrentActions(searchTerm) {
+        const searchLower = searchTerm.toLowerCase();
+        const items = document.querySelectorAll('.current-action-item');
+        let visibleCount = 0;
+        
+        items.forEach(item => {
+            const actionName = item.getAttribute('data-action-name') || '';
+            const actionDescription = item.getAttribute('data-action-description') || '';
+            
+            if (!searchTerm || actionName.includes(searchLower) || actionDescription.includes(searchLower)) {
+                item.style.display = '';
+                visibleCount++;
+            } else {
+                item.style.display = 'none';
+            }
+        });
+        
+        // Show/hide "no results" message if needed
+        const listContainer = document.getElementById('current-actions-list');
+        if (listContainer) {
+            let noResultsMsg = listContainer.querySelector('.no-results-message');
+            if (visibleCount === 0 && searchTerm) {
+                if (!noResultsMsg) {
+                    noResultsMsg = document.createElement('div');
+                    noResultsMsg.className = 'list-group-item text-muted no-results-message';
+                    noResultsMsg.textContent = 'No actions match your search.';
+                    listContainer.appendChild(noResultsMsg);
+                }
+            } else if (noResultsMsg) {
+                noResultsMsg.remove();
+            }
+        }
+    }
+
+    // Insert position update helpers
+    function updateInsertPosition(actionId, value) {
+        const insertPositionEl = document.getElementById(`insertPosition${actionId}`);
+        const afterSelect = document.getElementById(`afterActionSelect${actionId}`);
+        if (insertPositionEl) {
+            insertPositionEl.value = value;
+        }
+        if (afterSelect) {
+            if (value === 'after') {
+                afterSelect.style.display = 'block';
+            } else {
+                afterSelect.style.display = 'none';
+            }
+        }
+    }
+
+    function updateInsertPositionProto(actionId, value) {
+        const insertPositionEl = document.getElementById(`insertPositionProto${actionId}`);
+        const afterSelect = document.getElementById(`afterActionSelectProto${actionId}`);
+        if (insertPositionEl) {
+            insertPositionEl.value = value;
+        }
+        if (afterSelect) {
+            if (value === 'after') {
+                afterSelect.style.display = 'block';
+            } else {
+                afterSelect.style.display = 'none';
+            }
+        }
+    }
+
+    function updateInsertPositionCurrent(actionId, value) {
+        const insertPositionEl = document.getElementById(`insertPositionCurrent${actionId}`);
+        const afterSelect = document.getElementById(`afterActionSelectCurrent${actionId}`);
+        if (insertPositionEl) {
+            insertPositionEl.value = value;
+        }
+        if (afterSelect) {
+            if (value === 'after') {
+                afterSelect.style.display = 'block';
+            } else {
+                afterSelect.style.display = 'none';
+            }
+        }
+    }
+
+    function updateInsertPositionBlank(value) {
+        const insertPositionEl = document.getElementById('insertPositionBlank');
+        const afterSelect = document.getElementById('afterActionSelectBlank');
+        if (insertPositionEl) {
+            insertPositionEl.value = value;
+        }
+        if (afterSelect) {
+            if (value === 'after') {
+                afterSelect.style.display = 'block';
+            } else {
+                afterSelect.style.display = 'none';
+            }
+        }
+    }
+
+</script>
+{% endblock %}

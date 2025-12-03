@@ -127,9 +127,16 @@
                         <a href="{{ url_for('assets.detail_tables.list', detail_type=detail_type, asset_id=asset.id) }}" class="btn btn-sm btn-outline-primary">
                             <i class="bi bi-list"></i> View All {{ detail_type.replace('_', ' ').title() }}
                         </a>
-                        <a href="{{ url_for('assets.detail_tables.create', detail_type=detail_type) }}?asset_id={{ asset.id }}" class="btn btn-sm btn-outline-success">
-                            <i class="bi bi-plus"></i> Add {{ detail_type.replace('_', ' ').title() }}
-                        </a>
+                        {% set config = asset_type_config_dict.get(detail_type) %}
+                        {% if config and config.many_to_one %}
+                            <a href="{{ url_for('assets.detail_tables.list', detail_type=detail_type, asset_id=asset.id) }}" class="btn btn-sm btn-outline-success" title="Add {{ detail_type.replace('_', ' ').title() }}">
+                                <i class="bi bi-plus-circle"></i>
+                            </a>
+                        {% elif not details %}
+                            <a href="{{ url_for('assets.detail_tables.create', detail_type=detail_type) }}?asset_id={{ asset.id }}" class="btn btn-sm btn-outline-success">
+                                <i class="bi bi-plus"></i> Add {{ detail_type.replace('_', ' ').title() }}
+                            </a>
+                        {% endif %}
                     </div>
                 </div>
                 <div class="card-body">

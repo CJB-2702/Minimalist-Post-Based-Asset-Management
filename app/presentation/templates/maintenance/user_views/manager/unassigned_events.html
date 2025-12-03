@@ -1,0 +1,586 @@
+{% extends "base.html" %}
+
+{% block title %}Unassigned Events - Create & Assign{% endblock %}
+
+{% block extra_css %}
+<style>
+    .event-row {
+        transition: background-color 0.2s;
+    }
+    .event-row:hover {
+        background-color: #f8f9fa;
+    }
+    .event-row.selected {
+        background-color: #e7f1ff;
+    }
+    .bulk-assign-section {
+        background: #fff3cd;
+        border: 1px solid #ffc107;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-top: 2rem;
+    }
+    .search-dropdown-item {
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+        border-bottom: 1px solid #dee2e6;
+    }
+    .search-dropdown-item:hover {
+        background-color: #f8f9fa;
+    }
+    .search-dropdown-item:last-child {
+        border-bottom: none;
+    }
+    .search-match-count {
+        padding: 0.5rem 1rem;
+        background-color: #e9ecef;
+        font-size: 0.875rem;
+        color: #6c757d;
+        border-top: 1px solid #dee2e6;
+    }
+    .technician-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .technician-item .username {
+        font-weight: 500;
+        flex: 1;
+    }
+    .technician-item .active-events {
+        font-size: 0.875rem;
+        color: #6c757d;
+        font-weight: normal;
+        margin-left: 0.5rem;
+    }
+    .technician-item:hover .active-events {
+        color: #495057;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="bi bi-list-ul text-warning"></i> Unassigned Events
+                    </h1>
+                    <p class="text-muted mb-0">View and assign maintenance events that haven't been assigned to technicians</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('manager_portal.create_assign') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Create & Assign
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <form method="GET" action="{{ url_for('manager_portal.unassigned_events') }}" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="asset_type_id" class="form-label">Asset Type</label>
+                            <select class="form-select" id="asset_type_id" name="asset_type_id">
+                                <option value="">All Types</option>
+                                {% for asset_type in asset_types %}
+                                <option value="{{ asset_type.id }}" {% if current_filters.asset_type_id == asset_type.id %}selected{% endif %}>
+                                    {{ asset_type.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="status" class="form-label">Status</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="">All Statuses</option>
+                                <option value="Planned" {% if current_filters.status == 'Planned' %}selected{% endif %}>Planned</option>
+                                <option value="In Progress" {% if current_filters.status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                                <option value="Delayed" {% if current_filters.status == 'Delayed' %}selected{% endif %}>Delayed</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="priority" class="form-label">Priority</label>
+                            <select class="form-select" id="priority" name="priority">
+                                <option value="">All Priorities</option>
+                                <option value="Low" {% if current_filters.priority == 'Low' %}selected{% endif %}>Low</option>
+                                <option value="Medium" {% if current_filters.priority == 'Medium' %}selected{% endif %}>Medium</option>
+                                <option value="High" {% if current_filters.priority == 'High' %}selected{% endif %}>High</option>
+                                <option value="Critical" {% if current_filters.priority == 'Critical' %}selected{% endif %}>Critical</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">&nbsp;</label>
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="bi bi-funnel"></i> Filter
+                                </button>
+                                <a href="{{ url_for('manager_portal.unassigned_events') }}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-x-circle"></i> Clear
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Events List -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-list-ul"></i> Unassigned Events ({{ events.total if events else 0 }})
+                    </h5>
+                    <div>
+                        <button type="button" class="btn btn-sm btn-light" id="selectAllBtn" onclick="selectAll()">
+                            <i class="bi bi-check-square"></i> Select All
+                        </button>
+                        <button type="button" class="btn btn-sm btn-light" id="deselectAllBtn" onclick="deselectAll()" style="display: none;">
+                            <i class="bi bi-square"></i> Deselect All
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    {% if events and events.items %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th width="40">
+                                        <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)">
+                                    </th>
+                                    <th>Event ID</th>
+                                    <th>Task Name</th>
+                                    <th>Asset</th>
+                                    <th>Status</th>
+                                    <th>Priority</th>
+                                    <th>Planned Start</th>
+                                    <th>Created</th>
+                                    <th width="120">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for event in events.items %}
+                                <tr class="event-row" data-event-id="{{ event.event_id }}">
+                                    <td>
+                                        <input type="checkbox" class="event-checkbox" name="event_ids" value="{{ event.event_id }}">
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('maintenance_event.view_maintenance_event', event_id=event.event_id) }}" target="_blank">
+                                            #{{ event.event_id }}
+                                        </a>
+                                    </td>
+                                    <td>{{ event.task_name }}</td>
+                                    <td>
+                                        {% if event.asset_name %}
+                                        <a href="{{ url_for('core_assets.detail', asset_id=event.asset_id) }}" target="_blank">
+                                            {{ event.asset_name }}
+                                        </a>
+                                        {% else %}
+                                        Asset #{{ event.asset_id }}
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{% if event.status == 'Planned' %}secondary{% elif event.status == 'In Progress' %}primary{% elif event.status == 'Delayed' %}warning{% else %}success{% endif %}">
+                                            {{ event.status }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{% if event.priority == 'Critical' %}danger{% elif event.priority == 'High' %}warning{% elif event.priority == 'Medium' %}info{% else %}secondary{% endif %}">
+                                            {{ event.priority }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if event.planned_start_datetime %}
+                                        {{ event.planned_start_datetime[:16]|replace('T', ' ') }}
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if event.created_at %}
+                                        {{ event.created_at[:10] }}
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('maintenance_event.assign_event', event_id=event.event_id) }}" 
+                                           class="btn btn-sm btn-warning" 
+                                           title="Assign individually">
+                                            <i class="bi bi-person-check"></i>
+                                        </a>
+                                        <a href="{{ url_for('maintenance_event.view_maintenance_event', event_id=event.event_id) }}" 
+                                           class="btn btn-sm btn-outline-primary" 
+                                           target="_blank"
+                                           title="View details">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Pagination -->
+                    {% if events and events.pages and events.pages > 1 %}
+                    <nav aria-label="Unassigned events pagination" class="p-3 border-top">
+                        <ul class="pagination justify-content-center mb-0">
+                            {% if events.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('manager_portal.unassigned_events', page=events.prev_num, asset_type_id=current_filters.asset_type_id, status=current_filters.status, priority=current_filters.priority, date_from=current_filters.date_from, date_to=current_filters.date_to) }}">
+                                    <i class="bi bi-chevron-left"></i> Previous
+                                </a>
+                            </li>
+                            {% endif %}
+                            {% if events.iter_pages %}
+                            {% for page_num in events.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                                {% if page_num %}
+                                    {% if page_num == events.page %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ page_num }}</span>
+                                    </li>
+                                    {% else %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('manager_portal.unassigned_events', page=page_num, asset_type_id=current_filters.asset_type_id, status=current_filters.status, priority=current_filters.priority, date_from=current_filters.date_from, date_to=current_filters.date_to) }}">
+                                            {{ page_num }}
+                                        </a>
+                                    </li>
+                                    {% endif %}
+                                {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                                {% endif %}
+                            {% endfor %}
+                            {% endif %}
+                            {% if events.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('manager_portal.unassigned_events', page=events.next_num, asset_type_id=current_filters.asset_type_id, status=current_filters.status, priority=current_filters.priority, date_from=current_filters.date_from, date_to=current_filters.date_to) }}">
+                                    Next <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                        <div class="text-center mt-2 text-muted small">
+                            Showing {{ ((events.page - 1) * events.per_page) + 1 }} to {{ events.page * events.per_page if events.page * events.per_page < events.total else events.total }} of {{ events.total }} events
+                        </div>
+                    </nav>
+                    {% endif %}
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-check-circle text-success" style="font-size: 3rem;"></i>
+                        <h5 class="mt-3">No Unassigned Events</h5>
+                        <p class="text-muted">All maintenance events have been assigned to technicians.</p>
+                        <a href="{{ url_for('manager_portal.create_assign') }}" class="btn btn-warning">
+                            <i class="bi bi-plus-circle"></i> Create New Event
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Assignment Section -->
+    {% if events %}
+    <div class="row">
+        <div class="col-12">
+            <div class="bulk-assign-section">
+                <h5 class="mb-3">
+                    <i class="bi bi-people"></i> Bulk Assign Selected Events
+                </h5>
+                <form method="POST" action="{{ url_for('manager_portal.bulk_assign_events') }}" id="bulkAssignForm">
+                    <input type="hidden" name="event_ids" id="selectedEventIds">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="bulk_technician_search" class="form-label">Assign to Technician <span class="text-danger">*</span></label>
+                            <div class="position-relative">
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="bulk_technician_search" 
+                                       name="search"
+                                       placeholder="Search technicians..." 
+                                       autocomplete="off"
+                                       hx-get="{{ url_for('manager_portal.search_bars_assignment') }}"
+                                       hx-trigger="input changed delay:300ms, focus"
+                                       hx-target="#bulk_technician_results"
+                                       hx-swap="innerHTML">
+                                <input type="hidden" id="bulk_assigned_user_id" name="assigned_user_id" required>
+                                <div class="dropdown-menu w-100" id="bulk_technician_dropdown" style="max-height: 300px; overflow-y: auto; display: none;">
+                                    <div id="bulk_technician_results"
+                                         hx-get="{{ url_for('manager_portal.search_bars_assignment') }}"
+                                         hx-trigger="load"
+                                         hx-swap="innerHTML"></div>
+                                </div>
+                            </div>
+                            <div class="form-text" id="bulk_technician_feedback">Select the technician to assign selected events to</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="bulk_notes" class="form-label">Assignment Notes (Optional)</label>
+                            <input type="text" class="form-control" id="bulk_notes" name="notes" placeholder="Optional notes for all assignments">
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <button type="submit" class="btn btn-warning btn-lg" id="bulkAssignBtn" disabled>
+                            <i class="bi bi-people"></i> Bulk Assign Selected Events
+                        </button>
+                        <span class="ms-3 text-muted" id="selectedCount">0 events selected</span>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% block extra_js %}
+<script>
+// Technician selection handlers for bulk assign
+document.addEventListener('DOMContentLoaded', function() {
+    const bulkTechnicianSearch = document.getElementById('bulk_technician_search');
+    const bulkTechnicianIdInput = document.getElementById('bulk_assigned_user_id');
+    const bulkTechnicianDropdown = document.getElementById('bulk_technician_dropdown');
+    const bulkTechnicianFeedback = document.getElementById('bulk_technician_feedback');
+
+    // Global function for technician selection (called from HTMX-loaded results)
+    // Takes the clicked element and extracts username from the .username div
+    window.selectBulkTechnicianFromElement = function(element) {
+        const usernameDiv = element.querySelector('.username');
+        const technicianId = element.getAttribute('data-technician-id');
+        const bulkTechnicianSearch = document.getElementById('bulk_technician_search');
+        const bulkTechnicianIdInput = document.getElementById('bulk_assigned_user_id');
+        const bulkTechnicianDropdown = document.getElementById('bulk_technician_dropdown');
+        const bulkTechnicianFeedback = document.getElementById('bulk_technician_feedback');
+        
+        if (!usernameDiv || !technicianId) {
+            console.error('Invalid technician item structure');
+            return;
+        }
+        
+        const username = usernameDiv.textContent.trim();
+        
+        bulkTechnicianSearch.value = username;
+        bulkTechnicianIdInput.value = technicianId;
+        bulkTechnicianDropdown.style.display = 'none';
+        bulkTechnicianFeedback.textContent = `Selected: ${username}`;
+    };
+
+    // Generic handler that routes to the appropriate function based on context
+    window.handleTechnicianSelection = function(element) {
+        // Check if we're in the bulk assign context (unassigned events page)
+        const bulkSearch = document.getElementById('bulk_technician_search');
+        if (bulkSearch) {
+            if (window.selectBulkTechnicianFromElement) {
+                window.selectBulkTechnicianFromElement(element);
+            }
+        } else {
+            // Regular assign context (assign event page)
+            if (window.selectTechnicianFromElement) {
+                window.selectTechnicianFromElement(element);
+            }
+        }
+    };
+
+    // Show dropdown when HTMX updates results
+    document.body.addEventListener('htmx:afterSwap', function(event) {
+        if (event.detail.target.id === 'bulk_technician_results' && event.detail.target.innerHTML.trim()) {
+            bulkTechnicianDropdown.style.display = 'block';
+        }
+    });
+
+    // Show dropdown on focus (if there are already results)
+    if (bulkTechnicianSearch) {
+        bulkTechnicianSearch.addEventListener('focus', function() {
+            const results = document.getElementById('bulk_technician_results');
+            if (results && results.innerHTML.trim()) {
+                bulkTechnicianDropdown.style.display = 'block';
+            }
+        });
+    }
+
+    // Handle empty search input
+    if (bulkTechnicianSearch) {
+        bulkTechnicianSearch.addEventListener('input', function() {
+            if (!this.value.trim()) {
+                bulkTechnicianIdInput.value = '';
+                bulkTechnicianDropdown.style.display = 'none';
+                bulkTechnicianFeedback.textContent = 'Select the technician to assign selected events to';
+            }
+        });
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        if (bulkTechnicianSearch && !bulkTechnicianSearch.contains(e.target) && !bulkTechnicianDropdown.contains(e.target)) {
+            bulkTechnicianDropdown.style.display = 'none';
+        }
+    });
+
+    // Form validation
+    const bulkAssignForm = document.getElementById('bulkAssignForm');
+    if (bulkAssignForm) {
+        bulkAssignForm.addEventListener('submit', function(e) {
+            if (!bulkTechnicianIdInput.value) {
+                e.preventDefault();
+                bulkTechnicianSearch.focus();
+                bulkTechnicianSearch.classList.add('is-invalid');
+                bulkTechnicianFeedback.textContent = 'Please select a technician';
+                bulkTechnicianFeedback.classList.add('text-danger');
+                return false;
+            }
+        });
+        
+        // Remove invalid class on input
+        if (bulkTechnicianSearch) {
+            bulkTechnicianSearch.addEventListener('input', function() {
+                this.classList.remove('is-invalid');
+                bulkTechnicianFeedback.classList.remove('text-danger');
+            });
+        }
+    }
+
+    // Event selection functions (defined outside DOMContentLoaded so they're available globally)
+    let selectedEvents = new Set();
+
+    function updateSelectedCount() {
+        const count = selectedEvents.size;
+        const countElement = document.getElementById('selectedCount');
+        const btnElement = document.getElementById('bulkAssignBtn');
+        if (countElement) {
+            countElement.textContent = count + ' event' + (count !== 1 ? 's' : '') + ' selected';
+        }
+        if (btnElement) {
+            btnElement.disabled = count === 0;
+        }
+    }
+
+    function toggleSelectAll(checkbox) {
+        const eventCheckboxes = document.querySelectorAll('.event-checkbox');
+        eventCheckboxes.forEach(cb => {
+            cb.checked = checkbox.checked;
+            if (checkbox.checked) {
+                selectedEvents.add(cb.value);
+            } else {
+                selectedEvents.delete(cb.value);
+            }
+        });
+        updateSelectedCount();
+        updateSelectAllButtons();
+    }
+
+    function selectAll() {
+        const eventCheckboxes = document.querySelectorAll('.event-checkbox');
+        eventCheckboxes.forEach(cb => {
+            cb.checked = true;
+            selectedEvents.add(cb.value);
+        });
+        const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+        if (selectAllCheckbox) {
+            selectAllCheckbox.checked = true;
+        }
+        updateSelectedCount();
+        updateSelectAllButtons();
+    }
+
+    function deselectAll() {
+        const eventCheckboxes = document.querySelectorAll('.event-checkbox');
+        eventCheckboxes.forEach(cb => {
+            cb.checked = false;
+            selectedEvents.delete(cb.value);
+        });
+        const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+        if (selectAllCheckbox) {
+            selectAllCheckbox.checked = false;
+        }
+        updateSelectedCount();
+        updateSelectAllButtons();
+    }
+
+    function updateSelectAllButtons() {
+        const count = selectedEvents.size;
+        const total = document.querySelectorAll('.event-checkbox').length;
+        const selectAllBtn = document.getElementById('selectAllBtn');
+        const deselectAllBtn = document.getElementById('deselectAllBtn');
+        if (count === total && total > 0) {
+            if (selectAllBtn) selectAllBtn.style.display = 'none';
+            if (deselectAllBtn) deselectAllBtn.style.display = 'inline-block';
+        } else {
+            if (selectAllBtn) selectAllBtn.style.display = 'inline-block';
+            if (deselectAllBtn) deselectAllBtn.style.display = 'none';
+        }
+    }
+
+    // Make functions globally available
+    window.updateSelectedCount = updateSelectedCount;
+    window.toggleSelectAll = toggleSelectAll;
+    window.selectAll = selectAll;
+    window.deselectAll = deselectAll;
+    window.updateSelectAllButtons = updateSelectAllButtons;
+    window.selectedEvents = selectedEvents;
+
+    // Handle individual checkbox changes
+    document.querySelectorAll('.event-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            if (this.checked) {
+                selectedEvents.add(this.value);
+            } else {
+                selectedEvents.delete(this.value);
+            }
+            updateSelectedCount();
+            updateSelectAllButtons();
+            
+            // Update select all checkbox
+            const allChecked = document.querySelectorAll('.event-checkbox:checked').length === document.querySelectorAll('.event-checkbox').length;
+            const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+            if (selectAllCheckbox) {
+                selectAllCheckbox.checked = allChecked;
+            }
+        });
+    });
+    
+    // Handle bulk assign form submission - merge with existing form handler
+    const existingBulkAssignForm = document.getElementById('bulkAssignForm');
+    if (existingBulkAssignForm) {
+        existingBulkAssignForm.addEventListener('submit', function(e) {
+            if (selectedEvents.size === 0) {
+                e.preventDefault();
+                alert('Please select at least one event to assign.');
+                return false;
+            }
+            if (!bulkTechnicianIdInput || !bulkTechnicianIdInput.value) {
+                e.preventDefault();
+                if (bulkTechnicianSearch) {
+                    bulkTechnicianSearch.focus();
+                    bulkTechnicianSearch.classList.add('is-invalid');
+                }
+                if (bulkTechnicianFeedback) {
+                    bulkTechnicianFeedback.textContent = 'Please select a technician';
+                    bulkTechnicianFeedback.classList.add('text-danger');
+                }
+                return false;
+            }
+            const selectedEventIdsInput = document.getElementById('selectedEventIds');
+            if (selectedEventIdsInput) {
+                selectedEventIdsInput.value = Array.from(selectedEvents).join(',');
+            }
+        });
+    }
+    
+    updateSelectedCount();
+});
+</script>
+{% endblock %}
+{% endblock %}
+

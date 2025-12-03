@@ -21,7 +21,7 @@ class MaintenanceActionSetStruct:
     For business logic: Use MaintenanceContext
     """
     
-    def __init__(self, maintenance_action_set: Union[MaintenanceActionSet, int]):
+    def __init__(self, maintenance_action_set: MaintenanceActionSet):
         """
         Initialize MaintenanceActionSetStruct with MaintenanceActionSet instance or ID.
         
@@ -29,11 +29,10 @@ class MaintenanceActionSetStruct:
             maintenance_action_set: MaintenanceActionSet instance or ID
         """
         if isinstance(maintenance_action_set, int):
-            self._maintenance_action_set = MaintenanceActionSet.query.get_or_404(maintenance_action_set)
-            self._maintenance_action_set_id = maintenance_action_set
-        else:
-            self._maintenance_action_set = maintenance_action_set
-            self._maintenance_action_set_id = maintenance_action_set.id
+            raise ValueError("MaintenanceActionSetStruct does not accept int as an argument")
+        
+        self._maintenance_action_set = maintenance_action_set
+        self._maintenance_action_set_id = maintenance_action_set.id
         
         # Cache for lazy loading
         self._actions = None
@@ -41,6 +40,41 @@ class MaintenanceActionSetStruct:
         self._action_tools = None
         self._delays = None
         self._event = None
+        
+    @classmethod
+    def from_maintenance_action_set_id(cls, maintenance_action_set_id: int) -> 'MaintenanceActionSetStruct':
+        """
+        Create MaintenanceActionSetStruct from ID.
+        
+        Args:
+            maintenance_action_set_id: Maintenance action set ID
+            
+        Returns:
+            MaintenanceActionSetStruct instance
+        """
+
+        maintenance_action_set = MaintenanceActionSet.query.get_or_404(maintenance_action_set_id)
+        if not maintenance_action_set:
+            raise ValueError(f"Maintenance action set with id {maintenance_action_set_id} not found")
+        return cls(maintenance_action_set)
+    
+    @classmethod
+    def from_event_id(cls, event_id: int) -> Optional['MaintenanceActionSetStruct']:
+        """
+        Create MaintenanceActionSetStruct from event ID.
+        Since there's only one MaintenanceActionSet per Event (ONE-TO-ONE), returns the single instance.
+        
+        Args:
+            event_id: Event ID
+            
+        Returns:
+            MaintenanceActionSetStruct instance or None if not found
+        """
+        maintenance_action_set = MaintenanceActionSet.query.filter_by(event_id=event_id).first()
+        if maintenance_action_set:
+            return cls(maintenance_action_set)
+        return None
+    
     
     @property
     def maintenance_action_set(self) -> MaintenanceActionSet:
@@ -179,37 +213,7 @@ class MaintenanceActionSetStruct:
     def assigned_user(self):
         """Get the assigned user"""
         return self._maintenance_action_set.assigned_user
-    
-    @classmethod
-    def from_id(cls, maintenance_action_set_id: int) -> 'MaintenanceActionSetStruct':
-        """
-        Create MaintenanceActionSetStruct from ID.
-        
-        Args:
-            maintenance_action_set_id: Maintenance action set ID
-            
-        Returns:
-            MaintenanceActionSetStruct instance
-        """
-        return cls(maintenance_action_set_id)
-    
-    @classmethod
-    def from_event_id(cls, event_id: int) -> Optional['MaintenanceActionSetStruct']:
-        """
-        Create MaintenanceActionSetStruct from event ID.
-        Since there's only one MaintenanceActionSet per Event (ONE-TO-ONE), returns the single instance.
-        
-        Args:
-            event_id: Event ID
-            
-        Returns:
-            MaintenanceActionSetStruct instance or None if not found
-        """
-        maintenance_action_set = MaintenanceActionSet.query.filter_by(event_id=event_id).first()
-        if maintenance_action_set:
-            return cls(maintenance_action_set)
-        return None
-    
+
     def refresh(self):
         """Refresh cached data from database"""
         from app import db

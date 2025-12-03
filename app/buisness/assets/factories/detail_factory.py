@@ -21,18 +21,23 @@ class DetailFactory(ABC):
         # Asset detail tables
         'purchase_info': {
             'is_asset_detail': True,
-            'module_path': 'app.data.assets.asset_details.purchase_info',
+            'module_path': 'app.data.assets.asset_type_details.purchase_info',
             'class_name': 'PurchaseInfo'
         },
         'vehicle_registration': {
             'is_asset_detail': True,
-            'module_path': 'app.data.assets.asset_details.vehicle_registration',
+            'module_path': 'app.data.assets.asset_type_details.vehicle_registration',
             'class_name': 'VehicleRegistration'
         },
         'toyota_warranty_receipt': {
             'is_asset_detail': True,
-            'module_path': 'app.data.assets.asset_details.toyota_warranty_receipt',
+            'module_path': 'app.data.assets.asset_type_details.toyota_warranty_receipt',
             'class_name': 'ToyotaWarrantyReceipt'
+        },
+        'smog_record': {
+            'is_asset_detail': True,
+            'module_path': 'app.data.assets.asset_type_details.smog_record',
+            'class_name': 'SmogRecord'
         },
         # Model detail tables
         'emissions_info': {
@@ -118,18 +123,25 @@ class DetailFactory(ABC):
             module = __import__(module_path, fromlist=[class_name])
             detail_table_class = getattr(module, class_name)
             
-            # Check if row already exists
+            # Check if row already exists (only for non-many_to_one types)
+            # If many_to_one is True, always create (allow multiple records)
+            many_to_one = getattr(config, 'many_to_one', False)
+            
             if detail_table_class_path['is_asset_detail']:
-                existing_row = detail_table_class.query.filter_by(asset_id=target_id).first()
-                if existing_row:
-                    logger.debug(f"Asset detail row already exists for asset {target_id}, skipping")
-                    return False
+                # For many_to_one=False, check if record already exists
+                if not many_to_one:
+                    existing_row = detail_table_class.query.filter_by(asset_id=target_id).first()
+                    if existing_row:
+                        logger.debug(f"Asset detail row already exists for asset {target_id}, skipping")
+                        return False
                 detail_row = detail_table_class(asset_id=target_id, **kwargs)
             else:
-                existing_row = detail_table_class.query.filter_by(make_model_id=target_id).first()
-                if existing_row:
-                    logger.debug(f"Model detail row already exists for model {target_id}, skipping")
-                    return False
+                # For many_to_one=False, check if record already exists
+                if not many_to_one:
+                    existing_row = detail_table_class.query.filter_by(make_model_id=target_id).first()
+                    if existing_row:
+                        logger.debug(f"Model detail row already exists for model {target_id}, skipping")
+                        return False
                 detail_row = detail_table_class(make_model_id=target_id, **kwargs)
             
             # Add to session (don't commit - let the main transaction handle it)

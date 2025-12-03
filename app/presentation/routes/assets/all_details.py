@@ -32,6 +32,10 @@ def all_details(asset_id):
     asset_type_configs = AssetDetailService.get_asset_type_configs(asset_context.asset_type_id) if asset_context.asset_type_id else []
     model_type_configs = AssetDetailService.get_model_type_configs(asset_context.asset.make_model_id) if asset_context.asset.make_model_id else []
     
+    # Create a dictionary mapping detail_type to config for easy lookup in template
+    asset_type_config_dict = {config.detail_table_type: config for config in asset_type_configs}
+    model_type_config_dict = {config.detail_table_type: config for config in model_type_configs}
+    
     logger.info(f"All details accessed for asset: {asset_context.asset.name} (ID: {asset_id})")
     
     return render_template('assets/all_details.html',
@@ -39,5 +43,7 @@ def all_details(asset_id):
                          asset_details=asset_details,
                          model_details=model_details,
                          asset_type_configs=asset_type_configs,
-                         model_type_configs=model_type_configs)
+                         model_type_configs=model_type_configs,
+                         asset_type_config_dict=asset_type_config_dict,
+                         model_type_config_dict=model_type_config_dict)
 

@@ -98,7 +98,7 @@
                                         {{ field.replace('_', ' ').title() }}
                                     </label>
                                     <div class="form-control-plaintext">
-                                        {% if field == 'purchase_date' or field == 'warranty_expiry' or field == 'registration_expiry' or field == 'insurance_expiry' or field == 'service_date' or field == 'certification_date' or field == 'warranty_start_date' or field == 'warranty_end_date' %}
+                                        {% if field == 'purchase_date' or field == 'warranty_expiry' or field == 'registration_expiry' or field == 'insurance_expiry' or field == 'service_date' or field == 'certification_date' or field == 'warranty_start_date' or field == 'warranty_end_date' or field == 'smog_date' or field == 'expiration_date' %}
                                             {% if record[field] %}
                                                 <span class="badge bg-info">{{ record[field].strftime('%B %d, %Y') }}</span>
                                             {% else %}
@@ -131,6 +131,24 @@
                                         {% elif field == 'body_style' or field == 'transmission_type' or field == 'service_type' %}
                                             {% if record[field] %}
                                                 <span class="badge bg-dark">{{ record[field] }}</span>
+                                            {% else %}
+                                                <span class="text-muted">Not specified</span>
+                                            {% endif %}
+                                        {% elif field == 'result' %}
+                                            {% if record[field] %}
+                                                {% if record[field] == 'Pass' %}
+                                                    <span class="badge bg-success">{{ record[field] }}</span>
+                                                {% elif record[field] == 'Fail' %}
+                                                    <span class="badge bg-danger">{{ record[field] }}</span>
+                                                {% else %}
+                                                    <span class="badge bg-warning">{{ record[field] }}</span>
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="text-muted">Not specified</span>
+                                            {% endif %}
+                                        {% elif field == 'notes' or field == 'purchase_notes' or field == 'service_history' or field == 'warranty_claims' %}
+                                            {% if record[field] %}
+                                                <div class="text-break">{{ record[field] }}</div>
                                             {% else %}
                                                 <span class="text-muted">Not specified</span>
                                             {% endif %}

@@ -18,6 +18,7 @@ class ModelDetailTableTemplate(UserCreatedBase):
     # Configuration fields
     asset_type_id = db.Column(db.Integer, db.ForeignKey('asset_types.id'), nullable=True)
     detail_table_type = db.Column(db.String(100), nullable=False)  # e.g., 'emissions_info', 'model_info'
+    many_to_one = db.Column(db.Boolean, default=False)
     
     # Relationships
     asset_type = db.relationship('AssetType', backref='model_detail_templates')

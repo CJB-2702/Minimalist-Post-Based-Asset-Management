@@ -7,9 +7,10 @@ Handles CRUD operations and data access patterns for detail tables.
 from typing import List, Dict, Any, Optional, Union, Type
 from app import db
 from app.data.core.asset_info.asset import Asset
-from app.data.assets.asset_details.purchase_info import PurchaseInfo
-from app.data.assets.asset_details.vehicle_registration import VehicleRegistration
-from app.data.assets.asset_details.toyota_warranty_receipt import ToyotaWarrantyReceipt
+from app.data.assets.asset_type_details.purchase_info import PurchaseInfo
+from app.data.assets.asset_type_details.vehicle_registration import VehicleRegistration
+from app.data.assets.asset_type_details.toyota_warranty_receipt import ToyotaWarrantyReceipt
+from app.data.assets.asset_type_details.smog_record import SmogRecord
 from app.services.assets.asset_detail_union_service import AssetDetailUnionService
 
 
@@ -18,6 +19,7 @@ DETAIL_TABLE_MODELS = {
     'purchase_info': PurchaseInfo,
     'vehicle_registration': VehicleRegistration,
     'toyota_warranty_receipt': ToyotaWarrantyReceipt,
+    'smog_record': SmogRecord,
 }
 
 DETAIL_TABLE_CONFIG = {
@@ -38,6 +40,12 @@ DETAIL_TABLE_CONFIG = {
         'name': 'Toyota Warranty Receipt',
         'icon': 'bi-shield-check',
         'fields': ['warranty_receipt_number', 'warranty_type', 'warranty_mileage_limit', 'warranty_time_limit_months', 'dealer_name', 'dealer_contact', 'dealer_phone', 'dealer_email', 'service_history', 'warranty_claims']
+    },
+    'smog_record': {
+        'model': SmogRecord,
+        'name': 'Smog Record',
+        'icon': 'bi-cloud',
+        'fields': ['smog_date', 'test_station', 'certificate_number', 'result', 'expiration_date', 'notes']
     }
 }
 

@@ -63,7 +63,8 @@ def create():
             }
             
             # Use MakeModelFactory to create the make/model
-            make_model = MakeModelFactory.create_make_model(
+            factory = MakeModelFactory()
+            make_model = factory.create_make_model(
                 created_by_id=current_user.id,
                 commit=True,
                 **make_model_data

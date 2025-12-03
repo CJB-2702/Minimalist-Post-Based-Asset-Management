@@ -1,0 +1,572 @@
+{% extends "base.html" %}
+
+{% block title %}Create & Assign - Manager Portal{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-section {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .form-section h5 {
+        margin-bottom: 1rem;
+        color: #495057;
+    }
+    .preview-card {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 1rem;
+        background: white;
+    }
+    .preview-card h6 {
+        color: #6c757d;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        margin-bottom: 0.5rem;
+    }
+    .preview-card .value {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #212529;
+    }
+    .search-dropdown-item {
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+        border-bottom: 1px solid #dee2e6;
+    }
+    .search-dropdown-item:hover {
+        background-color: #f8f9fa;
+    }
+    .search-dropdown-item.selected {
+        background-color: #0d6efd;
+        color: white;
+    }
+    .search-dropdown-item:last-child {
+        border-bottom: none;
+    }
+    .search-match-count {
+        padding: 0.5rem 1rem;
+        background-color: #e9ecef;
+        font-size: 0.875rem;
+        color: #6c757d;
+        border-top: 1px solid #dee2e6;
+    }
+    .technician-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .technician-item .username {
+        font-weight: 500;
+        flex: 1;
+    }
+    .technician-item .active-events {
+        font-size: 0.875rem;
+        color: #6c757d;
+        font-weight: normal;
+        margin-left: 0.5rem;
+    }
+    .technician-item:hover .active-events {
+        color: #495057;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="bi bi-person-check text-warning"></i> Create & Assign
+                    </h1>
+                    <p class="text-muted mb-0">Create maintenance events from templates and assign them to assets and technicians</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('manager_portal.unassigned_events') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-list-ul"></i> View Unassigned Events
+                    </a>
+                    <a href="{{ url_for('manager_portal.dashboard') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Event Form -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-plus-circle"></i> Create Maintenance Event
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('manager_portal.create_event') }}" id="createEventForm" novalidate>
+                        <!-- Template Selection -->
+                        <div class="form-section">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h5 class="mb-0"><i class="bi bi-file-earmark-text"></i> Select Template</h5>
+                                <a href="{{ url_for('manager_portal.view_maintenance', type='templates') }}" 
+                                   class="btn btn-sm btn-outline-secondary" 
+                                   target="_blank">
+                                    <i class="bi bi-eye"></i> View All Templates
+                                </a>
+                            </div>
+                            <div class="mb-3">
+                                <label for="template_search" class="form-label">Template <span class="text-danger">*</span></label>
+                                <div class="position-relative">
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="template_search" 
+                                           name="search"
+                                           placeholder="Search templates..." 
+                                           autocomplete="off"
+                                           hx-get="{{ url_for('manager_portal.search_bars_templates') }}"
+                                           hx-trigger="input changed delay:300ms, focus"
+                                           hx-target="#template_results"
+                                           hx-swap="innerHTML"
+                                           hx-include="[name='filter_asset_type'], [name='filter_make_model']">
+                                    <input type="hidden" id="template_id" name="template_id" required>
+                                    <div class="dropdown-menu w-100" id="template_dropdown" style="max-height: 300px; overflow-y: auto; display: none;">
+                                        <div id="template_results" 
+                                             hx-get="{{ url_for('manager_portal.search_bars_templates') }}"
+                                             hx-trigger="load"
+                                             hx-swap="innerHTML"></div>
+                                    </div>
+                                </div>
+                                <div class="form-text" id="template_feedback">Select a maintenance template to create an event from</div>
+                            </div>
+                            
+                            <!-- Template Preview -->
+                            <div class="preview-card" id="templatePreview" style="display: none;">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="mb-0">Template Summary</h6>
+                                    <a href="#" id="templateViewLink" class="btn btn-sm btn-outline-primary" target="_blank" style="display: none;">
+                                        <i class="bi bi-eye"></i> View Template
+                                    </a>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-2">
+                                        <strong>Actions:</strong> <span class="value" id="previewActions">-</span>
+                                    </div>
+                                    <div class="col-md-6 mb-2">
+                                        <strong>Est. Duration:</strong> <span class="value" id="previewDuration">-</span>
+                                    </div>
+                                    <div class="col-md-6 mb-2">
+                                        <strong>Est. Cost:</strong> <span class="value" id="previewCost">-</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Asset Selection -->
+                        <div class="form-section">
+                            <h5><i class="bi bi-box-seam"></i> Select Asset</h5>
+                            <div class="mb-3">
+                                <label for="asset_search" class="form-label">Asset <span class="text-danger">*</span></label>
+                                <div class="position-relative">
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="asset_search" 
+                                           name="search"
+                                           placeholder="Search assets..." 
+                                           autocomplete="off"
+                                           hx-get="{{ url_for('manager_portal.search_bars_assets') }}"
+                                           hx-trigger="input changed delay:300ms, focus"
+                                           hx-target="#asset_results"
+                                           hx-swap="innerHTML"
+                                           hx-include="[name='filter_asset_type'], [name='filter_make_model'], [name='filter_location']">
+                                    <input type="hidden" id="asset_id" name="asset_id" required>
+                                    <div class="dropdown-menu w-100" id="asset_dropdown" style="max-height: 300px; overflow-y: auto; display: none;">
+                                        <div id="asset_results"
+                                             hx-get="{{ url_for('manager_portal.search_bars_assets') }}"
+                                             hx-trigger="load"
+                                             hx-swap="innerHTML"></div>
+                                    </div>
+                                </div>
+                                <div class="form-text" id="asset_feedback">Select the asset this maintenance event is for</div>
+                            </div>
+                            
+                            <!-- Asset Filters -->
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label for="filter_asset_type" class="form-label">Filter by Type</label>
+                                    <select class="form-select form-select-sm" id="filter_asset_type" name="filter_asset_type"
+                                            hx-get="{{ url_for('manager_portal.search_bars_assets') }}"
+                                            hx-trigger="change"
+                                            hx-target="#asset_results"
+                                            hx-swap="innerHTML"
+                                            hx-include="[name='search'], [name='filter_make_model'], [name='filter_location']">
+                                        <option value="">All Types</option>
+                                        {% for asset_type in asset_types %}
+                                        <option value="{{ asset_type.id }}">{{ asset_type.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="filter_make_model" class="form-label">Filter by Make/Model</label>
+                                    <select class="form-select form-select-sm" id="filter_make_model" name="filter_make_model"
+                                            hx-get="{{ url_for('manager_portal.search_bars_assets') }}"
+                                            hx-trigger="change"
+                                            hx-target="#asset_results"
+                                            hx-swap="innerHTML"
+                                            hx-include="[name='search'], [name='filter_asset_type'], [name='filter_location']">
+                                        <option value="">All Models</option>
+                                        {% for make_model in make_models %}
+                                        <option value="{{ make_model.id }}">{{ make_model.make }} {{ make_model.model }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="filter_location" class="form-label">Filter by Location</label>
+                                    <select class="form-select form-select-sm" id="filter_location" name="filter_location"
+                                            hx-get="{{ url_for('manager_portal.search_bars_assets') }}"
+                                            hx-trigger="change"
+                                            hx-target="#asset_results"
+                                            hx-swap="innerHTML"
+                                            hx-include="[name='search'], [name='filter_asset_type'], [name='filter_make_model']">
+                                        <option value="">All Locations</option>
+                                        {% for location in locations %}
+                                        <option value="{{ location.id }}">{{ location.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <!-- Asset Preview -->
+                            <div class="preview-card" id="assetPreview" style="display: none;">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="mb-0">Asset Information</h6>
+                                    <a href="#" id="assetViewLink" class="btn btn-sm btn-outline-primary" target="_blank" style="display: none;">
+                                        <i class="bi bi-eye"></i> View Asset
+                                    </a>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-2">
+                                        <strong>Name:</strong> <span class="value" id="previewAssetName">-</span>
+                                    </div>
+                                    <div class="col-md-6 mb-2">
+                                        <strong>Location:</strong> <span class="value" id="previewAssetLocation">-</span>
+                                    </div>
+                                    <div class="col-md-6 mb-2">
+                                        <strong>Type:</strong> <span class="value" id="previewAssetType">-</span>
+                                    </div>
+                                    <div class="col-md-6 mb-2">
+                                        <strong>Make/Model:</strong> <span class="value" id="previewAssetMakeModel">-</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Assignment Details -->
+                        <div class="form-section">
+                            <h5><i class="bi bi-person-check"></i> Assignment & Scheduling</h5>
+                            
+                            <div class="mb-3">
+                                <label for="technician_search" class="form-label">Assign to Technician (Optional)</label>
+                                <div class="position-relative">
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="technician_search" 
+                                           name="search"
+                                           placeholder="Search technicians..." 
+                                           autocomplete="off"
+                                           hx-get="{{ url_for('manager_portal.search_bars_assignment') }}"
+                                           hx-trigger="input changed delay:300ms, focus"
+                                           hx-target="#technician_results"
+                                           hx-swap="innerHTML">
+                                    <input type="hidden" id="assigned_user_id" name="assigned_user_id">
+                                    <div class="dropdown-menu w-100" id="technician_dropdown" style="max-height: 300px; overflow-y: auto; display: none;">
+                                        <div id="technician_results"
+                                             hx-get="{{ url_for('manager_portal.search_bars_assignment') }}"
+                                             hx-trigger="load"
+                                             hx-swap="innerHTML"></div>
+                                    </div>
+                                </div>
+                                <div class="form-text" id="technician_feedback">You can assign later if not selected now</div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="planned_start_datetime" class="form-label">Planned Start Date/Time <span class="text-danger">*</span></label>
+                                    <input type="datetime-local" class="form-control" id="planned_start_datetime" name="planned_start_datetime" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="priority" class="form-label">Priority <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="priority" name="priority" required>
+                                        <option value="">Select Priority</option>
+                                        <option value="Low">Low</option>
+                                        <option value="Medium" selected>Medium</option>
+                                        <option value="High">High</option>
+                                        <option value="Critical">Critical</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="notes" class="form-label">Notes (Optional)</label>
+                                <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="Additional instructions or notes..."></textarea>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('manager_portal.dashboard') }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-warning btn-lg">
+                                <i class="bi bi-check-circle"></i> Create & Assign Event
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions Sidebar -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm mb-3">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0"><i class="bi bi-lightning-charge"></i> Quick Actions</h6>
+                </div>
+                <div class="card-body">
+                    <a href="{{ url_for('manager_portal.unassigned_events') }}" class="btn btn-outline-primary w-100 mb-2">
+                        <i class="bi bi-list-ul"></i> View Unassigned Events
+                    </a>
+                    <a href="{{ url_for('manager_portal.view_maintenance') }}" class="btn btn-outline-secondary w-100 mb-2">
+                        <i class="bi bi-eye"></i> View All Maintenance
+                    </a>
+                    <a href="{{ url_for('manager_portal.build_maintenance') }}" class="btn btn-outline-info w-100">
+                        <i class="bi bi-tools"></i> Build Templates
+                    </a>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0"><i class="bi bi-info-circle"></i> Help</h6>
+                </div>
+                <div class="card-body">
+                    <p class="small mb-2">
+                        <strong>Creating Events:</strong> Select a template and asset to create a new maintenance event. 
+                        You can optionally assign it to a technician during creation.
+                    </p>
+                    <p class="small mb-2">
+                        <strong>Unassigned Events:</strong> View and bulk assign events that haven't been assigned to technicians yet.
+                    </p>
+                    <p class="small mb-0">
+                        <strong>Reassigning:</strong> Use the individual event pages to reassign events to different technicians.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Template selection handlers
+    const templateSearch = document.getElementById('template_search');
+    const templateIdInput = document.getElementById('template_id');
+    const templateDropdown = document.getElementById('template_dropdown');
+    const templateFeedback = document.getElementById('template_feedback');
+    const templatePreview = document.getElementById('templatePreview');
+
+    // Global function for template selection (called from HTMX-loaded results)
+    window.selectTemplate = function(id, taskName, revision, totalActions, estimatedDuration, estimatedCost) {
+        templateSearch.value = `${taskName} (Rev. ${revision})`;
+        templateIdInput.value = id;
+        templateDropdown.style.display = 'none';
+        
+        // Update preview
+        document.getElementById('previewActions').textContent = totalActions || '-';
+        document.getElementById('previewDuration').textContent = estimatedDuration ? estimatedDuration + ' hrs' : '-';
+        document.getElementById('previewCost').textContent = estimatedCost ? '$' + parseFloat(estimatedCost).toFixed(2) : '-';
+        templatePreview.style.display = 'block';
+        
+        // Update template view link
+        const templateViewLink = document.getElementById('templateViewLink');
+        templateViewLink.href = `/maintenance/maintenance-template/${id}/view`;
+        templateViewLink.style.display = 'inline-block';
+        
+        templateFeedback.textContent = `Selected: ${taskName}`;
+    };
+
+    // Show dropdown when HTMX updates results
+    document.body.addEventListener('htmx:afterSwap', function(event) {
+        if (event.detail.target.id === 'template_results' && event.detail.target.innerHTML.trim()) {
+            templateDropdown.style.display = 'block';
+        }
+        if (event.detail.target.id === 'asset_results' && event.detail.target.innerHTML.trim()) {
+            document.getElementById('asset_dropdown').style.display = 'block';
+        }
+        if (event.detail.target.id === 'technician_results' && event.detail.target.innerHTML.trim()) {
+            document.getElementById('technician_dropdown').style.display = 'block';
+        }
+    });
+
+    // Handle empty search input
+    templateSearch.addEventListener('input', function() {
+        if (!this.value.trim()) {
+            templateIdInput.value = '';
+            templatePreview.style.display = 'none';
+            templateDropdown.style.display = 'none';
+            templateFeedback.textContent = 'Select a maintenance template to create an event from';
+        }
+    });
+
+    // Asset selection handlers
+    const assetSearch = document.getElementById('asset_search');
+    const assetIdInput = document.getElementById('asset_id');
+    const assetDropdown = document.getElementById('asset_dropdown');
+    const assetFeedback = document.getElementById('asset_feedback');
+    const assetPreview = document.getElementById('assetPreview');
+
+    // Global function for asset selection (called from HTMX-loaded results)
+    window.selectAsset = function(id, name, location, assetType, makeModel) {
+        assetSearch.value = name;
+        assetIdInput.value = id;
+        assetDropdown.style.display = 'none';
+        
+        // Update preview
+        document.getElementById('previewAssetName').textContent = name || '-';
+        document.getElementById('previewAssetLocation').textContent = location || '-';
+        document.getElementById('previewAssetType').textContent = assetType || '-';
+        document.getElementById('previewAssetMakeModel').textContent = makeModel || '-';
+        assetPreview.style.display = 'block';
+        
+        // Update asset view link
+        const assetViewLink = document.getElementById('assetViewLink');
+        assetViewLink.href = `/assets/all-details/${id}`;
+        assetViewLink.style.display = 'inline-block';
+        
+        assetFeedback.textContent = `Selected: ${name}`;
+    };
+
+    // Handle empty search input
+    assetSearch.addEventListener('input', function() {
+        if (!this.value.trim()) {
+            assetIdInput.value = '';
+            assetPreview.style.display = 'none';
+            assetDropdown.style.display = 'none';
+            assetFeedback.textContent = 'Select the asset this maintenance event is for';
+        }
+    });
+
+    // Technician selection handlers
+    const technicianSearch = document.getElementById('technician_search');
+    const technicianIdInput = document.getElementById('assigned_user_id');
+    const technicianDropdown = document.getElementById('technician_dropdown');
+    const technicianFeedback = document.getElementById('technician_feedback');
+
+    // Global function for technician selection (called from HTMX-loaded results)
+    // Takes the clicked element and extracts username from the .username div
+    window.selectTechnicianFromElement = function(element) {
+        const usernameDiv = element.querySelector('.username');
+        const technicianId = element.getAttribute('data-technician-id');
+        
+        if (!usernameDiv || !technicianId) {
+            console.error('Invalid technician item structure');
+            return;
+        }
+        
+        const username = usernameDiv.textContent.trim();
+        
+        technicianSearch.value = username;
+        technicianIdInput.value = technicianId;
+        technicianDropdown.style.display = 'none';
+        technicianFeedback.textContent = `Selected: ${username}`;
+    };
+
+    // Handler function called from onclick in assignment_results.html
+    window.handleTechnicianSelection = function(element) {
+        selectTechnicianFromElement(element);
+    };
+
+    // Handle empty search input
+    if (technicianSearch) {
+        technicianSearch.addEventListener('input', function() {
+            if (!this.value.trim()) {
+                technicianIdInput.value = '';
+                technicianDropdown.style.display = 'none';
+                technicianFeedback.textContent = 'You can assign later if not selected now';
+            }
+        });
+    }
+
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!templateSearch.contains(e.target) && !templateDropdown.contains(e.target)) {
+            templateDropdown.style.display = 'none';
+        }
+        if (!assetSearch.contains(e.target) && !assetDropdown.contains(e.target)) {
+            assetDropdown.style.display = 'none';
+        }
+        if (technicianSearch && !technicianSearch.contains(e.target) && !technicianDropdown.contains(e.target)) {
+            technicianDropdown.style.display = 'none';
+        }
+    });
+    
+    // Set default planned start to now
+    const plannedStartInput = document.getElementById('planned_start_datetime');
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    plannedStartInput.value = now.toISOString().slice(0, 16);
+    
+    // Form validation
+    const form = document.getElementById('createEventForm');
+    form.addEventListener('submit', function(e) {
+        if (!templateIdInput.value) {
+            e.preventDefault();
+            templateSearch.focus();
+            templateSearch.classList.add('is-invalid');
+            templateFeedback.textContent = 'Please select a template';
+            templateFeedback.classList.add('text-danger');
+            return false;
+        }
+        if (!assetIdInput.value) {
+            e.preventDefault();
+            assetSearch.focus();
+            assetSearch.classList.add('is-invalid');
+            assetFeedback.textContent = 'Please select an asset';
+            assetFeedback.classList.add('text-danger');
+            return false;
+        }
+        if (!plannedStartInput.value) {
+            e.preventDefault();
+            plannedStartInput.focus();
+            plannedStartInput.classList.add('is-invalid');
+            return false;
+        }
+        const prioritySelect = document.getElementById('priority');
+        if (!prioritySelect.value) {
+            e.preventDefault();
+            prioritySelect.focus();
+            prioritySelect.classList.add('is-invalid');
+            return false;
+        }
+    });
+    
+    // Remove invalid class on input
+    templateSearch.addEventListener('input', function() {
+        this.classList.remove('is-invalid');
+        templateFeedback.classList.remove('text-danger');
+    });
+    
+    assetSearch.addEventListener('input', function() {
+        this.classList.remove('is-invalid');
+        assetFeedback.classList.remove('text-danger');
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}
+

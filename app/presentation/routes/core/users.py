@@ -11,19 +11,7 @@ from app.data.core.asset_info.asset import Asset
 from app.data.core.event_info.event import Event
 from app.data.core.major_location import MajorLocation
 from app.data.core.asset_info.asset_type import AssetType
-from app import db
-
-bp = Blueprint('users', __name__)
-logger = get_logger("asset_management.routes.bp")
-
-from flask import Blueprint, render_template, redirect, url_for, flash, request, abort
-from app.logger import get_logger
-from flask_login import login_required, current_user
-from app.data.core.user_info.user import User
-from app.data.core.asset_info.asset import Asset
-from app.data.core.event_info.event import Event
-from app.data.core.major_location import MajorLocation
-from app.data.core.asset_info.asset_type import AssetType
+from app.buisness.core.user_context import UserContext
 from app.services.core.user_service import UserService
 from app import db
 
@@ -67,7 +55,7 @@ def detail(user_id):
 @bp.route('/users/create', methods=['GET', 'POST'])
 @login_required
 def create():
-    """Create new user"""
+    """Create new user using UserContext"""
     if request.method == 'POST':
         # Validate form data
         username = request.form.get('username')
@@ -86,42 +74,38 @@ def create():
             flash('Passwords do not match', 'error')
             return render_template('core/users/create.html')
         
-        # Check if username or email already exists
-        if User.query.filter_by(username=username).first():
-            flash('Username already exists', 'error')
+        # Create user using UserContext (creates user + portal_user_data)
+        try:
+            user_context = UserContext.create(
+                username=username,
+                email=email,
+                password=password,
+                is_admin=is_admin,
+                is_active=is_active,
+                created_by_id=current_user.id,
+                commit=True
+            )
+            
+            flash('User created successfully', 'success')
+            return redirect(url_for('users.detail', user_id=user_context.user_id))
+        
+        except ValueError as e:
+            flash(str(e), 'error')
             return render_template('core/users/create.html')
-        
-        if User.query.filter_by(email=email).first():
-            flash('Email already exists', 'error')
+        except Exception as e:
+            flash(f'Error creating user: {str(e)}', 'error')
+            logger.error(f"Unexpected error creating user: {e}")
+            db.session.rollback()
             return render_template('core/users/create.html')
-        
-        # Create new user
-        user = User(
-            username=username,
-            email=email,
-            is_admin=is_admin,
-            is_active=is_active
-        )
-        user.set_password(password)
-        
-        db.session.add(user)
-        db.session.commit()
-        
-        flash('User created successfully', 'success')
-        return redirect(url_for('users.detail', user_id=user.id))
     
     return render_template('core/users/create.html')
 
-# ROUTE_TYPE: SIMPLE_CRUD (EDIT)
-# EXCEPTION: Direct ORM usage allowed for simple EDIT operations on User
-# This route performs basic update operations with minimal business logic.
-# Rationale: Simple user update doesn't require domain abstraction.
-# NOTE: CREATE/DELETE operations should use domain managers - see create() and delete() routes
 @bp.route('/users/<int:user_id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit(user_id):
-    """Edit user"""
+    """Edit user using UserContext"""
     user = User.query.get_or_404(user_id)
+    user_context = UserContext(user)
     
     # Prevent editing system user
     if user.is_system:
@@ -157,40 +141,45 @@ def edit(user_id):
                                      MajorLocation=MajorLocation,
                                      AssetType=AssetType)
         
-        # Check if username or email already exists (excluding current user)
-        existing_user = User.query.filter_by(username=username).first()
-        if existing_user and existing_user.id != user.id:
-            flash('Username already exists', 'error')
+        # Update user using UserContext
+        try:
+            update_data = {
+                'username': username,
+                'email': email,
+                'is_admin': is_admin,
+                'is_active': is_active
+            }
+            
+            if password:
+                update_data['password'] = password
+            
+            user_context.update(
+                updated_by_id=current_user.id,
+                commit=True,
+                **update_data
+            )
+            
+            flash('User updated successfully', 'success')
+            return redirect(url_for('users.detail', user_id=user.id))
+        
+        except ValueError as e:
+            flash(str(e), 'error')
             return render_template('core/users/edit.html', 
                                  user=user,
                                  Asset=Asset,
                                  Event=Event,
                                  MajorLocation=MajorLocation,
                                  AssetType=AssetType)
-        
-        existing_user = User.query.filter_by(email=email).first()
-        if existing_user and existing_user.id != user.id:
-            flash('Email already exists', 'error')
+        except Exception as e:
+            flash(f'Error updating user: {str(e)}', 'error')
+            logger.error(f"Unexpected error updating user: {e}")
+            db.session.rollback()
             return render_template('core/users/edit.html', 
                                  user=user,
                                  Asset=Asset,
                                  Event=Event,
                                  MajorLocation=MajorLocation,
                                  AssetType=AssetType)
-        
-        # Update user
-        user.username = username
-        user.email = email
-        user.is_admin = is_admin
-        user.is_active = is_active
-        
-        if password:
-            user.set_password(password)
-        
-        db.session.commit()
-        
-        flash('User updated successfully', 'success')
-        return redirect(url_for('users.detail', user_id=user.id))
     
     return render_template('core/users/edit.html', 
                          user=user,
@@ -202,8 +191,9 @@ def edit(user_id):
 @bp.route('/users/<int:user_id>/delete', methods=['POST'])
 @login_required
 def delete(user_id):
-    """Delete user"""
+    """Delete user using UserContext"""
     user = User.query.get_or_404(user_id)
+    user_context = UserContext(user)
     
     # Prevent deleting system user or self
     if user.is_system:
@@ -214,13 +204,20 @@ def delete(user_id):
         flash('Cannot delete your own account', 'error')
         return redirect(url_for('users.detail', user_id=user.id))
     
-    # Check if user has created any entities
-    if Asset.query.filter_by(created_by_id=user.id).count() > 0:
-        flash('Cannot delete user with created assets', 'error')
+    # Delete user using UserContext
+    try:
+        user_context.delete(
+            deleted_by_id=current_user.id,
+            commit=True
+        )
+        flash('User deleted successfully', 'success')
+        return redirect(url_for('users.list'))
+    
+    except ValueError as e:
+        flash(str(e), 'error')
         return redirect(url_for('users.detail', user_id=user.id))
-    
-    db.session.delete(user)
-    db.session.commit()
-    
-    flash('User deleted successfully', 'success')
-    return redirect(url_for('users.list')) 
+    except Exception as e:
+        flash(f'Error deleting user: {str(e)}', 'error')
+        logger.error(f"Unexpected error deleting user: {e}")
+        db.session.rollback()
+        return redirect(url_for('users.detail', user_id=user.id)) 

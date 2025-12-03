@@ -105,6 +105,37 @@ class BuildPartDemand:
         """Convert to dictionary."""
         return dict(self._data)
     
+    def update_from_dict(self, updates: Dict[str, Any]) -> None:
+        """Update part demand fields from dictionary, filtering valid fields."""
+        if not updates:
+            return
+        valid_fields = self._get_valid_fields()
+        for key, value in updates.items():
+            if key not in valid_fields:
+                continue
+            if key in ('part_id',):
+                if value is None or value == '':
+                    self._data.pop(key, None)
+                else:
+                    try:
+                        self._data[key] = int(value)
+                    except (ValueError, TypeError):
+                        continue
+            elif key in ('quantity_required', 'expected_cost'):
+                if value is None or value == '':
+                    self._data.pop(key, None)
+                else:
+                    try:
+                        self._data[key] = float(value)
+                    except (ValueError, TypeError):
+                        continue
+            else:
+                # notes or other strings
+                if value is None or value == '':
+                    self._data.pop(key, None)
+                else:
+                    self._data[key] = value
+    
     def __repr__(self):
         part_id = self.part_id or 'None'
         qty = self.quantity_required

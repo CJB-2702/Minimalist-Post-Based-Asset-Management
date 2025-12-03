@@ -1,0 +1,292 @@
+{% extends "base.html" %}
+
+{% block title %}Create Event - Create & Assign{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-section {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .form-section h5 {
+        margin-bottom: 1rem;
+        color: #495057;
+    }
+    .preview-card {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 1rem;
+        background: white;
+    }
+    .preview-card h6 {
+        color: #6c757d;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        margin-bottom: 0.5rem;
+    }
+    .template-summary {
+        background: #e7f1ff;
+        border-left: 4px solid #0d6efd;
+        padding: 1rem;
+        border-radius: 4px;
+        margin-bottom: 1.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="bi bi-plus-circle text-warning"></i> Create Maintenance Event
+                    </h1>
+                    <p class="text-muted mb-0">Create a new maintenance event from a template</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('manager_portal.create_assign') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Create & Assign
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Template Summary (if selected) -->
+    {% if template_summary %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="template-summary">
+                <h5><i class="bi bi-file-earmark-text"></i> Selected Template: {{ template_summary.task_name }}</h5>
+                <div class="row mt-3">
+                    <div class="col-md-3">
+                        <strong>Revision:</strong> {{ template_summary.revision }}
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Actions:</strong> {{ template_summary.total_actions }}
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Est. Duration:</strong> {{ template_summary.estimated_duration or '-' }} hrs
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Est. Cost:</strong> ${{ "%.2f"|format(template_summary.estimated_cost or 0) }}
+                    </div>
+                </div>
+                {% if template_summary.description %}
+                <p class="mt-2 mb-0"><strong>Description:</strong> {{ template_summary.description }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Create Event Form -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-clipboard-plus"></i> Event Details
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('manager_portal.create_event') }}" id="createEventForm">
+                        <!-- Template Selection -->
+                        <div class="form-section">
+                            <h5><i class="bi bi-file-earmark-text"></i> Select Template</h5>
+                            <div class="mb-3">
+                                <label for="template_id" class="form-label">Template <span class="text-danger">*</span></label>
+                                <select class="form-select" id="template_id" name="template_id" required>
+                                    <option value="">-- Select a template --</option>
+                                    {% for template in templates %}
+                                    <option value="{{ template.id }}" {% if selected_template_id == template.id %}selected{% endif %}>
+                                        {{ template.task_name }} (Rev. {{ template.revision }})
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">Select a maintenance template to create an event from</div>
+                            </div>
+                        </div>
+
+                        <!-- Asset Selection -->
+                        <div class="form-section">
+                            <h5><i class="bi bi-box-seam"></i> Select Asset</h5>
+                            <div class="mb-3">
+                                <label for="asset_id" class="form-label">Asset <span class="text-danger">*</span></label>
+                                <select class="form-select" id="asset_id" name="asset_id" required>
+                                    <option value="">-- Select an asset --</option>
+                                </select>
+                                <div class="form-text">Select the asset this maintenance event is for</div>
+                            </div>
+                            
+                            <!-- Asset Filters -->
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label for="filter_asset_type" class="form-label">Filter by Type</label>
+                                    <select class="form-select form-select-sm" id="filter_asset_type">
+                                        <option value="">All Types</option>
+                                        {% for asset_type in asset_types %}
+                                        <option value="{{ asset_type.id }}">{{ asset_type.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="filter_make_model" class="form-label">Filter by Make/Model</label>
+                                    <select class="form-select form-select-sm" id="filter_make_model">
+                                        <option value="">All Models</option>
+                                        {% for make_model in make_models %}
+                                        <option value="{{ make_model.id }}">{{ make_model.make }} {{ make_model.model }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="filter_location" class="form-label">Filter by Location</label>
+                                    <select class="form-select form-select-sm" id="filter_location">
+                                        <option value="">All Locations</option>
+                                        {% for location in locations %}
+                                        <option value="{{ location.id }}">{{ location.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Assignment Details -->
+                        <div class="form-section">
+                            <h5><i class="bi bi-person-check"></i> Assignment & Scheduling</h5>
+                            
+                            <div class="mb-3">
+                                <label for="assigned_user_id" class="form-label">Assign to Technician (Optional)</label>
+                                <select class="form-select" id="assigned_user_id" name="assigned_user_id">
+                                    <option value="">-- Not assigned --</option>
+                                    {% for tech in technicians %}
+                                    <option value="{{ tech.id }}">
+                                        {{ tech.username }} ({{ tech.workload_count }} active)
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">You can assign later if not selected now</div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="planned_start_datetime" class="form-label">Planned Start Date/Time</label>
+                                    <input type="datetime-local" class="form-control" id="planned_start_datetime" name="planned_start_datetime">
+                                    <div class="form-text">Leave blank to use current date/time</div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="priority" class="form-label">Priority</label>
+                                    <select class="form-select" id="priority" name="priority">
+                                        <option value="Low">Low</option>
+                                        <option value="Medium" selected>Medium</option>
+                                        <option value="High">High</option>
+                                        <option value="Critical">Critical</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="notes" class="form-label">Notes (Optional)</label>
+                                <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="Additional instructions or notes..."></textarea>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('manager_portal.create_assign') }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-warning btn-lg">
+                                <i class="bi bi-check-circle"></i> Create Event
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Help Sidebar -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0"><i class="bi bi-info-circle"></i> Help</h6>
+                </div>
+                <div class="card-body">
+                    <p class="small mb-2">
+                        <strong>Template:</strong> Select a maintenance template that defines the actions and requirements for this event.
+                    </p>
+                    <p class="small mb-2">
+                        <strong>Asset:</strong> Choose the asset that this maintenance event applies to. Use filters to find assets quickly.
+                    </p>
+                    <p class="small mb-2">
+                        <strong>Assignment:</strong> You can assign the event to a technician now, or assign it later from the unassigned events page.
+                    </p>
+                    <p class="small mb-0">
+                        <strong>After Creation:</strong> The event will be created and you'll be redirected back to the Create & Assign portal.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Template selection - reload page with template_id
+    const templateSelect = document.getElementById('template_id');
+    templateSelect.addEventListener('change', function() {
+        if (this.value) {
+            window.location.href = '{{ url_for("manager_portal.create_event") }}?template_id=' + this.value;
+        }
+    });
+
+    // Asset loading and filtering
+    const assetSelect = document.getElementById('asset_id');
+    const filterAssetType = document.getElementById('filter_asset_type');
+    const filterMakeModel = document.getElementById('filter_make_model');
+    const filterLocation = document.getElementById('filter_location');
+    
+    function loadAssets() {
+        const assetTypeId = filterAssetType.value;
+        const makeModelId = filterMakeModel.value;
+        const locationId = filterLocation.value;
+        
+        fetch(`{{ url_for('manager_portal.api_assets') }}?asset_type_id=${assetTypeId}&make_model_id=${makeModelId}&location_id=${locationId}`)
+            .then(response => response.json())
+            .then(data => {
+                assetSelect.innerHTML = '<option value="">-- Select an asset --</option>';
+                data.forEach(asset => {
+                    const option = document.createElement('option');
+                    option.value = asset.id;
+                    option.textContent = asset.name + (asset.serial_number ? ' (' + asset.serial_number + ')' : '');
+                    assetSelect.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Error loading assets:', error);
+            });
+    }
+    
+    // Load assets on filter change
+    [filterAssetType, filterMakeModel, filterLocation].forEach(filter => {
+        filter.addEventListener('change', loadAssets);
+    });
+    
+    // Initial load
+    loadAssets();
+    
+    // Set default planned start to now
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    document.getElementById('planned_start_datetime').value = now.toISOString().slice(0, 16);
+});
+</script>
+{% endblock %}
+{% endblock %}
+

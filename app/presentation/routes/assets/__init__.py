@@ -10,10 +10,12 @@ bp = Blueprint('assets', __name__)
 logger = get_logger("asset_management.routes.bp")
 
 # Import asset detail routes
-from . import detail_tables, model_details, all_details, asset_details_card
+from . import detail_tables, model_details, all_details, asset_details_card, detail_template_config, detail_template_crud
 
 # Register the blueprints
 bp.register_blueprint(detail_tables.bp, url_prefix='/detail-tables')
 bp.register_blueprint(model_details.bp, url_prefix='/model-details')
 bp.register_blueprint(all_details.bp)
-bp.register_blueprint(asset_details_card.bp) 
+bp.register_blueprint(asset_details_card.bp)
+bp.register_blueprint(detail_template_config.bp, url_prefix='/detail-template-config')
+bp.register_blueprint(detail_template_crud.bp, url_prefix='/detail-template-crud') 

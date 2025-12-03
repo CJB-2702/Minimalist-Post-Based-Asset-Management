@@ -63,6 +63,48 @@
         </div>
     </div>
 
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4>
+                        <i class="bi bi-lightning"></i>
+                        Quick Actions
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('core_assets.create') }}" class="btn btn-primary btn-lg w-100">
+                                <i class="bi bi-plus-circle"></i><br>
+                                Add New Asset
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('events.create') }}" class="btn btn-success btn-lg w-100">
+                                <i class="bi bi-calendar-plus"></i><br>
+                                Create Event
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('make_models.create') }}" class="btn btn-warning btn-lg w-100">
+                                <i class="bi bi-gear-wide-connected"></i><br>
+                                Add Make/Model
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('asset_types.create') }}" class="btn btn-info btn-lg w-100">
+                                <i class="bi bi-tag"></i><br>
+                                Create Asset Type
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Phase 2A Detail Tables Section -->
     <div class="row mb-4">
         <div class="col-12">
@@ -76,7 +118,7 @@
                 </div>
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-3 mb-3">
                             <div class="card h-100 border-primary">
                                 <div class="card-body text-center">
                                     <i class="bi bi-cart display-4 text-primary"></i>
@@ -96,7 +138,7 @@
                             </div>
                         </div>
                         
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-3 mb-3">
                             <div class="card h-100 border-success">
                                 <div class="card-body text-center">
                                     <i class="bi bi-car-front display-4 text-success"></i>
@@ -116,7 +158,7 @@
                             </div>
                         </div>
                         
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-3 mb-3">
                             <div class="card h-100 border-warning">
                                 <div class="card-body text-center">
                                     <i class="bi bi-shield-check display-4 text-warning"></i>
@@ -129,6 +171,26 @@
                                         </a>
                                         <a href="{{ url_for('assets.detail_tables.create', detail_type='toyota_warranty_receipt') }}" 
                                            class="btn btn-outline-warning">
+                                            <i class="bi bi-plus"></i> Create New
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-3 mb-3">
+                            <div class="card h-100 border-info">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-cloud display-4 text-info"></i>
+                                    <h5 class="card-title">Smog Record</h5>
+                                    <p class="card-text">Track smog test dates, results, certificates, and expiration dates for vehicles.</p>
+                                    <div class="btn-group-vertical w-100">
+                                        <a href="{{ url_for('assets.detail_tables.list', detail_type='smog_record') }}" 
+                                           class="btn btn-info">
+                                            <i class="bi bi-list"></i> View All
+                                        </a>
+                                        <a href="{{ url_for('assets.detail_tables.create', detail_type='smog_record') }}" 
+                                           class="btn btn-outline-info">
                                             <i class="bi bi-plus"></i> Create New
                                         </a>
                                     </div>
@@ -199,41 +261,77 @@
         </div>
     </div>
 
-    <!-- Quick Actions -->
-    <div class="row">
+    <!-- Detail Auto Creation Templates -->
+    <div class="row mb-4">
         <div class="col-12">
             <div class="card">
                 <div class="card-header">
                     <h4>
-                        <i class="bi bi-lightning"></i>
-                        Quick Actions
+                        <i class="bi bi-gear"></i>
+                        Detail Auto Creation Templates
                     </h4>
+                    <p class="text-muted mb-0">Configure which detail tables are automatically created for assets</p>
                 </div>
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-md-3 mb-3">
-                            <a href="{{ url_for('core_assets.create') }}" class="btn btn-primary btn-lg w-100">
-                                <i class="bi bi-plus-circle"></i><br>
-                                Add New Asset
-                            </a>
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100 border-primary">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-tag display-4 text-primary"></i>
+                                    <h5 class="card-title">Asset Type Templates</h5>
+                                    <p class="card-text">Configure detail tables that auto-create for all assets of a specific asset type.</p>
+                                    <div class="btn-group-vertical w-100">
+                                        <a href="{{ url_for('assets.detail_template_crud.list_asset_detail_template_by_asset_type') }}" 
+                                           class="btn btn-primary">
+                                            <i class="bi bi-list"></i> View All
+                                        </a>
+                                        <a href="{{ url_for('assets.detail_template_crud.create_asset_detail_template_by_asset_type') }}" 
+                                           class="btn btn-outline-primary">
+                                            <i class="bi bi-plus"></i> Create New
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="col-md-3 mb-3">
-                            <a href="{{ url_for('events.create') }}" class="btn btn-success btn-lg w-100">
-                                <i class="bi bi-calendar-plus"></i><br>
-                                Create Event
-                            </a>
+                        
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100 border-warning">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-gear-wide-connected display-4 text-warning"></i>
+                                    <h5 class="card-title">Make/Model Templates</h5>
+                                    <p class="card-text">Configure detail tables that auto-create for all assets of a specific make/model.</p>
+                                    <div class="btn-group-vertical w-100">
+                                        <a href="{{ url_for('assets.detail_template_crud.list_asset_detail_template_by_model_type') }}" 
+                                           class="btn btn-warning">
+                                            <i class="bi bi-list"></i> View All
+                                        </a>
+                                        <a href="{{ url_for('assets.detail_template_crud.create_asset_detail_template_by_model_type') }}" 
+                                           class="btn btn-outline-warning">
+                                            <i class="bi bi-plus"></i> Create New
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="col-md-3 mb-3">
-                            <a href="{{ url_for('make_models.create') }}" class="btn btn-warning btn-lg w-100">
-                                <i class="bi bi-gear-wide-connected"></i><br>
-                                Add Make/Model
-                            </a>
-                        </div>
-                        <div class="col-md-3 mb-3">
-                            <a href="{{ url_for('asset_types.create') }}" class="btn btn-info btn-lg w-100">
-                                <i class="bi bi-tag"></i><br>
-                                Create Asset Type
-                            </a>
+                        
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100 border-info">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-info-circle display-4 text-info"></i>
+                                    <h5 class="card-title">Model Detail Templates</h5>
+                                    <p class="card-text">Configure model detail tables that auto-create for make/models by asset type.</p>
+                                    <div class="btn-group-vertical w-100">
+                                        <a href="{{ url_for('assets.detail_template_crud.list_model_detail_table_template') }}" 
+                                           class="btn btn-info">
+                                            <i class="bi bi-list"></i> View All
+                                        </a>
+                                        <a href="{{ url_for('assets.detail_template_crud.create_model_detail_table_template') }}" 
+                                           class="btn btn-outline-info">
+                                            <i class="bi bi-plus"></i> Create New
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

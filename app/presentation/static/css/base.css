@@ -309,4 +309,31 @@ body {
 .modal-backdrop {
     transition: none !important;
     animation: none !important;
+}
+
+/* Core Management dropdown two-column layout */
+.core-management-dropdown {
+    min-width: 400px;
+    padding: 0;
+}
+
+.core-management-dropdown .container-fluid {
+    padding: 0;
+}
+
+.core-management-dropdown .col-6 {
+    padding: 0.25rem 0;
+}
+
+.core-management-dropdown .dropdown-item {
+    padding: 0.5rem 1rem;
+}
+
+.core-management-dropdown .dropdown-header {
+    padding: 0.5rem 1rem;
+    margin: 0;
+}
+
+.core-management-dropdown .border-start {
+    border-color: #dee2e6 !important;
 } 

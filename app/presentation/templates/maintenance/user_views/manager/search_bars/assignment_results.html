@@ -1,0 +1,22 @@
+{% if error %}
+<div class="search-dropdown-item text-danger">Error: {{ error }}</div>
+{% elif technicians|length == 0 %}
+<div class="search-dropdown-item text-muted">No technicians found</div>
+{% else %}
+{% for tech in technicians %}
+<div class="search-dropdown-item technician-item" 
+     data-technician-id="{{ tech.id }}"
+     onclick="handleTechnicianSelection(this)">
+    <div class="username">{{ tech.username }}</div>
+    <div class="active-events">{{ tech.workload_count }} active</div>
+</div>
+{% endfor %}
+<div class="search-match-count">
+    {% if total_count > showing %}
+    Showing {{ showing }} of {{ total_count }} matches
+    {% else %}
+    {{ total_count }} {{ 'match' if total_count == 1 else 'matches' }}
+    {% endif %}
+</div>
+{% endif %}
+

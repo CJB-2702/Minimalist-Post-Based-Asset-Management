@@ -1,0 +1,669 @@
+{% extends "base.html" %}
+
+{% block title %}View Maintenance Events{% endblock %}
+
+{% block extra_css %}
+<style>
+    .event-card {
+        transition: all 0.2s;
+        border-left: 3px solid transparent;
+    }
+    .event-card:hover {
+        border-left-color: #0d6efd;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .status-badge {
+        font-size: 0.75rem;
+        padding: 0.35rem 0.65rem;
+    }
+    .progress-bar-custom {
+        height: 8px;
+        border-radius: 4px;
+    }
+    .filter-card {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+    }
+    .filter-field-label {
+        font-size: 0.875rem;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+    .filter-group {
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        background-color: white;
+    }
+    .filter-group-title {
+        font-size: 0.875rem;
+        font-weight: 700;
+        color: #495057;
+        margin-bottom: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .search-dropdown-item {
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+        border-bottom: 1px solid #dee2e6;
+    }
+    .search-dropdown-item:hover {
+        background-color: #f8f9fa;
+    }
+    .search-dropdown-item.selected {
+        background-color: #0d6efd;
+        color: white;
+    }
+    .search-dropdown-item:last-child {
+        border-bottom: none;
+    }
+    .search-match-count {
+        padding: 0.5rem 1rem;
+        background-color: #e9ecef;
+        font-size: 0.875rem;
+        color: #6c757d;
+        border-top: 1px solid #dee2e6;
+    }
+    details summary {
+        list-style: none;
+    }
+    details summary::-webkit-details-marker {
+        display: none;
+    }
+    details summary .bi-chevron-down {
+        transition: transform 0.2s;
+    }
+    details[open] summary .bi-chevron-down {
+        transform: rotate(180deg);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="bi bi-calendar-event text-primary"></i> Maintenance Events
+                    </h1>
+                    <p class="text-muted mb-0">View and filter maintenance events with comprehensive search</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('maintenance.index') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Maintenance Portal
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters Card - Horizontal Layout -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card filter-card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-funnel"></i> Filters
+                    </h5>
+                    {% if active_filters %}
+                    <div>
+                        <span class="badge bg-primary">Active: {{ active_filters|length }}</span>
+                        <a href="{{ url_for('maintenance.view_events') }}" class="btn btn-sm btn-outline-secondary ms-2">
+                            <i class="bi bi-x-circle"></i> Clear All
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <form method="GET" action="{{ url_for('maintenance.view_events') }}" id="filter-form">
+                        <!-- Global Search -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-12">
+                                <label class="form-label filter-field-label">Search Events</label>
+                                <input type="text" class="form-control" name="search" 
+                                       value="{{ filters.search_term or '' }}" 
+                                       placeholder="Search events by description or task name...">
+                            </div>
+                        </div>
+
+                        <!-- Enhanced Filters (Collapsible) -->
+                        <details class="mb-3">
+                            <summary class="filter-group-title" style="cursor: pointer; user-select: none; padding: 0.75rem; background-color: #f8f9fa; border-radius: 6px; margin-bottom: 1rem;">
+                                <i class="bi bi-chevron-down"></i> Enhanced Filters
+                            </summary>
+                            
+                            <!-- Asset Filters Group -->
+                            <div class="filter-group">
+                                <div class="filter-group-title">
+                                    <i class="bi bi-box-seam"></i> Asset Filters
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label filter-field-label">Asset</label>
+                                        <div class="position-relative">
+                                            <input type="text" 
+                                                   class="form-control form-control-sm" 
+                                                   id="asset_search" 
+                                                   name="asset_search"
+                                                   placeholder="Search assets..." 
+                                                   autocomplete="off"
+                                                   value="{% if filters.asset_id %}{% for asset in filter_options.assets %}{% if asset.id == filters.asset_id %}{{ asset.name }}{% endif %}{% endfor %}{% endif %}"
+                                                   hx-get="{{ url_for('searchutils.searchbar_assets') }}"
+                                                   hx-trigger="input changed delay:300ms, focus"
+                                                   hx-target="#asset_results"
+                                                   hx-swap="innerHTML">
+                                            <input type="hidden" id="asset_id" name="asset_id" value="{{ filters.asset_id or '' }}">
+                                            <div class="dropdown-menu w-100" id="asset_dropdown" style="max-height: 300px; overflow-y: auto; display: none; position: absolute; z-index: 1000;">
+                                                <div id="asset_results"
+                                                     hx-get="{{ url_for('searchutils.searchbar_assets') }}"
+                                                     hx-trigger="load"
+                                                     hx-swap="innerHTML"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label filter-field-label">Make/Model</label>
+                                        <select class="form-select form-select-sm" name="make_model_id">
+                                            <option value="">All Make/Models</option>
+                                            {% for make_model in filter_options.make_models %}
+                                            <option value="{{ make_model.id }}" {% if filters.make_model_id == make_model.id %}selected{% endif %}>
+                                                {{ make_model.make }} {{ make_model.model }}
+                                            </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label filter-field-label">Major Location</label>
+                                        <select class="form-select form-select-sm" name="major_location_id">
+                                            <option value="">All Locations</option>
+                                            {% for location in filter_options.major_locations %}
+                                            <option value="{{ location.id }}" {% if filters.major_location_id == location.id %}selected{% endif %}>
+                                                {{ location.name }}
+                                            </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Status Filters Group -->
+                            <div class="filter-group">
+                                <div class="filter-group-title">
+                                    <i class="bi bi-funnel"></i> Status Filters
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label filter-field-label">Status</label>
+                                        <select class="form-select form-select-sm" name="status">
+                                            <option value="">All Statuses</option>
+                                            {% for status in filter_options.statuses %}
+                                            <option value="{{ status }}" {% if filters.status == status %}selected{% endif %}>
+                                                {{ status }}
+                                            </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label filter-field-label">Priority</label>
+                                        <select class="form-select form-select-sm" name="priority">
+                                            <option value="">All Priorities</option>
+                                            {% for priority in filter_options.priorities %}
+                                            <option value="{{ priority }}" {% if filters.priority == priority %}selected{% endif %}>
+                                                {{ priority }}
+                                            </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label filter-field-label">Action Title</label>
+                                        <input type="text" class="form-control form-control-sm" name="action_title" 
+                                               value="{{ filters.action_title or '' }}" 
+                                               placeholder="Contains...">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- User Filters Group -->
+                            <div class="filter-group">
+                                <div class="filter-group-title">
+                                    <i class="bi bi-people"></i> User Filters
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label filter-field-label">Created By</label>
+                                        <div class="position-relative">
+                                            <input type="text" 
+                                                   class="form-control form-control-sm" 
+                                                   id="created_by_search" 
+                                                   name="created_by_search"
+                                                   placeholder="Search users..." 
+                                                   autocomplete="off"
+                                                   value="{% if filters.created_by_user_id %}{% for user in filter_options.users %}{% if user.id == filters.created_by_user_id %}{{ user.username }}{% endif %}{% endfor %}{% endif %}"
+                                                   hx-get="{{ url_for('searchutils.searchbar_users') }}"
+                                                   hx-trigger="input changed delay:300ms, focus"
+                                                   hx-target="#created_by_results"
+                                                   hx-swap="innerHTML">
+                                            <input type="hidden" id="created_by_user_id" name="created_by_user_id" value="{{ filters.created_by_user_id or '' }}">
+                                            <div class="dropdown-menu w-100" id="created_by_dropdown" style="max-height: 300px; overflow-y: auto; display: none; position: absolute; z-index: 1000;">
+                                                <div id="created_by_results"
+                                                     hx-get="{{ url_for('searchutils.searchbar_users') }}"
+                                                     hx-trigger="load"
+                                                     hx-swap="innerHTML"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label filter-field-label">Assigned To</label>
+                                        <div class="position-relative">
+                                            <input type="text" 
+                                                   class="form-control form-control-sm" 
+                                                   id="assigned_to_search" 
+                                                   name="assigned_to_search"
+                                                   placeholder="Search users..." 
+                                                   autocomplete="off"
+                                                   value="{% if filters.assigned_user_id %}{% for user in filter_options.users %}{% if user.id == filters.assigned_user_id %}{{ user.username }}{% endif %}{% endfor %}{% endif %}"
+                                                   hx-get="{{ url_for('searchutils.searchbar_users') }}"
+                                                   hx-trigger="input changed delay:300ms, focus"
+                                                   hx-target="#assigned_to_results"
+                                                   hx-swap="innerHTML">
+                                            <input type="hidden" id="assigned_user_id" name="assigned_user_id" value="{{ filters.assigned_user_id or '' }}">
+                                            <div class="dropdown-menu w-100" id="assigned_to_dropdown" style="max-height: 300px; overflow-y: auto; display: none; position: absolute; z-index: 1000;">
+                                                <div id="assigned_to_results"
+                                                     hx-get="{{ url_for('searchutils.searchbar_users') }}"
+                                                     hx-trigger="load"
+                                                     hx-swap="innerHTML"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label filter-field-label">Has Comments By</label>
+                                        <div class="position-relative">
+                                            <input type="text" 
+                                                   class="form-control form-control-sm" 
+                                                   id="has_comments_by_search" 
+                                                   name="has_comments_by_search"
+                                                   placeholder="Search users..." 
+                                                   autocomplete="off"
+                                                   value="{% if filters.has_comments_by %}{% for user in filter_options.users %}{% if user.id == filters.has_comments_by %}{{ user.username }}{% endif %}{% endfor %}{% endif %}"
+                                                   hx-get="{{ url_for('searchutils.searchbar_users') }}"
+                                                   hx-trigger="input changed delay:300ms, focus"
+                                                   hx-target="#has_comments_by_results"
+                                                   hx-swap="innerHTML">
+                                            <input type="hidden" id="has_comments_by" name="has_comments_by" value="{{ filters.has_comments_by or '' }}">
+                                            <div class="dropdown-menu w-100" id="has_comments_by_dropdown" style="max-height: 300px; overflow-y: auto; display: none; position: absolute; z-index: 1000;">
+                                                <div id="has_comments_by_results"
+                                                     hx-get="{{ url_for('searchutils.searchbar_users') }}"
+                                                     hx-trigger="load"
+                                                     hx-swap="innerHTML"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </details>
+
+                        <!-- Date Range Filters -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label filter-field-label">Date From</label>
+                                <input type="date" class="form-control form-control-sm" name="date_from" 
+                                       value="{% if filters.date_from %}{{ filters.date_from.strftime('%Y-%m-%d') }}{% endif %}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label filter-field-label">Date To</label>
+                                <input type="date" class="form-control form-control-sm" name="date_to" 
+                                       value="{% if filters.date_to %}{{ filters.date_to.strftime('%Y-%m-%d') }}{% endif %}">
+                            </div>
+                        </div>
+
+                        <!-- Row 3: Search Button -->
+                        <div class="row">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary btn-lg w-100">
+                                    <i class="bi bi-search me-2"></i>Search Events
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Filters Display -->
+    {% if active_filters %}
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <strong class="text-muted">Active Filters:</strong>
+                {% for key, value in active_filters.items() %}
+                <span class="badge bg-info">{{ key }}: {{ value }}</span>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Events List -->
+    <div class="row">
+        <div class="col-12">
+            <!-- Results Header -->
+            <div class="card mb-3">
+                <div class="card-body py-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-0">
+                                {% if events and events.total %}
+                                Showing {{ events.items|length }} of {{ events.total }} event{{ 's' if events.total != 1 else '' }}
+                                {% else %}
+                                No events found
+                                {% endif %}
+                            </h6>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Events List -->
+            {% if events and events.items and events.total > 0 %}
+            <div class="list-group">
+                {% for event in events.items %}
+                <div class="list-group-item event-card px-3 py-3 mb-2">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1">
+                                {% if event.event_id %}
+                                <a href="{{ url_for('maintenance_event.view_maintenance_event', event_id=event.event_id) }}" 
+                                   class="text-decoration-none">
+                                    {{ event.task_name or 'Untitled Maintenance' }}
+                                </a>
+                                {% else %}
+                                <span class="text-muted">{{ event.task_name or 'Untitled Maintenance' }}</span>
+                                {% endif %}
+                            </h6>
+                            
+                            <!-- Badges -->
+                            <div class="mb-2">
+                                <span class="badge status-badge bg-{% if event.status == 'Complete' %}success{% elif event.status == 'In Progress' %}primary{% elif event.status == 'Delayed' %}danger{% else %}secondary{% endif %}">
+                                    {{ event.status }}
+                                </span>
+                                {% if event.priority %}
+                                <span class="badge status-badge bg-{% if event.priority == 'Critical' %}danger{% elif event.priority == 'High' %}warning{% elif event.priority == 'Medium' %}info{% else %}secondary{% endif %}">
+                                    {{ event.priority }}
+                                </span>
+                                {% endif %}
+                                {% if event.asset %}
+                                <span class="badge bg-secondary me-1">
+                                    <i class="bi bi-box"></i> {{ event.asset.name }}
+                                </span>
+                                {% endif %}
+                                {% if event.major_location %}
+                                <span class="badge bg-secondary me-1">
+                                    <i class="bi bi-geo-alt"></i> {{ event.major_location.name }}
+                                </span>
+                                {% endif %}
+                            </div>
+
+                            <!-- Action Completion Progress -->
+                            {% if event.total_actions and event.total_actions > 0 %}
+                            <div class="mb-2">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <small class="text-muted">Actions: {{ event.completed_actions }}/{{ event.total_actions }} complete</small>
+                                    <small class="text-muted">{{ (event.action_completion_fraction * 100)|round(0)|int }}%</small>
+                                </div>
+                                <div class="progress progress-bar-custom">
+                                    <div class="progress-bar {% if event.action_completion_fraction == 1.0 %}bg-success{% elif event.action_completion_fraction >= 0.5 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                         role="progressbar" 
+                                         style="width: {{ (event.action_completion_fraction * 100) }}%"
+                                         aria-valuenow="{{ (event.action_completion_fraction * 100) }}" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100">
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <!-- Event Details -->
+                            <div class="mb-2">
+                                <small class="text-muted">
+                                    {% if event.planned_start_datetime %}
+                                    <i class="bi bi-calendar"></i> Planned: {{ event.planned_start_datetime.strftime('%Y-%m-%d %H:%M') }}
+                                    {% endif %}
+                                    {% if event.assigned_user %}
+                                    <span class="ms-3"><i class="bi bi-person"></i> Assigned: {{ event.assigned_user.username }}</span>
+                                    {% else %}
+                                    <span class="ms-3 text-warning"><i class="bi bi-person-x"></i> Unassigned</span>
+                                    {% endif %}
+                                    {% if event.created_by_user %}
+                                    <span class="ms-3"><i class="bi bi-person-plus"></i> Created by: {{ event.created_by_user.username }}</span>
+                                    {% endif %}
+                                </small>
+                            </div>
+
+                            <!-- Last Comment -->
+                            {% if event.last_comment_date %}
+                            <div>
+                                <small class="text-muted">
+                                    <i class="bi bi-chat-dots"></i> Last comment: {{ event.last_comment_date.strftime('%Y-%m-%d %H:%M') }}
+                                    {% if event.last_comment_by %}
+                                    by {{ event.last_comment_by.username }}
+                                    {% endif %}
+                                </small>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="ms-3">
+                            {% if event.event_id %}
+                            <a href="{{ url_for('maintenance_event.view_maintenance_event', event_id=event.event_id) }}" 
+                               class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i> View
+                            </a>
+                            {% else %}
+                            <span class="btn btn-sm btn-outline-secondary disabled">
+                                <i class="bi bi-eye"></i> View
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Pagination -->
+            {% if events.pages and events.pages > 1 %}
+            <nav aria-label="Events pagination" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if events.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('maintenance.view_events', page=events.prev_num, **request.args) }}">Previous</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">Previous</span>
+                    </li>
+                    {% endif %}
+
+                    {% for page_num in events.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                        {% if page_num %}
+                            {% if page_num == events.page %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_num }}</span>
+                            </li>
+                            {% else %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('maintenance.view_events', page=page_num, **request.args) }}">{{ page_num }}</a>
+                            </li>
+                            {% endif %}
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">…</span>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if events.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('maintenance.view_events', page=events.next_num, **request.args) }}">Next</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">Next</span>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            {% else %}
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-inbox" style="font-size: 3rem; color: #6c757d;"></i>
+                    <h5 class="mt-3">No events found</h5>
+                    <p class="text-muted">Try adjusting your filters or search terms.</p>
+                    <a href="{{ url_for('maintenance.view_events') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-x-circle"></i> Clear Filters
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Asset searchbar handlers
+    const assetSearch = document.getElementById('asset_search');
+    const assetIdInput = document.getElementById('asset_id');
+    const assetDropdown = document.getElementById('asset_dropdown');
+    
+    window.selectAsset = function(id, displayName) {
+        assetSearch.value = displayName;
+        assetIdInput.value = id;
+        assetDropdown.style.display = 'none';
+    };
+    window.selectItem = window.selectAsset;
+    
+    // Created By searchbar handlers
+    const createdBySearch = document.getElementById('created_by_search');
+    const createdByIdInput = document.getElementById('created_by_user_id');
+    const createdByDropdown = document.getElementById('created_by_dropdown');
+    
+    window.selectCreatedBy = function(id, displayName) {
+        createdBySearch.value = displayName;
+        createdByIdInput.value = id;
+        createdByDropdown.style.display = 'none';
+    };
+    
+    // Assigned To searchbar handlers
+    const assignedToSearch = document.getElementById('assigned_to_search');
+    const assignedToIdInput = document.getElementById('assigned_user_id');
+    const assignedToDropdown = document.getElementById('assigned_to_dropdown');
+    
+    window.selectAssignedTo = function(id, displayName) {
+        assignedToSearch.value = displayName;
+        assignedToIdInput.value = id;
+        assignedToDropdown.style.display = 'none';
+    };
+    
+    // Has Comments By searchbar handlers
+    const hasCommentsBySearch = document.getElementById('has_comments_by_search');
+    const hasCommentsByIdInput = document.getElementById('has_comments_by');
+    const hasCommentsByDropdown = document.getElementById('has_comments_by_dropdown');
+    
+    window.selectHasCommentsBy = function(id, displayName) {
+        hasCommentsBySearch.value = displayName;
+        hasCommentsByIdInput.value = id;
+        hasCommentsByDropdown.style.display = 'none';
+    };
+    
+    // Generic selectItem function that routes to the appropriate handler
+    window.selectItem = function(id, displayName) {
+        // Determine which searchbar is currently focused/active
+        if (document.activeElement === assetSearch || assetSearch.contains(document.activeElement)) {
+            window.selectAsset(id, displayName);
+        } else if (document.activeElement === createdBySearch || createdBySearch.contains(document.activeElement)) {
+            window.selectCreatedBy(id, displayName);
+        } else if (document.activeElement === assignedToSearch || assignedToSearch.contains(document.activeElement)) {
+            window.selectAssignedTo(id, displayName);
+        } else if (document.activeElement === hasCommentsBySearch || hasCommentsBySearch.contains(document.activeElement)) {
+            window.selectHasCommentsBy(id, displayName);
+        }
+    };
+    
+    // Show dropdowns when HTMX updates results
+    document.body.addEventListener('htmx:afterSwap', function(event) {
+        const targetId = event.detail.target.id;
+        if (targetId === 'asset_results' && event.detail.target.innerHTML.trim()) {
+            assetDropdown.style.display = 'block';
+            window.selectItem = window.selectAsset;
+        } else if (targetId === 'created_by_results' && event.detail.target.innerHTML.trim()) {
+            createdByDropdown.style.display = 'block';
+            window.selectItem = window.selectCreatedBy;
+        } else if (targetId === 'assigned_to_results' && event.detail.target.innerHTML.trim()) {
+            assignedToDropdown.style.display = 'block';
+            window.selectItem = window.selectAssignedTo;
+        } else if (targetId === 'has_comments_by_results' && event.detail.target.innerHTML.trim()) {
+            hasCommentsByDropdown.style.display = 'block';
+            window.selectItem = window.selectHasCommentsBy;
+        }
+    });
+    
+    // Map search inputs to their corresponding ID inputs and dropdowns
+    const searchbarMap = {
+        'asset_search': { idInput: assetIdInput, dropdown: assetDropdown, selectFn: window.selectAsset },
+        'created_by_search': { idInput: createdByIdInput, dropdown: createdByDropdown, selectFn: window.selectCreatedBy },
+        'assigned_to_search': { idInput: assignedToIdInput, dropdown: assignedToDropdown, selectFn: window.selectAssignedTo },
+        'has_comments_by_search': { idInput: hasCommentsByIdInput, dropdown: hasCommentsByDropdown, selectFn: window.selectHasCommentsBy }
+    };
+    
+    // Handle empty search inputs and clear selections
+    [assetSearch, createdBySearch, assignedToSearch, hasCommentsBySearch].forEach(searchInput => {
+        if (searchInput) {
+            const mapping = searchbarMap[searchInput.id];
+            
+            searchInput.addEventListener('input', function() {
+                if (!this.value.trim()) {
+                    if (mapping && mapping.idInput) {
+                        mapping.idInput.value = '';
+                    }
+                    if (mapping && mapping.dropdown) {
+                        mapping.dropdown.style.display = 'none';
+                    }
+                }
+            });
+            
+            // Track which searchbar is active
+            searchInput.addEventListener('focus', function() {
+                if (mapping && mapping.selectFn) {
+                    window.selectItem = mapping.selectFn;
+                }
+            });
+        }
+    });
+    
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', function(e) {
+        const searchbars = [
+            { search: assetSearch, dropdown: assetDropdown },
+            { search: createdBySearch, dropdown: createdByDropdown },
+            { search: assignedToSearch, dropdown: assignedToDropdown },
+            { search: hasCommentsBySearch, dropdown: hasCommentsByDropdown }
+        ];
+        
+        searchbars.forEach(({ search, dropdown }) => {
+            if (search && dropdown && !search.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

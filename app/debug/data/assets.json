@@ -28,6 +28,14 @@
           "detail_table_type": "toyota_warranty_receipt",
           "is_asset_detail": true,
           "is_active": true
+        },
+        {
+          "make": "Ford",
+          "model": "F-250",
+          "detail_table_type": "smog_record",
+          "many_to_one": true,
+          "is_asset_detail": true,
+          "is_active": true
         }
       ],
       "Model_detail_table_template": [

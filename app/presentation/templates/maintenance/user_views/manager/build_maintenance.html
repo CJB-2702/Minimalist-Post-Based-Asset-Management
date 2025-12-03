@@ -1,0 +1,356 @@
+{% extends "base.html" %}
+
+{% block title %}Build Maintenance Templates - Manager Portal{% endblock %}
+
+{% block extra_css %}
+<style>
+    .template-card {
+        transition: all 0.2s;
+        border-left: 4px solid #dee2e6;
+        cursor: pointer;
+    }
+    .template-card:hover {
+        border-left-color: #0d6efd;
+        background-color: #f8f9fa;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .template-card.selected {
+        border-left-color: #0d6efd;
+        background-color: #e7f1ff;
+    }
+    .preview-section {
+        min-height: 300px;
+        max-height: 600px;
+        overflow-y: auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="bi bi-tools text-info"></i> Build Maintenance Templates
+                    </h1>
+                    <p class="text-muted mb-0">Create and manage maintenance templates, action sets, and prototype actions</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('manager_portal.dashboard') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Global Action Buttons -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('template_builder.new_builder') }}" class="btn btn-primary btn-lg">
+                    <i class="bi bi-plus-circle"></i> Create New Template from Scratch
+                </a>
+                <a href="{{ url_for('template_builder.view_drafts', search_user_id=current_user.id) }}" class="btn btn-secondary btn-lg">
+                    <i class="bi bi-file-earmark-text"></i> View your drafts
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Panel -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">From Existing Templates</h5>
+        </div>
+        <div class="card-body">
+            <!-- Template Creation/Revision Options -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="d-flex gap-2">
+                        <button type="button" 
+                                class="btn btn-primary" 
+                                id="btn-new-from-existing"
+                                onclick="showTemplateSelection()"
+                                disabled>
+                            <i class="bi bi-file-earmark-plus"></i> New Template from Existing
+                        </button>
+                        <button type="button" 
+                                class="btn btn-primary" 
+                                id="btn-new-revision"
+                                onclick="createRevision()"
+                                disabled>
+                            <i class="bi bi-arrow-repeat"></i> New Revision of Existing Template
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filters Section -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h5 class="fw-bold mb-3"><i class="bi bi-funnel"></i> Filters</h5>
+                    <form method="GET" action="{{ url_for('manager_portal.build_maintenance') }}" id="filterForm">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label for="search_name" class="form-label">Template name</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="search_name" 
+                                       name="search_name" 
+                                       value="{{ search_name }}"
+                                       placeholder="Search by name...">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="make_model_id" class="form-label">Make Model</label>
+                                <select class="form-select" id="make_model_id" name="make_model_id">
+                                    <option value="">All Make/Models</option>
+                                    {% for make_model in make_models %}
+                                    <option value="{{ make_model.id }}" {% if selected_make_model_id == make_model.id %}selected{% endif %}>
+                                        {{ make_model.make }} {{ make_model.model }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="asset_type_id" class="form-label">Asset Type</label>
+                                <select class="form-select" id="asset_type_id" name="asset_type_id">
+                                    <option value="">All Asset Types</option>
+                                    {% for asset_type in asset_types %}
+                                    <option value="{{ asset_type.id }}" {% if selected_asset_type_id == asset_type.id %}selected{% endif %}>
+                                        {{ asset_type.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="search_id" class="form-label">Template ID</label>
+                                <input type="number" 
+                                       class="form-control" 
+                                       id="search_id" 
+                                       name="search_id" 
+                                       value="{{ search_id or '' }}"
+                                       placeholder="Enter ID">
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-search"></i> Apply Filters
+                                </button>
+                                <a href="{{ url_for('manager_portal.build_maintenance') }}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-x-circle"></i> Clear Filters
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Template List Area -->
+                <div class="col-lg-6 mb-4">
+                    <h5 class="fw-bold mb-3">
+                        <i class="bi bi-list-ul"></i> List of Template Action Sets
+                        <span class="badge bg-secondary">{{ available_templates|length }}</span>
+                    </h5>
+                    <div class="border rounded p-3" style="min-height: 400px; max-height: 500px; overflow-y: auto; background-color: #ffffff;">
+                        {% if available_templates %}
+                            {% for template in available_templates[:8] %}
+                            <div class="card template-card mb-2" 
+                                 data-template-id="{{ template.id }}"
+                                 onclick="selectTemplate({{ template.id }})">
+                                <div class="card-body py-2">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-1">
+                                                {{ template.task_name }}
+                                                {% if template.revision %}
+                                                <span class="badge bg-secondary ms-2">Rev: {{ template.revision }}</span>
+                                                {% endif %}
+                                            </h6>
+                                            {% if template.description %}
+                                            <p class="text-muted small mb-1">{{ template.description[:100] }}{% if template.description|length > 100 %}...{% endif %}</p>
+                                            {% endif %}
+                                            <div class="small text-muted">
+                                                <i class="bi bi-list-ol"></i> {{ template.total_actions }} action{{ 's' if template.total_actions != 1 else '' }}
+                                            </div>
+                                        </div>
+                                        <span class="badge bg-info">ID: {{ template.id }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                            {% if available_templates|length > 8 %}
+                            <div class="alert alert-info mt-2">
+                                <i class="bi bi-info-circle"></i> Showing first 8 of {{ available_templates|length }} templates. Use filters to narrow results.
+                            </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="text-center text-muted py-5">
+                                <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                                <p class="mt-3">No templates found. Try adjusting your filters or create a new template.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Preview Section -->
+                <div class="col-lg-6 mb-4">
+                    <h5 class="fw-bold mb-3">
+                        <i class="bi bi-eye"></i> Preview
+                    </h5>
+                    <div class="border rounded p-3 preview-section" style="background-color: #ffffff;">
+                        <div id="template-preview">
+                            <div class="text-center text-muted py-5">
+                                <i class="bi bi-cursor" style="font-size: 3rem;"></i>
+                                <p class="mt-3">Click on a template from the list to preview its actions, part demands, and tools.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let selectedTemplateId = null;
+let selectedTemplateData = null;
+
+// Store template data in JavaScript object
+const templatesData = {
+    {% for template in available_templates[:8] %}
+    {{ template.id }}: {{ template|tojson }}{% if not loop.last %},{% endif %}
+    {% endfor %}
+};
+
+function selectTemplate(templateId) {
+    // Remove selected class from all cards
+    document.querySelectorAll('.template-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+    
+    // Add selected class to clicked card
+    const card = document.querySelector(`[data-template-id="${templateId}"]`);
+    if (card) {
+        card.classList.add('selected');
+    }
+    
+    selectedTemplateId = templateId;
+    
+    // Get template data
+    if (templatesData[templateId]) {
+        selectedTemplateData = templatesData[templateId];
+    } else {
+        console.error('Template data not found for ID:', templateId);
+        return;
+    }
+    
+    // Enable buttons
+    document.getElementById('btn-new-from-existing').disabled = false;
+    document.getElementById('btn-new-revision').disabled = false;
+    
+    // Show preview
+    renderPreview(selectedTemplateData);
+}
+
+function renderPreview(template) {
+    const previewDiv = document.getElementById('template-preview');
+    
+    let html = `
+        <div class="mb-3">
+            <h5 class="mb-2">
+                ${escapeHtml(template.task_name)}
+                ${template.revision ? `<span class="badge bg-secondary">Revision ${template.revision}</span>` : ''}
+            </h5>
+            ${template.description ? `<p class="text-muted">${escapeHtml(template.description)}</p>` : ''}
+            <div class="mb-3">
+                <span class="badge bg-info">Template ID: ${template.id}</span>
+                <span class="badge bg-primary ms-1">${template.total_actions || 0} Actions</span>
+            </div>
+        </div>
+    `;
+    
+    if (template.actions && template.actions.length > 0) {
+        html += `
+            <div class="mb-3">
+                <h6 class="fw-bold mb-2"><i class="bi bi-list-ul"></i> Actions</h6>
+                <div class="list-group">
+        `;
+        
+        template.actions.forEach((action, index) => {
+            html += `
+                <div class="list-group-item">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-items-center mb-1">
+                                <span class="badge bg-secondary me-2">#${action.sequence_order || index + 1}</span>
+                                <strong>${escapeHtml(action.action_name || 'Unnamed Action')}</strong>
+                            </div>
+                            ${action.description ? `<small class="text-muted d-block">${escapeHtml(action.description)}</small>` : ''}
+                            <div class="mt-2">
+                                ${action.estimated_duration ? `<span class="badge bg-info me-1"><i class="bi bi-clock"></i> ${action.estimated_duration}h</span>` : ''}
+                                ${action.part_count > 0 ? `<span class="badge bg-success me-1"><i class="bi bi-box"></i> ${action.part_count} part${action.part_count !== 1 ? 's' : ''}</span>` : ''}
+                                ${action.tool_count > 0 ? `<span class="badge bg-primary me-1"><i class="bi bi-wrench"></i> ${action.tool_count} tool${action.tool_count !== 1 ? 's' : ''}</span>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += `
+                </div>
+            </div>
+        `;
+    } else {
+        html += `
+            <div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle"></i> No actions found in this template.
+            </div>
+        `;
+    }
+    
+    previewDiv.innerHTML = html;
+}
+
+function showTemplateSelection() {
+    if (!selectedTemplateId) {
+        alert('Please select a template first');
+        return;
+    }
+    
+    // Redirect to create new template from existing
+    const url = new URL('{{ url_for("template_builder.new_builder") }}', window.location.origin);
+    url.searchParams.set('from_template', selectedTemplateId);
+    url.searchParams.set('is_revision', 'false');
+    window.location.href = url.toString();
+}
+
+function createRevision() {
+    if (!selectedTemplateId) {
+        alert('Please select a template first');
+        return;
+    }
+    
+    // Redirect to create new revision
+    const url = new URL('{{ url_for("template_builder.new_builder") }}', window.location.origin);
+    url.searchParams.set('from_template', selectedTemplateId);
+    url.searchParams.set('is_revision', 'true');
+    window.location.href = url.toString();
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+</script>
+{% endblock %}
+

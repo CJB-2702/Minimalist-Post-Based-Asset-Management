@@ -1,0 +1,1039 @@
+{% extends "base.html" %}
+
+{% block title %}Action Creator Portal{% endblock %}
+
+{% block content %}
+<div id="action-creator-portal-wrapper">
+<div class="container-fluid">
+    <div class="card mb-4 border-info">
+        <div class="card-header bg-info bg-opacity-10">
+            <h5 class="mb-0">
+                <i class="bi bi-plus-circle text-info"></i> Action Creator Portal
+            </h5>
+        </div>
+        <div class="card-body">
+            <!-- Creation Method Tabs -->
+            <ul class="nav nav-tabs mb-3" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="creator-template-tab" data-bs-toggle="tab" data-bs-target="#creator-template-pane" type="button" role="tab">
+                        <i class="bi bi-file-earmark-text"></i> From Template
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="creator-template-action-tab" data-bs-toggle="tab" data-bs-target="#creator-template-action-pane" type="button" role="tab">
+                        <i class="bi bi-file-earmark-code"></i> From Template Action
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="creator-proto-tab" data-bs-toggle="tab" data-bs-target="#creator-proto-pane" type="button" role="tab">
+                        <i class="bi bi-box"></i> From Proto Action
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="creator-current-tab" data-bs-toggle="tab" data-bs-target="#creator-current-pane" type="button" role="tab">
+                        <i class="bi bi-list-check"></i> From Current Action Set
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="creator-blank-tab" data-bs-toggle="tab" data-bs-target="#creator-blank-pane" type="button" role="tab">
+                        <i class="bi bi-file-plus"></i> Blank Action
+                    </button>
+                </li>
+            </ul>
+
+            <!-- Tab Content -->
+            <div class="tab-content">
+                <!-- Template Action Set Tab -->
+                <div class="tab-pane fade show active" id="creator-template-pane" role="tabpanel">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-file-earmark-text"></i> Select Template Action Set
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <!-- Search -->
+                            <div class="mb-3">
+                                <label for="templateSearch" class="form-label">Search Templates</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="templateSearch" 
+                                       placeholder="Type to filter by template name or description..." 
+                                       value=""
+                                       hx-get="{{ url_for('action_creator_portal.search_template_action_sets') }}"
+                                       hx-trigger="input changed delay:300ms, focus"
+                                       hx-target="#template-action-sets-results"
+                                       hx-swap="innerHTML"
+                                       hx-include="[name='maintenance_action_set_id']"
+                                       name="search">
+                                <input type="hidden" name="maintenance_action_set_id" value="{{ maintenance_action_set_id }}">
+                                <small class="text-muted">Searching template action sets and their action items</small>
+                            </div>
+
+                            <!-- Template Action Sets List -->
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Template Action Sets</label>
+                                <div class="list-group" style="max-height: 400px; overflow-y: auto;" id="template-action-sets-results">
+                                    {% if template_action_sets %}
+                                        {% for template_set in template_action_sets %}
+                                        <div class="list-group-item action-item" 
+                                             data-template-set-id="{{ template_set.id }}" 
+                                             style="cursor: pointer;"
+                                             onclick="selectTemplateActionSet({{ template_set.id }}, {{ maintenance_action_set_id }})">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div>
+                                                    <h6 class="mb-1">{{ template_set.task_name }}</h6>
+                                                    <small class="text-muted">
+                                                        Template action set with {{ template_set.template_action_items|length }} actions
+                                                    </small>
+                                                </div>
+                                                <span class="badge bg-primary">{{ template_set.template_action_items|length }} actions</span>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <div class="list-group-item">
+                                            <p class="text-muted mb-0">No template action sets found.</p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Template Action Items List (populated via HTMX when template set is selected) -->
+                            <div id="template-action-items-container" style="display: none;">
+                                <label class="form-label fw-bold">Action Items in Selected Template</label>
+                                <div class="list-group" style="max-height: 400px; overflow-y: auto;" id="template-action-items-list">
+                                    <!-- Will be populated dynamically via HTMX -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Template Action Item Tab -->
+                <div class="tab-pane fade" id="creator-template-action-pane" role="tabpanel">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-file-earmark-code"></i> Select Template Action Item
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <!-- Search -->
+                            <div class="mb-3">
+                                <label for="templateActionSearch" class="form-label">Search Template Actions</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="templateActionSearch" 
+                                       placeholder="Type to filter by action name or description..." 
+                                       value=""
+                                       hx-get="{{ url_for('action_creator_portal.search_template_actions') }}"
+                                       hx-trigger="input changed delay:300ms, focus"
+                                       hx-target="#template-action-items-results"
+                                       hx-swap="innerHTML"
+                                       hx-include="[name='maintenance_action_set_id']"
+                                       name="search">
+                                <input type="hidden" name="maintenance_action_set_id" value="{{ maintenance_action_set_id }}">
+                                <small class="text-muted">Searching template action items across all templates</small>
+                            </div>
+
+                            <!-- Template Action Items List -->
+                            <div class="list-group" style="max-height: 600px; overflow-y: auto;" id="template-action-items-results">
+                                {% if template_action_items %}
+                                    {% for template_item in template_action_items %}
+                                    <div class="list-group-item action-item" 
+                                         data-template-action-id="{{ template_item.id }}" 
+                                         style="cursor: pointer;"
+                                         onclick="selectTemplateAction({{ template_item.id }}, {{ maintenance_action_set_id }})">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div class="flex-grow-1">
+                                                <div class="d-flex align-items-center mb-1">
+                                                    <span class="badge bg-secondary me-2">#{{ template_item.sequence_order }}</span>
+                                                    <h6 class="mb-0">{{ template_item.action_name }}</h6>
+                                                    <span class="badge bg-info ms-2">{{ template_item.template_action_set.task_name }}</span>
+                                                </div>
+                                                <small class="text-muted">{{ template_item.description or 'No description' }}</small>
+                                                <div class="mt-1">
+                                                    {% if template_item.estimated_duration %}
+                                                        <span class="badge bg-info">Est: {{ template_item.estimated_duration }}h</span>
+                                                    {% endif %}
+                                                    {% if template_item.safety_notes %}
+                                                        <span class="badge bg-warning ms-1">Safety Notes</span>
+                                                    {% endif %}
+                                                    {% if template_item.template_part_demands %}
+                                                        <span class="badge bg-success ms-1">{{ template_item.template_part_demands|length }} Parts</span>
+                                                    {% endif %}
+                                                    {% if template_item.template_action_tools %}
+                                                        <span class="badge bg-primary ms-1">{{ template_item.template_action_tools|length }} Tools</span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-outline-primary ms-2" onclick="event.stopPropagation(); selectTemplateAction({{ template_item.id }}, {{ maintenance_action_set_id }})">
+                                                <i class="bi bi-check-circle"></i> Select
+                                            </button>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="list-group-item">
+                                        <p class="text-muted mb-0">No template action items found.</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Proto Action Tab -->
+                <div class="tab-pane fade" id="creator-proto-pane" role="tabpanel">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-box"></i> Select Proto Action
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <!-- Search -->
+                            <div class="mb-3">
+                                <label for="protoSearch" class="form-label">Search Proto Actions</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="protoSearch" 
+                                       placeholder="Type to filter by action name or description..." 
+                                       value=""
+                                       hx-get="{{ url_for('action_creator_portal.search_proto_actions') }}"
+                                       hx-trigger="input changed delay:300ms, focus"
+                                       hx-target="#proto-actions-results"
+                                       hx-swap="innerHTML"
+                                       hx-include="[name='maintenance_action_set_id']"
+                                       name="search">
+                                <input type="hidden" name="maintenance_action_set_id" value="{{ maintenance_action_set_id }}">
+                                <small class="text-muted">Searching reusable proto action library</small>
+                            </div>
+
+                            <!-- Proto Actions List -->
+                            <div class="list-group" style="max-height: 600px; overflow-y: auto;" id="proto-actions-results">
+                                {% if proto_actions %}
+                                    {% for proto_action in proto_actions %}
+                                    <div class="list-group-item action-item" 
+                                         data-proto-action-id="{{ proto_action.id }}" 
+                                         style="cursor: pointer;"
+                                         onclick="selectProtoAction({{ proto_action.id }}, {{ maintenance_action_set_id }})">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div class="flex-grow-1">
+                                                <h6 class="mb-1">{{ proto_action.action_name }}</h6>
+                                                <small class="text-muted">{{ proto_action.description or 'No description' }}</small>
+                                                <div class="mt-1">
+                                                    {% if proto_action.estimated_duration %}
+                                                        <span class="badge bg-info">Est: {{ proto_action.estimated_duration }}h</span>
+                                                    {% endif %}
+                                                    {% if proto_action.safety_notes %}
+                                                        <span class="badge bg-warning ms-1">Safety Notes</span>
+                                                    {% endif %}
+                                                    {% if proto_action.proto_part_demands %}
+                                                        <span class="badge bg-success ms-1">{{ proto_action.proto_part_demands|length }} Parts</span>
+                                                    {% endif %}
+                                                    {% if proto_action.proto_action_tools %}
+                                                        <span class="badge bg-primary ms-1">{{ proto_action.proto_action_tools|length }} Tools</span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-outline-primary ms-2" onclick="event.stopPropagation(); selectProtoAction({{ proto_action.id }}, {{ maintenance_action_set_id }})">
+                                                <i class="bi bi-check-circle"></i> Select
+                                            </button>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="list-group-item">
+                                        <p class="text-muted mb-0">No proto actions found.</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Current Action Set Tab -->
+                <div class="tab-pane fade" id="creator-current-pane" role="tabpanel">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-list-check"></i> Select from Current Action Set
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <!-- Search (JavaScript filtering) -->
+                            <div class="mb-3">
+                                <label for="currentSearch" class="form-label">Search Current Actions</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="currentSearch" 
+                                       placeholder="Type to filter by action name or description..." 
+                                       value=""
+                                       onkeyup="filterCurrentActions(this.value)">
+                                <small class="text-muted">Searching actions in the current maintenance event</small>
+                            </div>
+
+                            <!-- Current Actions List -->
+                            <div class="list-group" style="max-height: 600px; overflow-y: auto;" id="current-actions-list">
+                                {% if current_actions %}
+                                    {% for action_struct in current_actions %}
+                                    <div class="list-group-item action-item current-action-item" 
+                                         data-source-action-id="{{ action_struct.action_id }}" 
+                                         data-action-name="{{ action_struct.action.action_name|lower }}"
+                                         data-action-description="{{ (action_struct.action.description or '')|lower }}"
+                                         style="cursor: pointer;"
+                                         onclick="selectCurrentAction({{ action_struct.action_id }}, {{ maintenance_action_set_id }})">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div class="flex-grow-1">
+                                                <div class="d-flex align-items-center mb-1">
+                                                    <span class="badge bg-secondary me-2">#{{ action_struct.action.sequence_order }}</span>
+                                                    <h6 class="mb-0">{{ action_struct.action.action_name }}</h6>
+                                                    <span class="badge bg-{{ 'success' if action_struct.action.status == 'Complete' else 'primary' if action_struct.action.status == 'In Progress' else 'secondary' }} ms-2">
+                                                        {{ action_struct.action.status }}
+                                                    </span>
+                                                </div>
+                                                <small class="text-muted">{{ action_struct.action.description or 'No description' }}</small>
+                                                <div class="mt-1">
+                                                    {% if action_struct.action.estimated_duration %}
+                                                        <span class="badge bg-info">Est: {{ action_struct.action.estimated_duration }}h</span>
+                                                    {% endif %}
+                                                    {% if action_struct.action.safety_notes %}
+                                                        <span class="badge bg-warning ms-1">Safety Notes</span>
+                                                    {% endif %}
+                                                    {% if action_struct.part_demands %}
+                                                        <span class="badge bg-success ms-1">{{ action_struct.part_demands|length }} Parts</span>
+                                                    {% endif %}
+                                                    {% if action_struct.action_tools %}
+                                                        <span class="badge bg-primary ms-1">{{ action_struct.action_tools|length }} Tools</span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-outline-primary ms-2" onclick="event.stopPropagation(); selectCurrentAction({{ action_struct.action_id }}, {{ maintenance_action_set_id }})">
+                                                <i class="bi bi-check-circle"></i> Select
+                                            </button>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="list-group-item">
+                                        <p class="text-muted mb-0">No actions in current action set.</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="alert alert-info mt-3">
+                                <i class="bi bi-info-circle"></i> <strong>Note:</strong> Copying from current actions will duplicate the action including part demands and tools. Status will reset to "Not Started".
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Blank Action Tab -->
+                <div class="tab-pane fade" id="creator-blank-pane" role="tabpanel">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-file-plus"></i> Create Blank Action
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted">Create a new action from scratch. All fields will be empty and ready for manual entry.</p>
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle"></i> <strong>Note:</strong> You'll be able to fill in all action details after creation.
+                            </div>
+                            <button type="button" class="btn btn-primary" onclick="selectBlankAction()">
+                                <i class="bi bi-plus-circle"></i> Create Blank Action
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pre-rendered Modals for Actions -->
+{% if template_action_items %}
+    {% for template_item in template_action_items %}
+    <!-- Modal for Template Action {{ template_item.id }} -->
+    <div class="modal fade" id="templateActionModal{{ template_item.id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-pencil-square"></i> Edit Action Before Insert
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form method="POST" action="{{ url_for('maintenance_event.create_from_template_action', event_id=event_id) if event_id else '#' }}">
+                        <input type="hidden" name="template_action_item_id" value="{{ template_item.id }}">
+                        <input type="hidden" name="insertPosition" value="end" id="insertPosition{{ template_item.id }}">
+                        <input type="hidden" name="afterActionId" value="" id="afterActionId{{ template_item.id }}">
+                        
+                        <!-- Action Details -->
+                        <div class="card mb-3 border-primary">
+                            <div class="card-header bg-primary bg-opacity-10">
+                                <h6 class="mb-0">Action Details</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label">Action Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" name="actionName" value="{{ template_item.action_name }}" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Description</label>
+                                    <textarea class="form-control" name="actionDescription" rows="3">{{ template_item.description or '' }}</textarea>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Estimated Duration (hours)</label>
+                                        <input type="number" step="any" class="form-control" name="estimatedDuration" value="{{ template_item.estimated_duration or '' }}">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Expected Billable Hours</label>
+                                        <input type="number" step="any" class="form-control" name="expectedBillableHours" value="{{ template_item.expected_billable_hours or '' }}">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Safety Notes</label>
+                                    <textarea class="form-control" name="safetyNotes" rows="2">{{ template_item.safety_notes or '' }}</textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Notes</label>
+                                    <textarea class="form-control" name="notes" rows="2"></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Part Demands Preview -->
+                        {% if template_item.template_part_demands %}
+                        <div class="card mb-3 border-info">
+                            <div class="card-header bg-info bg-opacity-10">
+                                <h6 class="mb-0"><i class="bi bi-box-seam"></i> Part Demands (from source)</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="list-group">
+                                    {% for part_demand in template_item.template_part_demands %}
+                                    <div class="list-group-item py-2">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <strong>{{ part_demand.part.part_name if part_demand.part else 'Part #' + part_demand.part_id|string }}</strong>
+                                                <span class="text-muted ms-2">x {{ part_demand.quantity_required }} units</span>
+                                            </div>
+                                            <span class="badge bg-info">Will be copied</span>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Tools Preview -->
+                        {% if template_item.template_action_tools %}
+                        <div class="card mb-3 border-primary">
+                            <div class="card-header bg-primary bg-opacity-10">
+                                <h6 class="mb-0"><i class="bi bi-tools"></i> Tools (from source)</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="list-group">
+                                    {% for tool in template_item.template_action_tools %}
+                                    <div class="list-group-item py-2">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <strong>{{ tool.tool.tool_name if tool.tool else 'Tool #' + tool.tool_id|string }}</strong>
+                                            </div>
+                                            <span class="badge bg-info">Will be copied</span>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Configuration Options -->
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="bi bi-gear"></i> Configuration Options</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Copy Options</label>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="copyPartDemands" value="true" id="copyPartDemands{{ template_item.id }}" checked>
+                                        <label class="form-check-label" for="copyPartDemands{{ template_item.id }}">
+                                            Copy part demands from source
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="copyTools" value="true" id="copyTools{{ template_item.id }}" checked>
+                                        <label class="form-check-label" for="copyTools{{ template_item.id }}">
+                                            Copy tool requirements from source
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Insert Position</label>
+                                    <select class="form-select" onchange="updateInsertPosition({{ template_item.id }}, this.value)">
+                                        <option value="end" selected>At the end (after last action)</option>
+                                        <option value="beginning">At the beginning (before first action)</option>
+                                        <option value="after">After specific action</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3" id="afterActionSelect{{ template_item.id }}" style="display: none;">
+                                    <label class="form-label fw-bold">After Which Action?</label>
+                                    <select class="form-select" onchange="document.getElementById('afterActionId{{ template_item.id }}').value = this.value">
+                                        <option value="">-- Select Action --</option>
+                                        {% if current_actions %}
+                                            {% for action_struct in current_actions %}
+                                            <option value="{{ action_struct.action_id }}">#{{ action_struct.action.sequence_order }} - {{ action_struct.action.action_name }}</option>
+                                            {% endfor %}
+                                        {% endif %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="document.querySelector('#templateActionModal{{ template_item.id }} form').submit()">
+                        <i class="bi bi-plus-circle"></i> Insert Action
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+{% endif %}
+
+{% if proto_actions %}
+    {% for proto_action in proto_actions %}
+    <!-- Modal for Proto Action {{ proto_action.id }} -->
+    <div class="modal fade" id="protoActionModal{{ proto_action.id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-pencil-square"></i> Edit Action Before Insert
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form method="POST" action="{% if event_id %}{{ url_for('maintenance_event.create_from_proto_action', event_id=event_id) }}{% else %}#{% endif %}" onsubmit="{% if not event_id %}alert('Error: Event ID is missing. Cannot create action.'); return false;{% endif %}">
+                        <input type="hidden" name="proto_action_item_id" value="{{ proto_action.id }}">
+                        <input type="hidden" name="insertPosition" value="end" id="insertPositionProto{{ proto_action.id }}">
+                        <input type="hidden" name="afterActionId" value="" id="afterActionIdProto{{ proto_action.id }}">
+                        
+                        <!-- Action Details -->
+                        <div class="card mb-3 border-primary">
+                            <div class="card-header bg-primary bg-opacity-10">
+                                <h6 class="mb-0">Action Details</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label">Action Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" name="actionName" value="{{ proto_action.action_name }}" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Description</label>
+                                    <textarea class="form-control" name="actionDescription" rows="3">{{ proto_action.description or '' }}</textarea>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Estimated Duration (hours)</label>
+                                        <input type="number" step="any" class="form-control" name="estimatedDuration" value="{{ proto_action.estimated_duration or '' }}">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Expected Billable Hours</label>
+                                        <input type="number" step="any" class="form-control" name="expectedBillableHours" value="{{ proto_action.expected_billable_hours or '' }}">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Safety Notes</label>
+                                    <textarea class="form-control" name="safetyNotes" rows="2">{{ proto_action.safety_notes or '' }}</textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Notes</label>
+                                    <textarea class="form-control" name="notes" rows="2"></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Part Demands Preview -->
+                        {% if proto_action.proto_part_demands %}
+                        <div class="card mb-3 border-info">
+                            <div class="card-header bg-info bg-opacity-10">
+                                <h6 class="mb-0"><i class="bi bi-box-seam"></i> Part Demands (from source)</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="list-group">
+                                    {% for part_demand in proto_action.proto_part_demands %}
+                                    <div class="list-group-item py-2">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <strong>{{ part_demand.part.part_name if part_demand.part else 'Part #' + part_demand.part_id|string }}</strong>
+                                                <span class="text-muted ms-2">x {{ part_demand.quantity_required }} units</span>
+                                            </div>
+                                            <span class="badge bg-info">Will be copied</span>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Tools Preview -->
+                        {% if proto_action.proto_action_tools %}
+                        <div class="card mb-3 border-primary">
+                            <div class="card-header bg-primary bg-opacity-10">
+                                <h6 class="mb-0"><i class="bi bi-tools"></i> Tools (from source)</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="list-group">
+                                    {% for tool in proto_action.proto_action_tools %}
+                                    <div class="list-group-item py-2">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <strong>{{ tool.tool.tool_name if tool.tool else 'Tool #' + tool.tool_id|string }}</strong>
+                                            </div>
+                                            <span class="badge bg-info">Will be copied</span>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Configuration Options -->
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="bi bi-gear"></i> Configuration Options</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Copy Options</label>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="copyPartDemands" value="true" id="copyPartDemandsProto{{ proto_action.id }}" checked>
+                                        <label class="form-check-label" for="copyPartDemandsProto{{ proto_action.id }}">
+                                            Copy part demands from source
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="copyTools" value="true" id="copyToolsProto{{ proto_action.id }}" checked>
+                                        <label class="form-check-label" for="copyToolsProto{{ proto_action.id }}">
+                                            Copy tool requirements from source
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Insert Position</label>
+                                    <select class="form-select" onchange="updateInsertPositionProto({{ proto_action.id }}, this.value)">
+                                        <option value="end" selected>At the end (after last action)</option>
+                                        <option value="beginning">At the beginning (before first action)</option>
+                                        <option value="after">After specific action</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3" id="afterActionSelectProto{{ proto_action.id }}" style="display: none;">
+                                    <label class="form-label fw-bold">After Which Action?</label>
+                                    <select class="form-select" onchange="document.getElementById('afterActionIdProto{{ proto_action.id }}').value = this.value">
+                                        <option value="">-- Select Action --</option>
+                                        {% if current_actions %}
+                                            {% for action_struct in current_actions %}
+                                            <option value="{{ action_struct.action_id }}">#{{ action_struct.action.sequence_order }} - {{ action_struct.action.action_name }}</option>
+                                            {% endfor %}
+                                        {% endif %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="document.querySelector('#protoActionModal{{ proto_action.id }} form').submit()">
+                        <i class="bi bi-plus-circle"></i> Insert Action
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+{% endif %}
+
+{% if current_actions %}
+    {% for action_struct in current_actions %}
+    <!-- Modal for Current Action {{ action_struct.action_id }} -->
+    <div class="modal fade" id="currentActionModal{{ action_struct.action_id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-pencil-square"></i> Edit Action Before Insert
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form method="POST" action="{{ url_for('maintenance_event.create_from_current_action', event_id=event_id) if event_id else '#' }}">
+                        <input type="hidden" name="source_action_id" value="{{ action_struct.action_id }}">
+                        <input type="hidden" name="insertPosition" value="end" id="insertPositionCurrent{{ action_struct.action_id }}">
+                        <input type="hidden" name="afterActionId" value="" id="afterActionIdCurrent{{ action_struct.action_id }}">
+                        
+                        <!-- Action Details -->
+                        <div class="card mb-3 border-primary">
+                            <div class="card-header bg-primary bg-opacity-10">
+                                <h6 class="mb-0">Action Details</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label">Action Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" name="actionName" value="{{ action_struct.action.action_name }}" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Description</label>
+                                    <textarea class="form-control" name="actionDescription" rows="3">{{ action_struct.action.description or '' }}</textarea>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Estimated Duration (hours)</label>
+                                        <input type="number" step="any" class="form-control" name="estimatedDuration" value="{{ action_struct.action.estimated_duration or '' }}">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Expected Billable Hours</label>
+                                        <input type="number" step="any" class="form-control" name="expectedBillableHours" value="{{ action_struct.action.expected_billable_hours or '' }}">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Safety Notes</label>
+                                    <textarea class="form-control" name="safetyNotes" rows="2">{{ action_struct.action.safety_notes or '' }}</textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Notes</label>
+                                    <textarea class="form-control" name="notes" rows="2">{{ action_struct.action.notes or '' }}</textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Part Demands Preview -->
+                        {% if action_struct.part_demands %}
+                        <div class="card mb-3 border-info">
+                            <div class="card-header bg-info bg-opacity-10">
+                                <h6 class="mb-0"><i class="bi bi-box-seam"></i> Part Demands (from source)</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="list-group">
+                                    {% for part_demand in action_struct.part_demands %}
+                                    <div class="list-group-item py-2">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <strong>{{ part_demand.part.part_name if part_demand.part else 'Part #' + part_demand.part_id|string }}</strong>
+                                                <span class="text-muted ms-2">x {{ part_demand.quantity_required }} units</span>
+                                            </div>
+                                            <span class="badge bg-info">Will be copied</span>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Tools Preview -->
+                        {% if action_struct.action_tools %}
+                        <div class="card mb-3 border-primary">
+                            <div class="card-header bg-primary bg-opacity-10">
+                                <h6 class="mb-0"><i class="bi bi-tools"></i> Tools (from source)</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="list-group">
+                                    {% for tool in action_struct.action_tools %}
+                                    <div class="list-group-item py-2">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <strong>{{ tool.tool.tool_name if tool.tool else 'Tool #' + tool.tool_id|string }}</strong>
+                                            </div>
+                                            <span class="badge bg-info">Will be copied</span>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Configuration Options -->
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="bi bi-gear"></i> Configuration Options</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Copy Options</label>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="copyPartDemands" value="true" id="copyPartDemandsCurrent{{ action_struct.action_id }}" checked>
+                                        <label class="form-check-label" for="copyPartDemandsCurrent{{ action_struct.action_id }}">
+                                            Copy part demands from source
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="copyTools" value="true" id="copyToolsCurrent{{ action_struct.action_id }}" checked>
+                                        <label class="form-check-label" for="copyToolsCurrent{{ action_struct.action_id }}">
+                                            Copy tool requirements from source
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Insert Position</label>
+                                    <select class="form-select" onchange="updateInsertPositionCurrent({{ action_struct.action_id }}, this.value)">
+                                        <option value="end" selected>At the end (after last action)</option>
+                                        <option value="beginning">At the beginning (before first action)</option>
+                                        <option value="after">After specific action</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3" id="afterActionSelectCurrent{{ action_struct.action_id }}" style="display: none;">
+                                    <label class="form-label fw-bold">After Which Action?</label>
+                                    <select class="form-select" onchange="document.getElementById('afterActionIdCurrent{{ action_struct.action_id }}').value = this.value">
+                                        <option value="">-- Select Action --</option>
+                                        {% for other_action in current_actions %}
+                                            {% if other_action.action_id != action_struct.action_id %}
+                                            <option value="{{ other_action.action_id }}">#{{ other_action.action.sequence_order }} - {{ other_action.action.action_name }}</option>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="document.querySelector('#currentActionModal{{ action_struct.action_id }} form').submit()">
+                        <i class="bi bi-plus-circle"></i> Insert Action
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+{% endif %}
+
+<!-- Blank Action Modal -->
+<div class="modal fade" id="blankActionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-pencil-square"></i> Create Blank Action
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="POST" action="{{ url_for('maintenance_event.create_blank_action', event_id=event_id) if event_id else '#' }}">
+                    <input type="hidden" name="insertPosition" value="end" id="insertPositionBlank">
+                    <input type="hidden" name="afterActionId" value="" id="afterActionIdBlank">
+                    
+                    <!-- Action Details -->
+                    <div class="card mb-3 border-primary">
+                        <div class="card-header bg-primary bg-opacity-10">
+                            <h6 class="mb-0">Action Details</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label">Action Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="actionName" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Description</label>
+                                <textarea class="form-control" name="actionDescription" rows="3"></textarea>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Estimated Duration (hours)</label>
+                                    <input type="number" step="any" class="form-control" name="estimatedDuration">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Expected Billable Hours</label>
+                                    <input type="number" step="any" class="form-control" name="expectedBillableHours">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Safety Notes</label>
+                                <textarea class="form-control" name="safetyNotes" rows="2"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Notes</label>
+                                <textarea class="form-control" name="notes" rows="2"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Configuration Options -->
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="bi bi-gear"></i> Configuration Options</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Insert Position</label>
+                                <select class="form-select" onchange="updateInsertPositionBlank(this.value)">
+                                    <option value="end" selected>At the end (after last action)</option>
+                                    <option value="beginning">At the beginning (before first action)</option>
+                                    <option value="after">After specific action</option>
+                                </select>
+                            </div>
+                            <div class="mb-3" id="afterActionSelectBlank" style="display: none;">
+                                <label class="form-label fw-bold">After Which Action?</label>
+                                <select class="form-select" onchange="document.getElementById('afterActionIdBlank').value = this.value">
+                                    <option value="">-- Select Action --</option>
+                                    {% if current_actions %}
+                                        {% for action_struct in current_actions %}
+                                        <option value="{{ action_struct.action_id }}">#{{ action_struct.action.sequence_order }} - {{ action_struct.action.action_name }}</option>
+                                        {% endfor %}
+                                    {% endif %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="document.querySelector('#blankActionModal form').submit()">
+                    <i class="bi bi-plus-circle"></i> Create Action
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Template Action Set selection
+function selectTemplateActionSet(templateSetId, maintenanceActionSetId) {
+    // Remove selected class from all items
+    document.querySelectorAll('[data-template-set-id]').forEach(item => {
+        item.classList.remove('selected');
+        item.style.backgroundColor = '';
+    });
+    
+    // Add selected class
+    const selectedItem = document.querySelector(`[data-template-set-id="${templateSetId}"]`);
+    if (selectedItem) {
+        selectedItem.classList.add('selected');
+        selectedItem.style.backgroundColor = '#cfe2ff';
+    }
+    
+    // Load template action items via HTMX
+    const container = document.getElementById('template-action-items-container');
+    const list = document.getElementById('template-action-items-list');
+    
+    const url = `/maintenance/action-creator-portal/list-template-action-items/${templateSetId}?maintenance_action_set_id=${maintenanceActionSetId}`;
+    htmx.ajax('GET', url, {
+        target: list,
+        swap: 'innerHTML'
+    }).then(() => {
+        container.style.display = 'block';
+    });
+}
+
+// Action selection handlers - open pre-rendered modals
+function selectTemplateAction(templateActionId, maintenanceActionSetId) {
+    const modal = new bootstrap.Modal(document.getElementById(`templateActionModal${templateActionId}`));
+    modal.show();
+}
+
+function selectProtoAction(protoActionId, maintenanceActionSetId) {
+    const modal = new bootstrap.Modal(document.getElementById(`protoActionModal${protoActionId}`));
+    modal.show();
+}
+
+function selectCurrentAction(sourceActionId, maintenanceActionSetId) {
+    const modal = new bootstrap.Modal(document.getElementById(`currentActionModal${sourceActionId}`));
+    modal.show();
+}
+
+function selectBlankAction() {
+    const modal = new bootstrap.Modal(document.getElementById('blankActionModal'));
+    modal.show();
+}
+
+// JavaScript filtering for current actions
+function filterCurrentActions(searchTerm) {
+    const searchLower = searchTerm.toLowerCase();
+    const items = document.querySelectorAll('.current-action-item');
+    let visibleCount = 0;
+    
+    items.forEach(item => {
+        const actionName = item.getAttribute('data-action-name') || '';
+        const actionDescription = item.getAttribute('data-action-description') || '';
+        
+        if (!searchTerm || actionName.includes(searchLower) || actionDescription.includes(searchLower)) {
+            item.style.display = '';
+            visibleCount++;
+        } else {
+            item.style.display = 'none';
+        }
+    });
+    
+    // Show/hide "no results" message if needed
+    const listContainer = document.getElementById('current-actions-list');
+    let noResultsMsg = listContainer.querySelector('.no-results-message');
+    if (visibleCount === 0 && searchTerm) {
+        if (!noResultsMsg) {
+            noResultsMsg = document.createElement('div');
+            noResultsMsg.className = 'list-group-item text-muted no-results-message';
+            noResultsMsg.textContent = 'No actions match your search.';
+            listContainer.appendChild(noResultsMsg);
+        }
+    } else if (noResultsMsg) {
+        noResultsMsg.remove();
+    }
+}
+
+// Insert position update helpers
+function updateInsertPosition(actionId, value) {
+    document.getElementById(`insertPosition${actionId}`).value = value;
+    const afterSelect = document.getElementById(`afterActionSelect${actionId}`);
+    if (value === 'after') {
+        afterSelect.style.display = 'block';
+    } else {
+        afterSelect.style.display = 'none';
+    }
+}
+
+function updateInsertPositionProto(actionId, value) {
+    document.getElementById(`insertPositionProto${actionId}`).value = value;
+    const afterSelect = document.getElementById(`afterActionSelectProto${actionId}`);
+    if (value === 'after') {
+        afterSelect.style.display = 'block';
+    } else {
+        afterSelect.style.display = 'none';
+    }
+}
+
+function updateInsertPositionCurrent(actionId, value) {
+    document.getElementById(`insertPositionCurrent${actionId}`).value = value;
+    const afterSelect = document.getElementById(`afterActionSelectCurrent${actionId}`);
+    if (value === 'after') {
+        afterSelect.style.display = 'block';
+    } else {
+        afterSelect.style.display = 'none';
+    }
+}
+
+function updateInsertPositionBlank(value) {
+    document.getElementById('insertPositionBlank').value = value;
+    const afterSelect = document.getElementById('afterActionSelectBlank');
+    if (value === 'after') {
+        afterSelect.style.display = 'block';
+    } else {
+        afterSelect.style.display = 'none';
+    }
+}
+</script>
+</div>
+{% endblock %}

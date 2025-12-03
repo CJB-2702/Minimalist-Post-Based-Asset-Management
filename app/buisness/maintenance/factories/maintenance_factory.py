@@ -35,6 +35,10 @@ class MaintenanceFactory:
         planned_start_datetime: Optional[datetime] = None,
         maintenance_plan_id: Optional[int] = None,
         user_id: Optional[int] = None,
+        assigned_user_id: Optional[int] = None,
+        assigned_by_id: Optional[int] = None,
+        priority: str = 'Medium',
+        notes: Optional[str] = None,
         commit: bool = True
     ) -> MaintenanceActionSet:
         """
@@ -58,6 +62,10 @@ class MaintenanceFactory:
             planned_start_datetime: Planned start datetime (defaults to now)
             maintenance_plan_id: Optional maintenance plan ID
             user_id: User ID creating the maintenance event
+            assigned_user_id: Optional user ID to assign the maintenance to
+            assigned_by_id: Optional user ID of the manager assigning the maintenance
+            priority: Priority level (Low, Medium, High, Critical) - defaults to 'Medium'
+            notes: Optional assignment notes to add as event comment
             commit: Whether to commit the transaction (default: True)
             
         Returns:
@@ -87,6 +95,9 @@ class MaintenanceFactory:
                 planned_start_datetime=planned_start_datetime,
                 maintenance_plan_id=maintenance_plan_id,
                 user_id=user_id,
+                assigned_user_id=assigned_user_id,
+                assigned_by_id=assigned_by_id,
+                priority=priority,
                 commit=False  # Don't commit yet, wait for all actions
             )
             
@@ -102,6 +113,30 @@ class MaintenanceFactory:
             # Validate business rules
             if not actions:
                 logger.warning(f"No actions created from template {template_action_set_id}")
+            
+            # Add assignment comment if notes provided or if assigned
+            if notes or assigned_user_id:
+                from app.buisness.maintenance.base.maintenance_context import MaintenanceContext
+                maintenance_context = MaintenanceContext.from_maintenance_action_set(maintenance_action_set)
+                
+                # Build comment text
+                comment_parts = []
+                if assigned_user_id:
+                    from app.data.core.user_info.user import User
+                    technician = User.query.get(assigned_user_id)
+                    technician_name = technician.username if technician else f"User {assigned_user_id}"
+                    comment_parts.append(f"Assigned to {technician_name}")
+                
+                if notes:
+                    comment_parts.append(f"Notes: {notes}")
+                
+                if comment_parts:
+                    comment_text = " | ".join(comment_parts)
+                    maintenance_context.add_comment(
+                        user_id=user_id or assigned_by_id or maintenance_action_set.created_by_id,
+                        content=comment_text,
+                        is_human_made=True
+                    )
             
             # Commit all changes
             if commit:

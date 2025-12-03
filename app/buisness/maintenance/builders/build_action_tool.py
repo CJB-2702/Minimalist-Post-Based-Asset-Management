@@ -87,4 +87,35 @@ class BuildActionTool:
         tool_id = self.tool_id or 'None'
         qty = self.quantity_required
         return f'<BuildActionTool tool_id={tool_id} qty={qty}>'
+    
+    def update_from_dict(self, updates: Dict[str, Any]) -> None:
+        """Update tool fields from dictionary, filtering valid fields."""
+        if not updates:
+            return
+        valid_fields = self._get_valid_fields()
+        for key, value in updates.items():
+            if key not in valid_fields:
+                continue
+            if key in ('tool_id',):
+                if value is None or value == '':
+                    self._data.pop(key, None)
+                else:
+                    try:
+                        self._data[key] = int(value)
+                    except (ValueError, TypeError):
+                        continue
+            elif key in ('quantity_required',):
+                if value is None or value == '':
+                    self._data.pop(key, None)
+                else:
+                    try:
+                        self._data[key] = int(value)
+                    except (ValueError, TypeError):
+                        continue
+            else:
+                # notes or other strings
+                if value is None or value == '':
+                    self._data.pop(key, None)
+                else:
+                    self._data[key] = value
 

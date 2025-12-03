@@ -1,0 +1,484 @@
+{% extends "base.html" %}
+
+{% block title %}Technician Portal - Maintenance{% endblock %}
+
+{% block extra_css %}
+<style>
+    .work-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+        border-left: 4px solid;
+    }
+    .work-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .work-card.primary { border-left-color: #0d6efd; }
+    .work-card.success { border-left-color: #198754; }
+    .work-card.warning { border-left-color: #ffc107; }
+    .search-dropdown-item {
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+        border-bottom: 1px solid #dee2e6;
+    }
+    .search-dropdown-item:hover {
+        background-color: #f8f9fa;
+    }
+    .search-dropdown-item.selected {
+        background-color: #0d6efd;
+        color: white;
+    }
+    .search-dropdown-item:last-child {
+        border-bottom: none;
+    }
+    .search-match-count {
+        padding: 0.5rem 1rem;
+        background-color: #e9ecef;
+        font-size: 0.875rem;
+        color: #6c757d;
+        border-top: 1px solid #dee2e6;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="bi bi-person-wrench text-primary"></i> Technician Portal
+                    </h1>
+                    <p class="text-muted mb-0">View assigned work, complete actions, and track your maintenance history</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('maintenance.index') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Portals
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row mb-4">
+        <div class="col-md-4 mb-3">
+            <div class="card border-primary">
+                <div class="card-body text-center">
+                    <h6 class="text-muted mb-2">Assigned Work</h6>
+                    <h2 class="text-primary mb-0">{{ stats.get('assigned_work', 0) }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card border-success">
+                <div class="card-body text-center">
+                    <h6 class="text-muted mb-2">In Progress</h6>
+                    <h2 class="text-success mb-0">{{ stats.get('in_progress', 0) }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card border-warning">
+                <div class="card-body text-center">
+                    <h6 class="text-muted mb-2">Completed Today</h6>
+                    <h2 class="text-warning mb-0">{{ stats.get('completed_today', 0) }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Asset Lookup and Action Buttons -->
+    <div class="row mb-4">
+        <!-- Quick Asset Lookup (Left Half) -->
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-search"></i> Quick Asset Lookup</h5>
+                </div>
+                <div class="card-body">
+                    <div class="position-relative">
+                        <input type="text" 
+                               class="form-control" 
+                               id="asset_lookup_search" 
+                               name="search"
+                               placeholder="Search assets by name or serial number..." 
+                               autocomplete="off"
+                               hx-get="{{ url_for('searchutils.searchbar_assets') }}"
+                               hx-trigger="input changed delay:300ms, focus"
+                               hx-target="#asset_lookup_results"
+                               hx-swap="innerHTML">
+                        <input type="hidden" id="asset_lookup_id" name="asset_id">
+                        <div class="dropdown-menu w-100" id="asset_lookup_dropdown" style="max-height: 300px; overflow-y: auto; display: none; position: absolute; z-index: 1000;">
+                            <div id="asset_lookup_results"
+                                 hx-get="{{ url_for('searchutils.searchbar_assets') }}"
+                                 hx-trigger="load"
+                                 hx-swap="innerHTML"></div>
+                        </div>
+                    </div>
+                    <small class="text-muted">Search for assets to view their maintenance history</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons (Right Half) -->
+        <div class="col-md-6 mb-3">
+            <div class="row">
+                <!-- View Events by Location Button (1/4) -->
+                <div class="col-md-6 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body d-flex flex-column justify-content-center align-items-center text-center">
+                            {% if most_recently_completed_location_id %}
+                            <a href="{{ url_for('maintenance.view_events', major_location_id=most_recently_completed_location_id) }}" 
+                               class="btn btn-primary btn-lg w-100">
+                                <i class="bi bi-geo-alt"></i><br>
+                                View Events by Your Location
+                            </a>
+                            {% else %}
+                            <button class="btn btn-secondary btn-lg w-100" disabled>
+                                <i class="bi bi-geo-alt"></i><br>
+                                View Events by Your Location
+                            </button>
+                            <small class="text-muted mt-2">Complete an event to see location-based events</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Event Viewer Dashboard Button (1/4) -->
+                <div class="col-md-6 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body d-flex flex-column justify-content-center align-items-center text-center">
+                            <a href="{{ url_for('maintenance.view_events') }}" 
+                               class="btn btn-info btn-lg w-100">
+                                <i class="bi bi-list-ul"></i><br>
+                                Event Viewer Dashboard
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Access Features -->
+    <div class="row mb-4">
+        {% if quick_access.get('most_recently_assigned_event') %}
+        <div class="col-md-6 mb-3">
+            <div class="card border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0"><i class="bi bi-clock-history"></i> Most Recently Assigned</h6>
+                </div>
+                <div class="card-body">
+                    <h6 class="card-title">{{ quick_access.most_recently_assigned_event.task_name }}</h6>
+                    <p class="text-muted small mb-2">
+                        <i class="bi bi-calendar"></i> Updated: {{ quick_access.most_recently_assigned_event.updated_at.strftime('%Y-%m-%d %H:%M') }}
+                    </p>
+                    <a href="{{ url_for('maintenance_event.view_maintenance_event', event_id=quick_access.most_recently_assigned_event.event_id) }}" 
+                       class="btn btn-primary btn-sm">
+                        <i class="bi bi-arrow-right-circle"></i> Go to Latest Assignment
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if quick_access.get('most_recently_commented_event') %}
+        <div class="col-md-6 mb-3">
+            <div class="card border-info">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0"><i class="bi bi-chat-dots"></i> Continue Discussion</h6>
+                </div>
+                <div class="card-body">
+                    <h6 class="card-title">{{ quick_access.most_recently_commented_event.task_name }}</h6>
+                    <p class="text-muted small mb-2">
+                        <i class="bi bi-calendar"></i> Last commented: {{ quick_access.most_recently_commented_event.comment_created_at.strftime('%Y-%m-%d %H:%M') }}
+                    </p>
+                    <p class="text-muted small mb-2">{{ quick_access.most_recently_commented_event.comment_preview }}</p>
+                    <a href="{{ url_for('maintenance_event.view_maintenance_event', event_id=quick_access.most_recently_commented_event.event_id) }}" 
+                       class="btn btn-info btn-sm">
+                        <i class="bi bi-arrow-right-circle"></i> Continue Discussion
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Event List Widgets -->
+    <div class="row mb-4">
+        <!-- Feature #3: View Assigned Events -->
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-list-task"></i> Assigned Events</h5>
+                    <a href="{{ url_for('maintenance.view_events', assigned_user_id=current_user.id) }}" 
+                       class="btn btn-sm btn-outline-primary">
+                        View All
+                    </a>
+                </div>
+                <div class="card-body" 
+                     hx-get="{{ url_for('maintenance.view_events', assigned_user_id=current_user.id, per_page=5) }}"
+                     hx-trigger="load"
+                     hx-target="this"
+                     hx-swap="innerHTML"
+                     hx-select=".list-group">
+                    <div class="text-center py-3">
+                        <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                        <span class="ms-2 text-muted">Loading events...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Feature #4: View Recently Interacted With Events -->
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-chat-dots"></i> Recently Interacted With</h5>
+                    <a href="{{ url_for('maintenance.view_events', has_comments_by=current_user.id, order_by='last_comment_date', order_direction='desc') }}" 
+                       class="btn btn-sm btn-outline-info">
+                        View All
+                    </a>
+                </div>
+                <div class="card-body" 
+                     hx-get="{{ url_for('maintenance.view_events', has_comments_by=current_user.id, order_by='last_comment_date', order_direction='desc', per_page=5) }}"
+                     hx-trigger="load"
+                     hx-target="this"
+                     hx-swap="innerHTML"
+                     hx-select=".list-group">
+                    <div class="text-center py-3">
+                        <div class="spinner-border spinner-border-sm text-info" role="status"></div>
+                        <span class="ms-2 text-muted">Loading events...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feature #5: Assigned Events Planned This Week -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-calendar-week"></i> Planned This Week</h5>
+                    <a href="{{ url_for('maintenance.view_events', assigned_user_id=current_user.id, status='Planned', date_from=start_of_week, date_to=end_of_week) }}" 
+                       class="btn btn-sm btn-outline-primary">
+                        View All
+                    </a>
+                </div>
+                <div class="card-body" 
+                     hx-get="{{ url_for('maintenance.view_events', assigned_user_id=current_user.id, status='Planned', date_from=start_of_week, date_to=end_of_week, per_page=5) }}"
+                     hx-trigger="load"
+                     hx-target="this"
+                     hx-swap="innerHTML"
+                     hx-select=".list-group">
+                    <div class="text-center py-3">
+                        <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                        <span class="ms-2 text-muted">Loading events...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feature #8: Top Five Assets with Most Actions Completed -->
+    {% if top_assets %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-star-fill"></i> Top Assets (Last 6 Months)</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        {% for asset in top_assets %}
+                        <a href="{{ url_for('maintenance.view_events', asset_id=asset.id) }}" 
+                           class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ asset.name }}</strong>
+                            </div>
+                            <span class="badge bg-primary rounded-pill">{{ asset.action_count }} actions</span>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Feature #9: Recent Part Demand Status Updates -->
+    {% if recent_part_demands %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-box-arrow-up"></i> Recent Part Demand Updates</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        {% for pd in recent_part_demands %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">{{ pd.part_name }}</h6>
+                                    <p class="mb-1 small">
+                                        <span class="badge bg-{% if pd.status == 'Issued' %}success{% elif pd.status == 'Rejected' %}danger{% elif 'Pending' in pd.status %}warning{% else %}info{% endif %}">
+                                            {{ pd.status }}
+                                        </span>
+                                        <span class="ms-2">Qty: {{ pd.quantity }}</span>
+                                    </p>
+                                    <small class="text-muted">
+                                        Updated: {{ pd.updated_at.strftime('%Y-%m-%d %H:%M') }}
+                                    </small>
+                                </div>
+                                {% if pd.event_id %}
+                                <a href="{{ url_for('maintenance_event.view_maintenance_event', event_id=pd.event_id) }}" 
+                                   class="btn btn-sm btn-outline-primary">
+                                    View Event
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Feature #10: Oldest Part Demands Needing Approval -->
+    {% if oldest_part_demands_needing_approval %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="bi bi-clock-history"></i> Part Demands Needing Approval</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        {% for pd in oldest_part_demands_needing_approval %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">{{ pd.part_name }}</h6>
+                                    <p class="mb-1 small">
+                                        <span class="badge bg-warning">{{ pd.status }}</span>
+                                        <span class="ms-2">Qty: {{ pd.quantity }}</span>
+                                    </p>
+                                    <small class="text-muted">
+                                        Waiting {{ pd.days_waiting }} day{{ 's' if pd.days_waiting != 1 else '' }}
+                                        (Requested: {{ pd.created_at.strftime('%Y-%m-%d') }})
+                                    </small>
+                                </div>
+                                {% if pd.event_id %}
+                                <a href="{{ url_for('maintenance_event.view_maintenance_event', event_id=pd.event_id) }}" 
+                                   class="btn btn-sm btn-outline-primary">
+                                    View Event
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Feature #11: Oldest Part Demands Not Received -->
+    {% if oldest_part_demands_not_received %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-info">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-box-seam"></i> Part Demands Awaiting Receipt</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        {% for pd in oldest_part_demands_not_received %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">{{ pd.part_name }}</h6>
+                                    <p class="mb-1 small">
+                                        <span class="badge bg-info">{{ pd.status }}</span>
+                                        <span class="ms-2">Qty: {{ pd.quantity }}</span>
+                                    </p>
+                                    <small class="text-muted">
+                                        Waiting {{ pd.days_waiting }} day{{ 's' if pd.days_waiting != 1 else '' }}
+                                        (Requested: {{ pd.created_at.strftime('%Y-%m-%d') }})
+                                    </small>
+                                </div>
+                                {% if pd.event_id %}
+                                <a href="{{ url_for('maintenance_event.view_maintenance_event', event_id=pd.event_id) }}" 
+                                   class="btn btn-sm btn-outline-primary">
+                                    View Event
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    // Asset lookup searchbar handlers
+    const assetLookupSearch = document.getElementById('asset_lookup_search');
+    const assetLookupId = document.getElementById('asset_lookup_id');
+    const assetLookupDropdown = document.getElementById('asset_lookup_dropdown');
+    
+    // Global function for asset selection (called from HTMX-loaded results)
+    window.selectItem = function(id, name) {
+        assetLookupSearch.value = name;
+        assetLookupId.value = id;
+        assetLookupDropdown.style.display = 'none';
+        
+        // Redirect to view events for this asset
+        window.location.href = "{{ url_for('maintenance.view_events') }}?asset_id=" + id;
+    };
+    
+    // Show dropdown when results are loaded
+    document.body.addEventListener('htmx:afterSwap', function(event) {
+        if (event.detail.target.id === 'asset_lookup_results') {
+            const hasResults = event.detail.target.querySelector('.search-dropdown-item:not(.text-danger):not(.text-muted)');
+            if (hasResults && assetLookupSearch.value.trim()) {
+                assetLookupDropdown.style.display = 'block';
+            } else {
+                assetLookupDropdown.style.display = 'none';
+            }
+        }
+    });
+    
+    // Hide dropdown when clicking outside
+    document.addEventListener('click', function(event) {
+        if (!assetLookupSearch.contains(event.target) && !assetLookupDropdown.contains(event.target)) {
+            assetLookupDropdown.style.display = 'none';
+        }
+    });
+    
+    // Show dropdown on focus if there's a value
+    assetLookupSearch.addEventListener('focus', function() {
+        if (this.value.trim() && assetLookupDropdown.querySelector('.search-dropdown-item:not(.text-danger):not(.text-muted)')) {
+            assetLookupDropdown.style.display = 'block';
+        }
+    });
+    
+    // Clear selection when input is cleared
+    assetLookupSearch.addEventListener('input', function() {
+        if (!this.value.trim()) {
+            assetLookupId.value = '';
+            assetLookupDropdown.style.display = 'none';
+        }
+    });
+</script>
+{% endblock %}

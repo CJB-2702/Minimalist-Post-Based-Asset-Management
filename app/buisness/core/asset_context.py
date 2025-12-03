@@ -12,7 +12,9 @@ Note: Detail table management is handled by AssetDetailsContext in domain.assets
 """
 
 from typing import List, Optional, Union, Dict, Any, TYPE_CHECKING
+from datetime import datetime
 from app.data.core.asset_info.asset import Asset
+from app.data.core.asset_info.meter_history import MeterHistory
 from app.data.core.event_info.event import Event
 
 if TYPE_CHECKING:
@@ -219,10 +221,93 @@ class AssetContext:
             return "None (will use CoreAssetFactory on first create)"
         return cls.asset_factory.get_factory_type()
     
+    def update_meters(
+        self,
+        meter1: Optional[float] = None,
+        meter2: Optional[float] = None,
+        meter3: Optional[float] = None,
+        meter4: Optional[float] = None,
+        updated_by_id: Optional[int] = None,
+        recorded_at: Optional[datetime] = None,
+        validate: bool = True,
+        commit: bool = True
+    ) -> MeterHistory:
+        """
+        Update asset meters and create meter history record.
+        
+        Updates the asset's current meters and creates a MeterHistory record.
+        Can optionally validate that at least one meter value is provided.
+        
+        Args:
+            meter1-4: Meter values (can be None)
+            updated_by_id: ID of the user making the change
+            recorded_at: Optional timestamp (defaults to now)
+            validate: If True, validates that at least one meter value is provided
+            commit: If True, commit the transaction immediately. If False, 
+                    add to session but don't commit (allows rollback on error)
+        
+        Raises:
+            ValueError: If validate=True and all meters are None
+            
+        Returns:
+            MeterHistory instance
+        """
+        from app import db
+        
+        # Validation: at least one meter must be provided (if validation enabled)
+        
+        if validate:
+
+            all_meters_none = meter1 is None and meter2 is None and meter3 is None and meter4 is None
+            if all_meters_none:
+                raise ValueError("At least one meter value must be provided")
+            #todo add validation for meter values
+        
+        if recorded_at is None:
+            recorded_at = datetime.utcnow()
+        
+        # Create meter history record
+        meter_history = MeterHistory(
+            asset_id=self._asset_id,
+            meter1=meter1,
+            meter2=meter2,
+            meter3=meter3,
+            meter4=meter4,
+            recorded_at=recorded_at,
+            recorded_by_id=updated_by_id,
+            created_by_id=updated_by_id,
+            updated_by_id=updated_by_id
+        )
+        
+        db.session.add(meter_history)
+        
+        # Flush to get the ID (needed even when commit=False so ID is available for foreign key)
+        db.session.flush()
+        
+        # Update asset's current meters (only non-None values)
+        if meter1 is not None:
+            self._asset.meter1 = meter1
+        if meter2 is not None:
+            self._asset.meter2 = meter2
+        if meter3 is not None:
+            self._asset.meter3 = meter3
+        if meter4 is not None:
+            self._asset.meter4 = meter4
+        
+        # Update asset audit fields
+        if updated_by_id:
+            self._asset.updated_by_id = updated_by_id
+        
+        if commit:
+            db.session.commit()
+        
+        return meter_history
+    
     def edit(
         self,
         updated_by_id: Optional[int] = None,
         commit: bool = True,
+        ignore_meter_validation: bool = False,
         **kwargs
     ) -> 'AssetContext':
         """
@@ -234,9 +319,45 @@ class AssetContext:
         - major_location_id
         - make_model_id
         
+        Meter tracking:
+        - If any meter values (meter1-4) are updated,        # Check if meters are being updated
+        meter_fields = ['meter1', 'meter2', 'meter3', 'meter4']
+        meters_updated = any(field in kwargs for field in meter_fields)
+        
+        # Extract meter values from kwargs (use current values if not provided)
+        meter_values = {}
+        if meters_updated:
+            for field in meter_fields:
+                meter_values[field] = kwargs.get(field, getattr(self._asset, field, None))
+        
+        # Apply all changes (including non-key fields, but exclude meters - handled separately)
+        for key, value in kwargs.items():
+            if key not in meter_fields and value is not None:
+                setattr(self._asset, key, value)
+        
+        # Set audit fields
+        if updated_by_id:
+            self._asset.updated_by_id = updated_by_id
+        
+        # Update meters and create history if meters were updated
+        if meters_updated:
+            self.update_meters(
+                meter1=meter_values.get('meter1'),
+                meter2=meter_values.get('meter2'),
+                meter3=meter_values.get('meter3'),
+                meter4=meter_values.get('meter4'),
+                updated_by_id=updated_by_id,
+                validate=not ignore_meter_validation,  # Validate unless explicitly bypassed
+                commit=commit
+            )
+         a MeterHistory record is automatically created
+        - Meter history is created with commit=False if commit=False, allowing transaction rollback
+        
         Args:
             updated_by_id: ID of the user making the change
             commit: Whether to commit the transaction
+            ignore_meter_validation: If True, skip meter validation (e.g., allow decreasing values, large jumps).
+                                     This is ONLY available on asset edit route, NOT on maintenance completion.
             **kwargs: Fields to update (name, serial_number, major_location_id, make_model_id, status, meters, etc.)
             
         Returns:
@@ -300,14 +421,36 @@ class AssetContext:
             )
             db.session.add(event)
         
-        # Apply all changes (including non-key fields)
+        # Check if meters are being updated
+        meter_fields = ['meter1', 'meter2', 'meter3', 'meter4']
+        meters_updated = any(field in kwargs for field in meter_fields)
+        
+        # Extract meter values from kwargs (use current values if not provided)
+        meter_values = {}
+        if meters_updated:
+            for field in meter_fields:
+                meter_values[field] = kwargs.get(field, getattr(self._asset, field, None))
+        
+        # Apply all changes (including non-key fields, but exclude meters - handled separately)
         for key, value in kwargs.items():
-            if value is not None:
+            if key not in meter_fields and value is not None:
                 setattr(self._asset, key, value)
         
         # Set audit fields
         if updated_by_id:
             self._asset.updated_by_id = updated_by_id
+        
+        # Update meters and create history if meters were updated
+        if meters_updated:
+            self.update_meters(
+                meter1=meter_values.get('meter1'),
+                meter2=meter_values.get('meter2'),
+                meter3=meter_values.get('meter3'),
+                meter4=meter_values.get('meter4'),
+                updated_by_id=updated_by_id,
+                validate=not ignore_meter_validation,  # Validate unless explicitly bypassed
+                commit=commit
+            )
         
         # Commit if requested
         if commit:

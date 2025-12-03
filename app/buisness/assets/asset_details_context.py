@@ -8,7 +8,7 @@ Focus: Managing detail relationships (asset_details and model_details)
 from typing import List, Dict, Any, Optional, Union
 from app.data.core.asset_info.asset import Asset
 from app.buisness.core.asset_context import AssetContext
-from app.buisness.assets.asset_details.asset_details_struct import AssetDetailsStruct
+from app.buisness.assets.asset_type_details.asset_details_struct import AssetDetailsStruct
 from app.buisness.assets.model_details.model_details_struct import ModelDetailsStruct
 from app.data.assets.detail_table_templates.asset_details_from_asset_type import AssetDetailTemplateByAssetType
 from app.data.assets.detail_table_templates.asset_details_from_model_type import AssetDetailTemplateByModelType
@@ -70,22 +70,24 @@ class AssetDetailsContext(AssetContext):
             details_dict = struct.asdict()
             
             self._asset_details = []
-            for class_name, record in details_dict.items():
-                if record is not None:
-                    # Extract common fields
-                    detail_data = {
-                        'id': record.id,
-                        'all_asset_detail_id': record.all_asset_detail_id,
-                        'asset_id': record.asset_id,
-                        'created_at': record.created_at,
-                        'created_by_id': record.created_by_id,
-                        'updated_at': record.updated_at,
-                        'updated_by_id': record.updated_by_id,
-                        'table_name': record.__tablename__,
-                        'table_class': class_name,
-                        'record': record
-                    }
-                    self._asset_details.append(detail_data)
+            for class_name, records in details_dict.items():
+                # records is now a list (even if empty)
+                if records:
+                    for record in records:
+                        # Extract common fields
+                        detail_data = {
+                            'id': record.id,
+                            'all_asset_detail_id': record.all_asset_detail_id,
+                            'asset_id': record.asset_id,
+                            'created_at': record.created_at,
+                            'created_by_id': record.created_by_id,
+                            'updated_at': record.updated_at,
+                            'updated_by_id': record.updated_by_id,
+                            'table_name': record.__tablename__,
+                            'table_class': class_name,
+                            'record': record
+                        }
+                        self._asset_details.append(detail_data)
             
             # Sort by global ID for consistent ordering
             self._asset_details = sorted(self._asset_details, key=lambda x: x['all_asset_detail_id'])
@@ -179,13 +181,13 @@ class AssetDetailsContext(AssetContext):
         details_dict = struct.asdict()
         
         details_by_type = {}
-        for class_name, record in details_dict.items():
-            if record is not None:
-                # Use table name as key
-                key = record.__tablename__
-                if key not in details_by_type:
-                    details_by_type[key] = []
-                details_by_type[key].append(record)
+        for class_name, records in details_dict.items():
+            # records is now a list
+            if records:
+                # Get table name from first record
+                key = records[0].__tablename__
+                # Add all records for this type
+                details_by_type[key] = records
         
         return details_by_type
     
@@ -223,14 +225,14 @@ class AssetDetailsContext(AssetContext):
         Returns:
             Total number of detail records
         """
-        # Count non-None records from structs
+        # Count all records from structs (now returns lists)
         asset_struct = self.asset_details_struct
-        asset_detail_count = sum(1 for record in asset_struct.asdict().values() if record is not None)
+        asset_detail_count = sum(len(records) for records in asset_struct.asdict().values() if records)
         
         model_detail_count = 0
         if self._asset.make_model_id:
             model_struct = ModelDetailsStruct(self._asset.make_model_id)
-            model_detail_count = sum(1 for record in model_struct.asdict().values() if record is not None)
+            model_detail_count = sum(len(records) for records in model_struct.asdict().values() if records)
         
         return asset_detail_count + model_detail_count
     

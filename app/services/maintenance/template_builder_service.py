@@ -228,6 +228,102 @@ class TemplateBuilderService:
         except Exception:
             return None
     
+    # ===== New: Form conversion for updates =====
+    @staticmethod
+    def convert_form_to_action_updates(form_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Convert form data to action updates dictionary (subset of TemplateActionItem fields).
+        """
+        updates: Dict[str, Any] = {}
+        # Strings
+        if 'action_name' in form_data:
+            updates['action_name'] = form_data.get('action_name') or None
+        if 'description' in form_data:
+            updates['description'] = form_data.get('description') or None
+        if 'safety_notes' in form_data:
+            updates['safety_notes'] = form_data.get('safety_notes') or None
+        if 'notes' in form_data:
+            updates['notes'] = form_data.get('notes') or None
+        if 'instructions' in form_data:
+            updates['instructions'] = form_data.get('instructions') or None
+        if 'instructions_type' in form_data:
+            updates['instructions_type'] = form_data.get('instructions_type') or None
+        if 'required_skills' in form_data:
+            updates['required_skills'] = form_data.get('required_skills') or None
+        # Numbers
+        if 'estimated_duration' in form_data:
+            try:
+                updates['estimated_duration'] = float(form_data.get('estimated_duration')) if form_data.get('estimated_duration') else None
+            except (ValueError, TypeError):
+                updates['estimated_duration'] = None
+        if 'expected_billable_hours' in form_data:
+            try:
+                updates['expected_billable_hours'] = float(form_data.get('expected_billable_hours')) if form_data.get('expected_billable_hours') else None
+            except (ValueError, TypeError):
+                updates['expected_billable_hours'] = None
+        if 'minimum_staff_count' in form_data:
+            try:
+                updates['minimum_staff_count'] = int(form_data.get('minimum_staff_count')) if form_data.get('minimum_staff_count') else None
+            except (ValueError, TypeError):
+                updates['minimum_staff_count'] = None
+        if 'sequence_order' in form_data:
+            try:
+                sequence_order = int(form_data.get('sequence_order')) if form_data.get('sequence_order') else None
+                if sequence_order and sequence_order >= 1:
+                    updates['sequence_order'] = sequence_order
+            except (ValueError, TypeError):
+                pass
+        # Booleans
+        if 'is_required' in form_data:
+            val = form_data.get('is_required')
+            updates['is_required'] = val in ('true', 'True', '1', True, 1, 'on')
+        return updates
+
+    @staticmethod
+    def convert_form_to_part_updates(form_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Convert form data to part demand updates dictionary.
+        """
+        updates: Dict[str, Any] = {}
+        if 'part_id' in form_data:
+            try:
+                updates['part_id'] = int(form_data.get('part_id')) if form_data.get('part_id') else None
+            except (ValueError, TypeError):
+                updates['part_id'] = None
+        if 'quantity_required' in form_data:
+            try:
+                updates['quantity_required'] = float(form_data.get('quantity_required')) if form_data.get('quantity_required') else None
+            except (ValueError, TypeError):
+                updates['quantity_required'] = None
+        if 'expected_cost' in form_data:
+            try:
+                updates['expected_cost'] = float(form_data.get('expected_cost')) if form_data.get('expected_cost') else None
+            except (ValueError, TypeError):
+                updates['expected_cost'] = None
+        if 'notes' in form_data:
+            updates['notes'] = form_data.get('notes') or None
+        return updates
+
+    @staticmethod
+    def convert_form_to_tool_updates(form_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Convert form data to tool updates dictionary.
+        """
+        updates: Dict[str, Any] = {}
+        if 'tool_id' in form_data:
+            try:
+                updates['tool_id'] = int(form_data.get('tool_id')) if form_data.get('tool_id') else None
+            except (ValueError, TypeError):
+                updates['tool_id'] = None
+        if 'quantity_required' in form_data:
+            try:
+                updates['quantity_required'] = int(form_data.get('quantity_required')) if form_data.get('quantity_required') else None
+            except (ValueError, TypeError):
+                updates['quantity_required'] = None
+        if 'notes' in form_data:
+            updates['notes'] = form_data.get('notes') or None
+        return updates
+
     @staticmethod
     def convert_form_to_action_dict(form_data: Dict[str, Any]) -> Dict[str, Any]:
         """

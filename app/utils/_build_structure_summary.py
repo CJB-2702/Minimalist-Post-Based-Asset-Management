@@ -74,12 +74,14 @@ def main():
     structure = scan_directory(root_dir)
     
     # Save as JSON
-    output_json = root_dir / 'application_structure.json'
+    design_dir = root_dir / 'Design'
+    design_dir.mkdir(exist_ok=True)
+    output_json = design_dir / 'application_structure.json'
     with open(output_json, 'w', encoding='utf-8') as f:
         json.dump(structure, f, indent=2, ensure_ascii=False)
     
     # Also create markdown version
-    output_md = root_dir / 'application_structure.md'
+    output_md = design_dir / 'application_structure.md'
     with open(output_md, 'w', encoding='utf-8') as f:
         f.write("# Application Structure Summary\n\n")
         f.write("This document provides a comprehensive overview of all files and classes in the application.\n\n")

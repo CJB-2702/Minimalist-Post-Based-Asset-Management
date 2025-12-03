@@ -21,9 +21,10 @@ def build_models():
     import app.data.assets.model_detail_virtual
     
     # Import asset detail models
-    import app.data.assets.asset_details.purchase_info
-    import app.data.assets.asset_details.vehicle_registration
-    import app.data.assets.asset_details.toyota_warranty_receipt
+    import app.data.assets.asset_type_details.purchase_info
+    import app.data.assets.asset_type_details.vehicle_registration
+    import app.data.assets.asset_type_details.toyota_warranty_receipt
+    import app.data.assets.asset_type_details.smog_record
     
     # Import model detail models
     import app.data.assets.model_details.emissions_info

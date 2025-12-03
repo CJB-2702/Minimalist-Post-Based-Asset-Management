@@ -26,3 +26,8 @@ class UserCreatedBase(db.Model, DataInsertionMixin):
     @declared_attr
     def updated_by(cls):
         return db.relationship('User', foreign_keys=[cls.updated_by_id], overlaps="updated_assets,updated_locations,updated_asset_types,updated_make_models,events,updated_comments,updated_attachments") 
+    
+    def get_columns(self):
+        return {
+            'id', 'created_at', 'created_by_id', 'updated_at', 'updated_by_id'
+        }

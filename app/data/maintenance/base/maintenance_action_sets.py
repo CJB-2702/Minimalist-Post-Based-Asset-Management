@@ -21,7 +21,7 @@ class MaintenanceActionSet(EventDetailVirtual, VirtualActionSet):
     maintenance_plan_id = db.Column(db.Integer, db.ForeignKey('maintenance_plans.id'), nullable=True)
     
     # Planning
-    planned_start_datetime = db.Column(db.DateTime, nullable=True)
+    planned_start_datetime = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Execution tracking
     status = db.Column(db.String(20), default='Planned')
@@ -39,6 +39,9 @@ class MaintenanceActionSet(EventDetailVirtual, VirtualActionSet):
     completion_notes = db.Column(db.Text, nullable=True)
     delay_notes = db.Column(db.Text, nullable=True)
     
+    # Meter reading reference (linked to meter history record taken at completion)
+    meter_reading_id = db.Column(db.Integer, db.ForeignKey('meter_history.id'), nullable=True)
+    
     # Relationships
     asset = relationship('Asset', foreign_keys='MaintenanceActionSet.asset_id', lazy='select')
     maintenance_plan = relationship('MaintenancePlan', back_populates='maintenance_action_sets', lazy='select')
@@ -50,6 +53,9 @@ class MaintenanceActionSet(EventDetailVirtual, VirtualActionSet):
     assigned_user = relationship('User', foreign_keys=[assigned_user_id], backref='assigned_maintenance_action_sets')
     assigned_by = relationship('User', foreign_keys=[assigned_by_id], backref='assigned_maintenance_action_sets_by_me')
     completed_by = relationship('User', foreign_keys=[completed_by_id], backref='completed_maintenance_action_sets')
+    
+    # Meter reading relationship
+    meter_reading = relationship('MeterHistory', foreign_keys=[meter_reading_id], lazy='select')
     
     # Association proxies for easier access
     action_names = association_proxy('actions', 'action_name')

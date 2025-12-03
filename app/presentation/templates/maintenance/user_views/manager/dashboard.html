@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block title %}Manager Portal - Maintenance{% endblock %}
+
+{% block extra_css %}
+<style>
+    .workflow-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+        border: none;
+        border-radius: 12px;
+        height: 100%;
+        min-height: 200px;
+        border-left: 4px solid;
+    }
+    .workflow-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    }
+    .workflow-card.primary { border-left-color: #0d6efd; }
+    .workflow-card.success { border-left-color: #198754; }
+    .workflow-card.info { border-left-color: #0dcaf0; }
+    .workflow-card.warning { border-left-color: #ffc107; }
+    .workflow-card.danger { border-left-color: #dc3545; }
+    .workflow-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+    .stat-badge {
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="bi bi-clipboard-check text-success"></i> Manager Portal
+                    </h1>
+                    <p class="text-muted mb-0">Plan, schedule, and manage maintenance operations</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('maintenance.index') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Portals
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card border-primary">
+                <div class="card-body text-center">
+                    <h6 class="text-muted mb-2">Total Events</h6>
+                    <h2 class="text-primary mb-0">{{ stats.get('total_maintenance_events', 0) }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-success">
+                <div class="card-body text-center">
+                    <h6 class="text-muted mb-2">Active Maintenance</h6>
+                    <h2 class="text-success mb-0">{{ stats.get('active_maintenance', 0) }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-warning">
+                <div class="card-body text-center">
+                    <h6 class="text-muted mb-2">Pending Part Demands</h6>
+                    <h2 class="text-warning mb-0">{{ stats.get('pending_part_demands', 0) }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-info">
+                <div class="card-body text-center">
+                    <h6 class="text-muted mb-2">Active Templates</h6>
+                    <h2 class="text-info mb-0">{{ stats.get('total_templates', 0) }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Workflow Cards -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <h5 class="text-muted mb-3">
+                <i class="bi bi-grid-3x3-gap"></i> Maintenance Workflows
+            </h5>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- View Maintenance -->
+        <div class="col-lg-4 col-md-6">
+            <div class="card workflow-card primary shadow-sm">
+                <div class="card-body text-center d-flex flex-column p-4">
+                    <div class="workflow-icon text-primary">
+                        <i class="bi bi-eye"></i>
+                    </div>
+                    <h4 class="card-title mb-3">View Maintenance</h4>
+                    <p class="card-text flex-grow-1 mb-3">
+                        View maintenance events, templates, and prototypes. Browse and search all maintenance data.
+                    </p>
+                    <a href="{{ url_for('manager_portal.view_maintenance') }}" class="btn btn-primary btn-lg mt-auto">
+                        <i class="bi bi-arrow-right-circle"></i> View Maintenance
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Create & Assign -->
+        <div class="col-lg-4 col-md-6">
+            <div class="card workflow-card warning shadow-sm">
+                <div class="card-body text-center d-flex flex-column p-4">
+                    <div class="workflow-icon text-warning">
+                        <i class="bi bi-person-check"></i>
+                    </div>
+                    <h4 class="card-title mb-3">Create & Assign</h4>
+                    <p class="card-text flex-grow-1 mb-3">
+                        Create maintenance events from templates and assign them to assets and technicians.
+                    </p>
+                    <a href="{{ url_for('manager_portal.create_assign') }}" class="btn btn-warning btn-lg mt-auto">
+                        <i class="bi bi-arrow-right-circle"></i> Create & Assign
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Approve & Review -->
+        <div class="col-lg-4 col-md-6">
+            <div class="card workflow-card danger shadow-sm">
+                <div class="card-body text-center d-flex flex-column p-4">
+                    <div class="workflow-icon text-danger">
+                        <i class="bi bi-check-circle"></i>
+                    </div>
+                    <h4 class="card-title mb-3">Approve & Review</h4>
+                    <p class="card-text flex-grow-1 mb-3">
+                        Approve part demands, review delays, and manage maintenance approvals.
+                    </p>
+                    <a href="{{ url_for('manager_portal.approve_review') }}" class="btn btn-danger btn-lg mt-auto">
+                        <i class="bi bi-arrow-right-circle"></i> Approve & Review
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Build Maintenance Templates -->
+        <div class="col-lg-4 col-md-6">
+            <div class="card workflow-card info shadow-sm">
+                <div class="card-body text-center d-flex flex-column p-4">
+                    <div class="workflow-icon text-info">
+                        <i class="bi bi-tools"></i>
+                    </div>
+                    <h4 class="card-title mb-3">Build Maintenance Templates</h4>
+                    <p class="card-text flex-grow-1 mb-3">
+                        Create and manage maintenance templates, action sets, and prototype actions.
+                    </p>
+                    <a href="{{ url_for('manager_portal.build_maintenance') }}" class="btn btn-info btn-lg mt-auto">
+                        <i class="bi bi-arrow-right-circle"></i> Build Maintenance Templates
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Plan Maintenance -->
+        <div class="col-lg-4 col-md-6">
+            <div class="card workflow-card success shadow-sm">
+                <div class="card-body text-center d-flex flex-column p-4">
+                    <div class="workflow-icon text-success">
+                        <i class="bi bi-calendar-check"></i>
+                    </div>
+                    <h4 class="card-title mb-3">Plan Maintenance</h4>
+                    <p class="card-text flex-grow-1 mb-3">
+                        Create maintenance plans, schedule events, and manage assets due for maintenance.
+                    </p>
+                    <a href="{{ url_for('manager_portal.plan_maintenance') }}" class="btn btn-success btn-lg mt-auto">
+                        <i class="bi bi-arrow-right-circle"></i> Plan Maintenance
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

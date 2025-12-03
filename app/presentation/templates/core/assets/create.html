@@ -49,8 +49,9 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="status" class="form-label">Status</label>
-                                <select class="form-select" id="status" name="status">
+                                <label for="status" class="form-label">Status *</label>
+                                <select class="form-select" id="status" name="status" required>
+                                    <option value="">Select Status</option>
                                     <option value="Active" {% if request.form.get('status') == 'Active' %}selected{% endif %}>Active</option>
                                     <option value="Inactive" {% if request.form.get('status') == 'Inactive' %}selected{% endif %}>Inactive</option>
                                     <option value="Maintenance" {% if request.form.get('status') == 'Maintenance' %}selected{% endif %}>Maintenance</option>
@@ -60,8 +61,8 @@
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="major_location_id" class="form-label">Location</label>
-                                <select class="form-select" id="major_location_id" name="major_location_id">
+                                <label for="major_location_id" class="form-label">Location *</label>
+                                <select class="form-select" id="major_location_id" name="major_location_id" required>
                                     <option value="">Select Location</option>
                                     {% for location in locations %}
                                     <option value="{{ location.id }}" {% if request.form.get('major_location_id')|int == location.id %}selected{% endif %}>
@@ -76,8 +77,8 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="make_model_id" class="form-label">Make/Model</label>
-                                <select class="form-select" id="make_model_id" name="make_model_id">
+                                <label for="make_model_id" class="form-label">Make/Model *</label>
+                                <select class="form-select" id="make_model_id" name="make_model_id" required>
                                     <option value="">Select Make/Model</option>
                                     {% for make_model in make_models %}
                                     <option value="{{ make_model.id }}" {% if request.form.get('make_model_id')|int == make_model.id %}selected{% endif %}>
@@ -98,28 +99,28 @@
                         <div class="col-md-3">
                             <div class="mb-3">
                                 <label for="meter1" class="form-label">Meter 1</label>
-                                <input type="number" step="0.1" class="form-control" id="meter1" name="meter1"
+                                <input type="number" step="any" class="form-control" id="meter1" name="meter1"
                                        value="{{ request.form.get('meter1', '') }}" placeholder="0.0">
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="mb-3">
                                 <label for="meter2" class="form-label">Meter 2</label>
-                                <input type="number" step="0.1" class="form-control" id="meter2" name="meter2"
+                                <input type="number" step="any" class="form-control" id="meter2" name="meter2"
                                        value="{{ request.form.get('meter2', '') }}" placeholder="0.0">
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="mb-3">
                                 <label for="meter3" class="form-label">Meter 3</label>
-                                <input type="number" step="0.1" class="form-control" id="meter3" name="meter3"
+                                <input type="number" step="any" class="form-control" id="meter3" name="meter3"
                                        value="{{ request.form.get('meter3', '') }}" placeholder="0.0">
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="mb-3">
                                 <label for="meter4" class="form-label">Meter 4</label>
-                                <input type="number" step="0.1" class="form-control" id="meter4" name="meter4"
+                                <input type="number" step="any" class="form-control" id="meter4" name="meter4"
                                        value="{{ request.form.get('meter4', '') }}" placeholder="0.0">
                             </div>
                         </div>
@@ -149,13 +150,13 @@
                 <ul class="list-unstyled">
                     <li><i class="bi bi-asterisk text-danger"></i> Asset Name</li>
                     <li><i class="bi bi-asterisk text-danger"></i> Serial Number</li>
+                    <li><i class="bi bi-asterisk text-danger"></i> Status</li>
+                    <li><i class="bi bi-asterisk text-danger"></i> Location</li>
+                    <li><i class="bi bi-asterisk text-danger"></i> Make/Model</li>
                 </ul>
 
                 <h6>Optional Fields</h6>
                 <ul class="list-unstyled">
-                    <li><i class="bi bi-circle text-muted"></i> Status (defaults to Active)</li>
-                    <li><i class="bi bi-circle text-muted"></i> Location</li>
-                    <li><i class="bi bi-circle text-muted"></i> Make/Model</li>
                     <li><i class="bi bi-circle text-muted"></i> Meter Readings</li>
                 </ul>
 
@@ -190,6 +191,105 @@
                 </div>
             </div>
         </div>
+
+        <!-- Detail Template Configuration Section -->
+        <div id="detail_template_config_section" class="card mt-3">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-gear"></i>
+                    Detail Table Auto-Create Configuration
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small">
+                    Configure which detail tables should be automatically created for assets.
+                    Select a make/model to configure templates.
+                </p>
+                
+                <div id="template_info">
+                    <p class="mb-2"><strong>Configure templates for:</strong></p>
+                    <div id="asset_type_link" style="display: none;" class="mb-2">
+                        <a href="#" id="asset_type_config_link" class="btn btn-sm btn-outline-primary w-100" target="_blank">
+                            <i class="bi bi-link-external"></i> Configure Asset Type Templates
+                        </a>
+                    </div>
+                    <div id="make_model_link" style="display: none;">
+                        <a href="#" id="make_model_config_link" class="btn btn-sm btn-outline-primary w-100" target="_blank">
+                            <i class="bi bi-link-external"></i> Configure Make/Model Templates
+                        </a>
+                    </div>
+                    <div id="no_selection" class="text-muted small">
+                        <em>Select a Make/Model above to configure templates</em>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const makeModelSelect = document.getElementById('make_model_id');
+    const configSection = document.getElementById('detail_template_config_section');
+    const assetTypeLink = document.getElementById('asset_type_config_link');
+    const makeModelLink = document.getElementById('make_model_config_link');
+    const assetTypeLinkDiv = document.getElementById('asset_type_link');
+    const makeModelLinkDiv = document.getElementById('make_model_link');
+    
+    // Make/Model data from template
+    const makeModels = {
+        {% for make_model in make_models %}
+        {{ make_model.id }}: {
+            id: {{ make_model.id }},
+            make: "{{ make_model.make }}",
+            model: "{{ make_model.model }}",
+            asset_type_id: {{ make_model.asset_type_id if make_model.asset_type_id else 'null' }}
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    };
+    
+    const noSelectionDiv = document.getElementById('no_selection');
+    
+    makeModelSelect.addEventListener('change', function() {
+        const makeModelId = this.value;
+        
+        if (makeModelId && makeModels[makeModelId]) {
+            const makeModel = makeModels[makeModelId];
+            
+            // Hide "no selection" message
+            if (noSelectionDiv) {
+                noSelectionDiv.style.display = 'none';
+            }
+            
+            // Update links
+            if (makeModel.asset_type_id) {
+                assetTypeLink.href = '{{ url_for("assets.detail_template_config.configure_asset_type", asset_type_id=0) }}'.replace('0', makeModel.asset_type_id) + '?redirect_to=create_asset';
+                assetTypeLinkDiv.style.display = 'block';
+            } else {
+                assetTypeLinkDiv.style.display = 'none';
+            }
+            
+            makeModelLink.href = '{{ url_for("assets.detail_template_config.configure_make_model", make_model_id=0) }}'.replace('0', makeModelId) + '?redirect_to=create_asset';
+            makeModelLinkDiv.style.display = 'block';
+        } else {
+            // Show "no selection" message and hide links
+            if (noSelectionDiv) {
+                noSelectionDiv.style.display = 'block';
+            }
+            assetTypeLinkDiv.style.display = 'none';
+            makeModelLinkDiv.style.display = 'none';
+        }
+    });
+    
+    // Trigger change on page load if make/model is already selected
+    if (makeModelSelect.value) {
+        makeModelSelect.dispatchEvent(new Event('change'));
+    } else {
+        // Show "no selection" message initially
+        if (noSelectionDiv) {
+            noSelectionDiv.style.display = 'block';
+        }
+    }
+});
+</script>
 {% endblock %} 

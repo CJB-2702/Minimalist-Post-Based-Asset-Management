@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Portal Settings & Cache - {{ user.username }} - Asset Management System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1>Edit Portal Settings & Cache: {{ user.username }}</h1>
+                <p class="text-muted">User ID: {{ user.id }} | Email: {{ user.email }}</p>
+            </div>
+            <div>
+                <a href="{{ url_for('settings_cache_viewer.view', user_id=user.id) }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to View
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <form method="POST">
+            <!-- Settings Section -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Settings (User Preferences)</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="general_settings" class="form-label fw-bold">General Settings (JSON)</label>
+                        <textarea class="form-control font-monospace" id="general_settings" name="general_settings" 
+                                  rows="10" style="font-size: 0.9em;">{{ settings_data.general_settings }}</textarea>
+                        <div class="form-text">Valid JSON object</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="core_settings" class="form-label fw-bold">Core Settings (JSON)</label>
+                        <textarea class="form-control font-monospace" id="core_settings" name="core_settings" 
+                                  rows="10" style="font-size: 0.9em;">{{ settings_data.core_settings }}</textarea>
+                        <div class="form-text">Valid JSON object</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="maintenance_settings" class="form-label fw-bold">Maintenance Settings (JSON)</label>
+                        <textarea class="form-control font-monospace" id="maintenance_settings" name="maintenance_settings" 
+                                  rows="10" style="font-size: 0.9em;">{{ settings_data.maintenance_settings }}</textarea>
+                        <div class="form-text">Valid JSON object</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Cache Section -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Cache (Computed Data)</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="general_cache" class="form-label fw-bold">General Cache (JSON)</label>
+                        <textarea class="form-control font-monospace" id="general_cache" name="general_cache" 
+                                  rows="10" style="font-size: 0.9em;">{{ cache_data.general_cache }}</textarea>
+                        <div class="form-text">Valid JSON object</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="core_cache" class="form-label fw-bold">Core Cache (JSON)</label>
+                        <textarea class="form-control font-monospace" id="core_cache" name="core_cache" 
+                                  rows="10" style="font-size: 0.9em;">{{ cache_data.core_cache }}</textarea>
+                        <div class="form-text">Valid JSON object</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="maintenance_cache" class="form-label fw-bold">Maintenance Cache (JSON)</label>
+                        <textarea class="form-control font-monospace" id="maintenance_cache" name="maintenance_cache" 
+                                  rows="10" style="font-size: 0.9em;">{{ cache_data.maintenance_cache }}</textarea>
+                        <div class="form-text">Valid JSON object</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Form Actions -->
+            <div class="card">
+                <div class="card-body">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> Save Changes
+                    </button>
+                    <a href="{{ url_for('settings_cache_viewer.view', user_id=user.id) }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle"></i> Cancel
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+
+
+
+
+
+

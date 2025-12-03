@@ -1,0 +1,24 @@
+{% if error %}
+<div class="search-dropdown-item text-danger">Error: {{ error }}</div>
+{% elif items|length == 0 %}
+<div class="search-dropdown-item text-muted">No templates found</div>
+{% else %}
+{% for item in items %}
+<div class="search-dropdown-item" 
+     data-template-id="{{ item.id }}"
+     onclick="if (window.selectTemplate) { window.selectTemplate({{ item.id }}, '{{ item.task_name|e }}', '{{ item.revision or '' }}'); }">
+    {{ item.display_name }}
+    {% if item.description %}
+    <div class="small text-muted">{{ item.description[:50] }}{% if item.description|length > 50 %}...{% endif %}</div>
+    {% endif %}
+</div>
+{% endfor %}
+<div class="search-match-count">
+    {% if total_count > showing %}
+    Showing {{ showing }} of {{ total_count }} matches
+    {% else %}
+    {{ total_count }} {{ 'match' if total_count == 1 else 'matches' }}
+    {% endif %}
+</div>
+{% endif %}
+

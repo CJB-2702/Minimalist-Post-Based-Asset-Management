@@ -52,6 +52,28 @@ class ActionContext:
         """Get the action ID"""
         return self._action_id
     
+    def _handle_user_assignment(self, user_id: Optional[int], new_status: str) -> None:
+        """
+        Handle user assignment and completed_by_id for status changes.
+        
+        Args:
+            user_id: ID of user making the change (optional)
+            new_status: New status being set
+        """
+        # If no user is assigned and a user_id is provided, assign the user
+        if self.action.assigned_user_id is None and user_id is not None:
+            self.action.assigned_user_id = user_id
+            if self.action.assigned_by_id is None:
+                self.action.assigned_by_id = user_id
+        
+        # For terminal conditions, set completed_by_id
+        terminal_statuses = ['Complete', 'Failed', 'Skipped']
+        if new_status in terminal_statuses:
+            # Use provided user_id, or fall back to assigned_user_id
+            completed_by = user_id if user_id is not None else self.action.assigned_user_id
+            if completed_by is not None:
+                self.action.completed_by_id = completed_by
+    
     # Management methods
     def start(self, user_id: Optional[int] = None) -> 'ActionContext':
         """
@@ -66,9 +88,7 @@ class ActionContext:
         if self.action.status == 'Not Started':
             self.action.status = 'In Progress'
             self.action.start_time = datetime.utcnow()
-            if user_id:
-                self.action.assigned_by_id = user_id
-                self.action.assigned_user_id = user_id
+            self._handle_user_assignment(user_id, 'In Progress')
             db.session.commit()
             self.refresh()
         return self
@@ -97,6 +117,7 @@ class ActionContext:
                 self.action.billable_hours = billable_hours
             if notes:
                 self.action.completion_notes = notes
+            self._handle_user_assignment(user_id, 'Complete')
             db.session.commit()
             self.refresh()
         return self
@@ -151,11 +172,10 @@ class ActionContext:
                     if part_demand.status != 'Issued':
                         part_demand.status = 'Issued'
             
+            self._handle_user_assignment(user_id, 'Complete')
             db.session.commit()
             self.refresh()
-            
-            # Auto-update maintenance action set billable hours if sum is greater
-            self._update_maintenance_billable_hours_auto()
+
         return self
     
     def mark_failed(
@@ -214,11 +234,10 @@ class ActionContext:
                     if part_demand.status not in ['Issued', 'Cancelled by Technician', 'Cancelled by Supply']:
                         part_demand.status = 'Cancelled by Technician'
             
+            self._handle_user_assignment(user_id, 'Failed')
             db.session.commit()
             self.refresh()
-            
-            # Auto-update maintenance action set billable hours if sum is greater
-            self._update_maintenance_billable_hours_auto()
+
         return self
     
     def mark_skipped(
@@ -249,11 +268,11 @@ class ActionContext:
                     if part_demand.status not in ['Issued', 'Cancelled by Technician', 'Cancelled by Supply']:
                         part_demand.status = 'Cancelled by Technician'
             
+            self._handle_user_assignment(user_id, 'Skipped')
             db.session.commit()
             self.refresh()
             
-            # Auto-update maintenance action set billable hours if sum is greater
-            self._update_maintenance_billable_hours_auto()
+
         return self
     
     # Statistics
@@ -289,55 +308,6 @@ class ActionContext:
             delta = self.action.end_time - self.action.start_time
             return delta.total_seconds() / 3600
         return None
-    
-    # Query methods
-    @staticmethod
-    def get_by_maintenance_action_set(maintenance_action_set_id: int) -> List['ActionContext']:
-        """
-        Get all actions for a maintenance action set.
-        
-        Args:
-            maintenance_action_set_id: Maintenance action set ID
-            
-        Returns:
-            List of ActionContext instances, ordered by sequence_order
-        """
-        actions = Action.query.filter_by(
-            maintenance_action_set_id=maintenance_action_set_id
-        ).order_by(Action.sequence_order).all()
-        return [ActionContext(action) for action in actions]
-    
-    @staticmethod
-    def get_by_user(user_id: int) -> List['ActionContext']:
-        """
-        Get all actions assigned to a user.
-        
-        Args:
-            user_id: User ID
-            
-        Returns:
-            List of ActionContext instances
-        """
-        actions = Action.query.filter_by(assigned_user_id=user_id).all()
-        return [ActionContext(action) for action in actions]
-    
-    @staticmethod
-    def get_by_status(status: str, maintenance_action_set_id: Optional[int] = None) -> List['ActionContext']:
-        """
-        Get actions by status.
-        
-        Args:
-            status: Status to filter by
-            maintenance_action_set_id: Optional maintenance action set ID to filter by
-            
-        Returns:
-            List of ActionContext instances
-        """
-        query = Action.query.filter_by(status=status)
-        if maintenance_action_set_id:
-            query = query.filter_by(maintenance_action_set_id=maintenance_action_set_id)
-        actions = query.all()
-        return [ActionContext(action) for action in actions]
     
     def to_dict(self) -> Dict[str, Any]:
         """
@@ -437,7 +407,8 @@ class ActionContext:
         notes: Optional[str] = None,
         sequence_order: Optional[int] = None,
         maintenance_action_set_id: Optional[int] = None,
-        reset_to_in_progress: bool = False
+        reset_to_in_progress: bool = False,
+        user_id: Optional[int] = None
     ) -> 'ActionContext':
         """
         Edit action with all updatable fields.
@@ -459,6 +430,7 @@ class ActionContext:
             sequence_order: New sequence order (will trigger reordering)
             maintenance_action_set_id: If provided, set to this action's maintenance_action_set_id
             reset_to_in_progress: If True, reset status to In Progress and clear end_time
+            user_id: ID of user making the change (used for assignment and completed_by_id)
             
         Returns:
             self for chaining
@@ -499,6 +471,14 @@ class ActionContext:
             self.action.completion_notes = completion_notes
         if assigned_user_id is not None:
             self.action.assigned_user_id = assigned_user_id
+            if self.action.assigned_by_id is None:
+                self.action.assigned_by_id = assigned_user_id
+        
+        # Handle user assignment and completed_by_id for status changes
+        if status is not None:
+            # Use user_id if provided, otherwise use assigned_user_id from the update
+            effective_user_id = user_id if user_id is not None else (assigned_user_id if assigned_user_id is not None else None)
+            self._handle_user_assignment(effective_user_id, status)
         
         # Handle maintenance_action_set_id (set to self if provided)
         if maintenance_action_set_id is not None:
@@ -511,25 +491,9 @@ class ActionContext:
         db.session.commit()
         self.refresh()
         
-        # Auto-update maintenance action set billable hours if billable_hours was changed
-        if billable_hours is not None:
-            self._update_maintenance_billable_hours_auto()
         return self
     
-    def _update_maintenance_billable_hours_auto(self):
-        """
-        Internal helper to auto-update maintenance action set billable hours.
-        Called after action billable hours are modified.
-        """
-        try:
-            from app.buisness.maintenance.base.maintenance_context import MaintenanceContext
-            maintenance_context = MaintenanceContext(self.action.maintenance_action_set_id)
-            maintenance_context.update_actual_billable_hours_auto()
-        except Exception:
-            # Silently fail if maintenance context cannot be created
-            # This prevents breaking action operations if there's an issue
-            pass
-    
+
     def refresh(self):
         """Refresh cached data from database"""
         self._struct.refresh()

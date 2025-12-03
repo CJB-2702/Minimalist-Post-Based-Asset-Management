@@ -46,7 +46,7 @@
                                     {{ field.replace('_', ' ').title() }}
                                 </label>
                                 
-                                {% if field == 'purchase_date' or field == 'warranty_expiry' or field == 'registration_expiry' or field == 'insurance_expiry' or field == 'service_date' or field == 'certification_date' %}
+                                {% if field == 'purchase_date' or field == 'warranty_expiry' or field == 'registration_expiry' or field == 'insurance_expiry' or field == 'service_date' or field == 'certification_date' or field == 'smog_date' or field == 'expiration_date' or field == 'warranty_start_date' or field == 'warranty_end_date' %}
                                     <input type="date" 
                                            class="form-control" 
                                            id="{{ field }}" 
@@ -68,7 +68,7 @@
                                            class="form-control" 
                                            id="{{ field }}" 
                                            name="{{ field }}"
-                                           step="0.1"
+                                           step="any"
                                            min="0"
                                            value="{{ request.form.get(field, '') }}"
                                            placeholder="0.0">
@@ -130,6 +130,21 @@
                                         <option value="Recall Service" {{ 'selected' if request.form.get(field) == 'Recall Service' else '' }}>Recall Service</option>
                                         <option value="Maintenance" {{ 'selected' if request.form.get(field) == 'Maintenance' else '' }}>Maintenance</option>
                                     </select>
+                                
+                                {% elif field == 'result' %}
+                                    <select class="form-select" id="{{ field }}" name="{{ field }}">
+                                        <option value="">Select result</option>
+                                        <option value="Pass" {{ 'selected' if request.form.get(field) == 'Pass' else '' }}>Pass</option>
+                                        <option value="Fail" {{ 'selected' if request.form.get(field) == 'Fail' else '' }}>Fail</option>
+                                        <option value="Conditional" {{ 'selected' if request.form.get(field) == 'Conditional' else '' }}>Conditional</option>
+                                    </select>
+                                
+                                {% elif field == 'notes' or field == 'purchase_notes' or field == 'service_history' or field == 'warranty_claims' %}
+                                    <textarea class="form-control" 
+                                              id="{{ field }}" 
+                                              name="{{ field }}"
+                                              rows="4"
+                                              placeholder="Enter {{ field.replace('_', ' ').lower() }}">{{ request.form.get(field, '') }}</textarea>
                                 
                                 {% else %}
                                     <input type="text" 

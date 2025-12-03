@@ -187,13 +187,16 @@ class ModelDetailContext:
             make_model_id: Optional make_model ID to filter by
             
         Returns:
-            List of detail records
+            List of detail records with make_model relationship eagerly loaded
         """
+        from sqlalchemy.orm import joinedload
+        
         model = ModelDetailContext.get_model_detail_table_model(detail_type)
         if not model:
             return []
         
-        query = model.query
+        # Eagerly load the make_model relationship to avoid N+1 queries
+        query = model.query.options(joinedload('make_model'))
         if make_model_id:
             query = query.filter_by(make_model_id=make_model_id)
         

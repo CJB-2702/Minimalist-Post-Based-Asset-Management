@@ -25,6 +25,9 @@
                             <thead>
                                 <tr>
                                     <th>ID</th>
+                                    <th>Make</th>
+                                    <th>Model</th>
+                                    <th>Year</th>
                                     {% for field in config.fields %}
                                     <th>{{ field.replace('_', ' ').title() }}</th>
                                     {% endfor %}
@@ -36,6 +39,27 @@
                                 {% for record in records %}
                                 <tr>
                                     <td>{{ record.id }}</td>
+                                    <td>
+                                        {% if record.make_model %}
+                                            <strong>{{ record.make_model.make }}</strong>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if record.make_model %}
+                                            {{ record.make_model.model }}
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if record.make_model %}
+                                            {{ record.make_model.year if record.make_model.year else '-' }}
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
                                     {% for field in config.fields %}
                                     <td>
                                         {% if field == 'emissions_test_date' or field == 'certification_date' %}

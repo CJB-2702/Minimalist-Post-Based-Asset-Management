@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block title %}Configure Detail Templates - {{ make_model.make }} {{ make_model.model }} - Asset Management System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{{ url_for('make_models.list') }}">Make/Models</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Configure Detail Templates</li>
+                    </ol>
+                </nav>
+                <h1>Configure Detail Templates for {{ make_model.make }} {{ make_model.model }}</h1>
+            </div>
+            <a href="{{ url_for('make_models.list') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-10 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-gear"></i>
+                    Auto-Create Detail Tables Configuration
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">
+                    Configure which detail table types should be automatically created when a new asset 
+                    of make/model <strong>{{ make_model.make }} {{ make_model.model }}</strong> is created. 
+                    Check the detail types you want to auto-create, and optionally enable "Many to One" 
+                    if multiple records of this type should be allowed.
+                </p>
+                
+                <form method="POST">
+                    <input type="hidden" name="redirect_to" value="{{ request.args.get('redirect_to', '') }}">
+                    
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th style="width: 40px;">Enable</th>
+                                    <th>Detail Table Type</th>
+                                    <th>Many to One</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for detail_type in available_types %}
+                                <tr>
+                                    <td>
+                                        <div class="form-check">
+                                            <input class="form-check-input" 
+                                                   type="checkbox" 
+                                                   id="detail_type_{{ detail_type.type }}" 
+                                                   name="detail_types" 
+                                                   value="{{ detail_type.type }}"
+                                                   {% if detail_type.type in existing_configs %}checked{% endif %}>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <label for="detail_type_{{ detail_type.type }}" class="form-check-label">
+                                            <strong>{{ detail_type.name }}</strong>
+                                        </label>
+                                    </td>
+                                    <td>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" 
+                                                   type="checkbox" 
+                                                   id="many_to_one_{{ detail_type.type }}" 
+                                                   name="many_to_one_{{ detail_type.type }}"
+                                                   {% if detail_type.type in existing_configs and existing_configs[detail_type.type].many_to_one %}checked{% endif %}
+                                                   {% if detail_type.type not in existing_configs %}disabled{% endif %}>
+                                            <label class="form-check-label" for="many_to_one_{{ detail_type.type }}">
+                                                Allow Multiple
+                                            </label>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            Auto-creates a {{ detail_type.name|lower }} record when an asset of this make/model is created.
+                                            {% if detail_type.type in existing_configs and existing_configs[detail_type.type].many_to_one %}
+                                            <br><span class="badge bg-info">Multiple records allowed</span>
+                                            {% else %}
+                                            <br><span class="badge bg-secondary">Single record only</span>
+                                            {% endif %}
+                                        </small>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted">
+                                        No detail table types available
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="alert alert-info mt-3">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Note:</strong> The "Many to One" option allows multiple detail records of the same type 
+                        for a single asset. If disabled (default), only one record will be created and attempts to create 
+                        additional records will be skipped.
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{{ url_for('make_models.list') }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Save Configuration
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Enable/disable many_to_one checkbox based on detail type checkbox
+document.addEventListener('DOMContentLoaded', function() {
+    const detailTypeCheckboxes = document.querySelectorAll('input[name="detail_types"]');
+    
+    detailTypeCheckboxes.forEach(function(checkbox) {
+        checkbox.addEventListener('change', function() {
+            const detailType = this.value;
+            const manyToOneCheckbox = document.getElementById('many_to_one_' + detailType);
+            const manyToOneLabel = manyToOneCheckbox.nextElementSibling;
+            
+            if (this.checked) {
+                manyToOneCheckbox.disabled = false;
+            } else {
+                manyToOneCheckbox.disabled = true;
+                manyToOneCheckbox.checked = false;
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
+

@@ -17,6 +17,7 @@ class AssetDetailTemplateByModelType(UserCreatedBase):
     
     make_model_id = db.Column(db.Integer, db.ForeignKey('make_models.id'), nullable=True)
     detail_table_type = db.Column(db.String(100), nullable=False)  # e.g., 'toyota_warranty_receipt'
+    many_to_one = db.Column(db.Boolean, default=False)
 
     # Relationships
     make_model = db.relationship('MakeModel', backref='model_type_detail_templates')

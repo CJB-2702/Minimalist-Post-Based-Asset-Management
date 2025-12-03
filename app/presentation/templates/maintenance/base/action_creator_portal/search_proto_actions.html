@@ -1,0 +1,46 @@
+{% if error %}
+<div class="list-group-item text-danger">Error: {{ error }}</div>
+{% elif proto_actions|length == 0 %}
+<div class="list-group-item text-muted">No proto actions found</div>
+{% else %}
+{% for proto_action in proto_actions %}
+<div class="list-group-item action-item" 
+     data-proto-action-id="{{ proto_action.id }}" 
+     style="cursor: pointer;"
+     onclick="selectProtoAction({{ proto_action.id }}, {{ maintenance_action_set_id }})">
+    <div class="d-flex justify-content-between align-items-start">
+        <div class="flex-grow-1">
+            <h6 class="mb-1">{{ proto_action.action_name }}</h6>
+            <small class="text-muted">{{ proto_action.description or 'No description' }}</small>
+            <div class="mt-1">
+                {% if proto_action.estimated_duration %}
+                    <span class="badge bg-info">Est: {{ proto_action.estimated_duration }}h</span>
+                {% endif %}
+                {% if proto_action.safety_notes %}
+                    <span class="badge bg-warning ms-1">Safety Notes</span>
+                {% endif %}
+                {% if proto_action.proto_part_demands %}
+                    <span class="badge bg-success ms-1">{{ proto_action.proto_part_demands|length }} Parts</span>
+                {% endif %}
+                {% if proto_action.proto_action_tools %}
+                    <span class="badge bg-primary ms-1">{{ proto_action.proto_action_tools|length }} Tools</span>
+                {% endif %}
+            </div>
+        </div>
+        <button type="button" class="btn btn-sm btn-outline-primary ms-2" onclick="event.stopPropagation(); selectProtoAction({{ proto_action.id }}, {{ maintenance_action_set_id }})">
+            <i class="bi bi-check-circle"></i> Select
+        </button>
+    </div>
+</div>
+{% endfor %}
+{% if total_count > showing %}
+<div class="list-group-item text-muted small">
+    Showing {{ showing }} of {{ total_count }} matches
+</div>
+{% else %}
+<div class="list-group-item text-muted small">
+    {{ total_count }} {{ 'match' if total_count == 1 else 'matches' }}
+</div>
+{% endif %}
+{% endif %}
+

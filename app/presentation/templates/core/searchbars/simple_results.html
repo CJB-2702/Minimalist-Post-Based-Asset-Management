@@ -1,0 +1,21 @@
+{% if error %}
+<div class="search-dropdown-item text-danger">Error: {{ error }}</div>
+{% elif items|length == 0 %}
+<div class="search-dropdown-item text-muted">No results found</div>
+{% else %}
+{% for item in items %}
+<div class="search-dropdown-item" 
+     data-item-id="{{ item.id }}"
+     onclick="if (window.selectItem) { window.selectItem({{ item.id }}, '{{ item.display_name|e }}'); }">
+    {{ item.display_name }}
+</div>
+{% endfor %}
+<div class="search-match-count">
+    {% if total_count > showing %}
+    Showing {{ showing }} of {{ total_count }} matches
+    {% else %}
+    {{ total_count }} {{ 'match' if total_count == 1 else 'matches' }}
+    {% endif %}
+</div>
+{% endif %}
+

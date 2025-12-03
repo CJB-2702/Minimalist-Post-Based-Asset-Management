@@ -120,7 +120,7 @@
                                     </td>
                                     {% for field in config.fields %}
                                     <td>
-                                        {% if field == 'purchase_date' or field == 'warranty_expiry' or field == 'registration_expiry' or field == 'insurance_expiry' or field == 'service_date' or field == 'certification_date' or field == 'warranty_start_date' or field == 'warranty_end_date' %}
+                                        {% if field == 'purchase_date' or field == 'warranty_expiry' or field == 'registration_expiry' or field == 'insurance_expiry' or field == 'service_date' or field == 'certification_date' or field == 'warranty_start_date' or field == 'warranty_end_date' or field == 'smog_date' or field == 'expiration_date' %}
                                             {{ record[field].strftime('%Y-%m-%d') if record[field] else '-' }}
                                         {% elif field == 'purchase_price' or field == 'co2_emissions' or field == 'cargo_capacity' %}
                                             {{ "${:,.2f}".format(record[field]) if record[field] else '-' }}
@@ -128,6 +128,26 @@
                                             {{ "{:.1f} mpg".format(record[field]) if record[field] else '-' }}
                                         {% elif field == 'seating_capacity' or field == 'mileage_at_service' or field == 'warranty_mileage_limit' or field == 'warranty_time_limit_months' %}
                                             {{ record[field] if record[field] else '-' }}
+                                        {% elif field == 'result' %}
+                                            {% if record[field] %}
+                                                {% if record[field] == 'Pass' %}
+                                                    <span class="badge bg-success">{{ record[field] }}</span>
+                                                {% elif record[field] == 'Fail' %}
+                                                    <span class="badge bg-danger">{{ record[field] }}</span>
+                                                {% else %}
+                                                    <span class="badge bg-warning">{{ record[field] }}</span>
+                                                {% endif %}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        {% elif field == 'notes' or field == 'purchase_notes' or field == 'service_history' or field == 'warranty_claims' %}
+                                            {% if record[field] %}
+                                                <span class="text-truncate d-inline-block" style="max-width: 200px;" title="{{ record[field] }}">
+                                                    {{ record[field][:50] }}{% if record[field]|length > 50 %}...{% endif %}
+                                                </span>
+                                            {% else %}
+                                                -
+                                            {% endif %}
                                         {% else %}
                                             {{ record[field] if record[field] else '-' }}
                                         {% endif %}

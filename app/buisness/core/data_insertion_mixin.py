@@ -125,6 +125,87 @@ class DataInsertionMixin:
         
         return result
     
+    def print_safe_dict(self, include_relationships=False, include_audit_fields=True):
+        """
+        Convert model instance to dictionary with print-safe serialization.
+        Handles difficult-to-serialize types like datetime and binary data.
+        
+        Args:
+            include_relationships (bool): Whether to include relationship data
+            include_audit_fields (bool): Whether to include audit fields
+            
+        Returns:
+            dict: Dictionary representation safe for JSON serialization/printing
+        """
+        result = self.to_dict(include_relationships=include_relationships, 
+                             include_audit_fields=include_audit_fields)
+        
+        # Get model columns to check types
+        mapper = inspect(self.__class__)
+        columns = {c.key: c for c in mapper.columns}
+        
+        # Process each field for print-safe serialization
+        for key, value in result.items():
+            if value is None:
+                continue
+            
+            # Check if this is a column field
+            if key in columns:
+                column = columns[key]
+                column_type = column.type
+                
+                # Handle LargeBinary and Binary types
+                if isinstance(column_type, db.LargeBinary):
+                    result[key] = ""
+                # datetime is already handled in to_dict(), but ensure it's a string
+                elif isinstance(value, datetime):
+                    result[key] = value.isoformat() if hasattr(value, 'isoformat') else str(value)
+                # Handle bytes objects (raw binary data)
+                elif isinstance(value, bytes):
+                    result[key] = ""
+            else:
+                # For non-column fields (like relationships), handle datetime if present
+                if isinstance(value, datetime):
+                    result[key] = value.isoformat() if hasattr(value, 'isoformat') else str(value)
+                elif isinstance(value, bytes):
+                    result[key] = ""
+                # Recursively handle nested dictionaries (from relationships)
+                elif isinstance(value, dict):
+                    result[key] = self._make_dict_print_safe(value)
+        
+        return result
+    
+    def _make_dict_print_safe(self, data_dict):
+        """
+        Recursively make a dictionary print-safe by converting datetime and binary types.
+        
+        Args:
+            data_dict: Dictionary to process
+            
+        Returns:
+            dict: Print-safe dictionary
+        """
+        safe_dict = {}
+        for key, value in data_dict.items():
+            if value is None:
+                safe_dict[key] = None
+            elif isinstance(value, datetime):
+                safe_dict[key] = value.isoformat() if hasattr(value, 'isoformat') else str(value)
+            elif isinstance(value, bytes):
+                safe_dict[key] = ""
+            elif isinstance(value, dict):
+                safe_dict[key] = self._make_dict_print_safe(value)
+            elif isinstance(value, list):
+                safe_dict[key] = [
+                    self._make_dict_print_safe(item) if isinstance(item, dict) 
+                    else (item.isoformat() if isinstance(item, datetime) 
+                          else ("" if isinstance(item, bytes) else item))
+                    for item in value
+                ]
+            else:
+                safe_dict[key] = value
+        return safe_dict
+    
     @classmethod
     def create_from_dict(cls, data_dict, user_id=None, skip_fields=None, commit=True):
         """

@@ -1,7 +1,6 @@
 from app.data.core.user_created_base import UserCreatedBase
 from app.data.core.event_info.attachment import VirtualAttachmentReference
 from app import db
-from datetime import datetime
 from sqlalchemy.orm import foreign
 
 class Comment(UserCreatedBase):
@@ -14,21 +13,21 @@ class Comment(UserCreatedBase):
     event_id = db.Column(db.Integer, db.ForeignKey('events.id'), nullable=False)
     
     # Comment properties
-    is_private = db.Column(db.Boolean, default=False)  # For internal notes
-    is_edited = db.Column(db.Boolean, default=False)
-    edited_at = db.Column(db.DateTime, nullable=True)
-    edited_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     is_human_made = db.Column(db.Boolean, default=False)  # True for manually inserted comments, False for machine-generated
+    
+    # Visibility and state management
+    user_viewable = db.Column(db.String(20), nullable=True)  # None=visible, 'deleted'=soft deleted, 'edit'=previous edit version
+    
+    # Edit history tracking
+    previous_comment_id = db.Column(db.Integer, db.ForeignKey('comments.id'), nullable=True)
+    
+    # Reply tracking
+    replied_to_comment_id = db.Column(db.Integer, db.ForeignKey('comments.id'), nullable=True)
     
     # Relationships
     event = db.relationship('Event', backref='comments')
-    edited_by = db.relationship('User', foreign_keys=[edited_by_id])
-    
-    def mark_as_edited(self, edited_by_id):
-        """Mark comment as edited"""
-        self.is_edited = True
-        self.edited_at = datetime.utcnow()
-        self.edited_by_id = edited_by_id
+    previous_comment = db.relationship('Comment', remote_side='Comment.id', foreign_keys=[previous_comment_id], backref='next_comment')
+    replied_to_comment = db.relationship('Comment', remote_side='Comment.id', foreign_keys=[replied_to_comment_id], backref='replies')
     
     def get_content_preview(self, max_length=100):
         """Get a preview of the comment content"""
@@ -39,6 +38,11 @@ class Comment(UserCreatedBase):
     def __repr__(self):
         preview = self.get_content_preview(50)
         return f'<Comment {self.id}: {preview}>'
+    
+    def get_columns():
+        return super().get_columns() | {
+            'id', 'content', 'event_id', 'is_human_made', 'user_viewable', 'previous_comment_id', 'replied_to_comment_id'
+        }
 
 
 class CommentAttachment(VirtualAttachmentReference):

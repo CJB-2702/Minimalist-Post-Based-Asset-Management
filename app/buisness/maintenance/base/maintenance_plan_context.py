@@ -202,43 +202,6 @@ class MaintenancePlanContext:
         """
         return list(self._maintenance_plan.maintenance_action_sets)
     
-    # Query methods
-    @staticmethod
-    def get_all() -> List['MaintenancePlanContext']:
-        """
-        Get all maintenance plans.
-        
-        Returns:
-            List of MaintenancePlanContext instances
-        """
-        plans = MaintenancePlan.query.all()
-        return [MaintenancePlanContext(plan) for plan in plans]
-    
-    @staticmethod
-    def get_active() -> List['MaintenancePlanContext']:
-        """
-        Get all active maintenance plans.
-        
-        Returns:
-            List of MaintenancePlanContext instances
-        """
-        plans = MaintenancePlan.query.filter_by(status='Active').all()
-        return [MaintenancePlanContext(plan) for plan in plans]
-    
-    @staticmethod
-    def get_by_asset_type(asset_type_id: int) -> List['MaintenancePlanContext']:
-        """
-        Get maintenance plans by asset type.
-        
-        Args:
-            asset_type_id: Asset type ID
-            
-        Returns:
-            List of MaintenancePlanContext instances
-        """
-        plans = MaintenancePlan.query.filter_by(asset_type_id=asset_type_id).all()
-        return [MaintenancePlanContext(plan) for plan in plans]
-    
     def to_dict(self) -> Dict[str, Any]:
         """
         Serialize maintenance plan to dictionary.

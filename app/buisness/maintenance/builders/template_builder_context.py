@@ -347,6 +347,48 @@ class TemplateBuilderContext:
             return tool
         raise IndexError(f"Action index {action_index} out of range")
     
+    # Update functions
+    def update_action(self, action_index: int, updates: Dict[str, Any]):
+        """
+        Update fields on an existing build action.
+        """
+        if 0 <= action_index < len(self._build_actions):
+            self._build_actions[action_index].update_from_dict(updates)
+            # If sequence order is changed, normalize sequence ordering
+            if 'sequence_order' in updates and updates.get('sequence_order'):
+                # Sort by sequence_order while preserving list object identity
+                self._build_actions.sort(key=lambda a: a.sequence_order or 0)
+                self._renumber_sequence_orders()
+            self._save()
+            return
+        raise IndexError(f"Action index {action_index} out of range")
+
+    def update_part_demand(self, action_index: int, part_index: int, updates: Dict[str, Any]):
+        """
+        Update fields on a part demand for an action.
+        """
+        if 0 <= action_index < len(self._build_actions):
+            action = self._build_actions[action_index]
+            if 0 <= part_index < len(action.part_demands):
+                action.part_demands[part_index].update_from_dict(updates)
+                self._save()
+                return
+            raise IndexError(f"Part demand index {part_index} out of range")
+        raise IndexError(f"Action index {action_index} out of range")
+
+    def update_tool(self, action_index: int, tool_index: int, updates: Dict[str, Any]):
+        """
+        Update fields on a tool for an action.
+        """
+        if 0 <= action_index < len(self._build_actions):
+            action = self._build_actions[action_index]
+            if 0 <= tool_index < len(action.tools):
+                action.tools[tool_index].update_from_dict(updates)
+                self._save()
+                return
+            raise IndexError(f"Tool index {tool_index} out of range")
+        raise IndexError(f"Action index {action_index} out of range")
+
     # Remove functions
     def remove_action(self, action_index: int):
         """

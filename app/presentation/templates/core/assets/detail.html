@@ -24,6 +24,9 @@
                 <a href="{{ url_for('assets.all_details.all_details', asset_id=asset.id) }}" class="btn btn-info">
                     <i class="bi bi-table"></i> All Details
                 </a>
+                <a href="{{ url_for('meter_history.list', asset_id=asset.id) }}" class="btn btn-secondary">
+                    <i class="bi bi-speedometer2"></i> View Meter History
+                </a>
                 <a href="{{ url_for('core_assets.edit', asset_id=asset.id) }}" class="btn btn-primary">
                     <i class="bi bi-pencil"></i> Edit Asset
                 </a>

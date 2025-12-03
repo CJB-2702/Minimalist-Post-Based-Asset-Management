@@ -56,7 +56,7 @@
                                            readonly>
                                     <div class="form-text">This field is automatically set and cannot be changed</div>
                                 
-                                {% elif field == 'purchase_date' or field == 'warranty_expiry' or field == 'registration_expiry' or field == 'insurance_expiry' or field == 'service_date' or field == 'certification_date' %}
+                                {% elif field == 'purchase_date' or field == 'warranty_expiry' or field == 'registration_expiry' or field == 'insurance_expiry' or field == 'service_date' or field == 'certification_date' or field == 'smog_date' or field == 'expiration_date' or field == 'warranty_start_date' or field == 'warranty_end_date' %}
                                     <input type="date" 
                                            class="form-control" 
                                            id="{{ field }}" 
@@ -78,7 +78,7 @@
                                            class="form-control" 
                                            id="{{ field }}" 
                                            name="{{ field }}"
-                                           step="0.1"
+                                           step="any"
                                            min="0"
                                            value="{{ record[field] if record[field] else '' }}"
                                            placeholder="0.0">
@@ -140,6 +140,21 @@
                                         <option value="Recall Service" {{ 'selected' if record[field] == 'Recall Service' else '' }}>Recall Service</option>
                                         <option value="Maintenance" {{ 'selected' if record[field] == 'Maintenance' else '' }}>Maintenance</option>
                                     </select>
+                                
+                                {% elif field == 'result' %}
+                                    <select class="form-select" id="{{ field }}" name="{{ field }}">
+                                        <option value="">Select result</option>
+                                        <option value="Pass" {{ 'selected' if record[field] == 'Pass' else '' }}>Pass</option>
+                                        <option value="Fail" {{ 'selected' if record[field] == 'Fail' else '' }}>Fail</option>
+                                        <option value="Conditional" {{ 'selected' if record[field] == 'Conditional' else '' }}>Conditional</option>
+                                    </select>
+                                
+                                {% elif field == 'notes' or field == 'purchase_notes' or field == 'service_history' or field == 'warranty_claims' %}
+                                    <textarea class="form-control" 
+                                              id="{{ field }}" 
+                                              name="{{ field }}"
+                                              rows="4"
+                                              placeholder="Enter {{ field.replace('_', ' ').lower() }}">{{ record[field] if record[field] else '' }}</textarea>
                                 
                                 {% else %}
                                     <input type="text" 

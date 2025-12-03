@@ -37,7 +37,25 @@ class Attachment(UserCreatedBase):
     #  implement later. don't forget.
     # 'audio': {'.mp3','mp4','.wav','.ogg'},
     # 'video': {'.mp4','.avi','.mov','.wmv','.flv','.mpeg','.mpg','.m4v','.webm','.mkv'},
-    
+    def get_metadata_dict(self):
+        """Convert to dictionary for JSON serialization"""
+        return {
+            'id': self.id,
+            'filename': self.filename,
+            'file_size': self.file_size,
+            'mime_type': self.mime_type,
+            'description': self.description,
+            'tags': self.tags,
+            'storage_type': self.storage_type,
+            'file_path': self.file_path,
+            'created_at': self.created_at,
+            'created_by_id': self.created_by_id,
+            'created_by_username': self.created_by.username if self.created_by else None,
+            'updated_at': self.updated_at,
+            'updated_by_id': self.updated_by_id,
+            'updated_by_username': self.updated_by.username if self.updated_by else None,
+        }
+
     @classmethod
     def get_allowed_extensions(cls):
         """Get all allowed file extensions"""

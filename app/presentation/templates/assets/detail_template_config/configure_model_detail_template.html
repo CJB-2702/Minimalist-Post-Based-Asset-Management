@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}Configure Model Detail Templates - {{ asset_type.name }} - Asset Management System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{{ url_for('core_assets.list') }}">Assets</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Configure Model Detail Templates</li>
+                    </ol>
+                </nav>
+                <h1>Configure Model Detail Templates for {{ asset_type.name }}</h1>
+            </div>
+            <a href="{{ url_for('core_assets.list') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-10 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-gear"></i>
+                    Model Detail Table Templates Configuration
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">
+                    Configure which model detail table types should be automatically created for assets 
+                    of type <strong>{{ asset_type.name }}</strong>. These are model-level detail tables 
+                    (like emissions info, model info) that are associated with the make/model.
+                </p>
+                
+                <form method="POST">
+                    <input type="hidden" name="redirect_to" value="{{ request.args.get('redirect_to', '') }}">
+                    
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th style="width: 40px;">Enable</th>
+                                    <th>Model Detail Table Type</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for detail_type in available_types %}
+                                <tr>
+                                    <td>
+                                        <div class="form-check">
+                                            <input class="form-check-input" 
+                                                   type="checkbox" 
+                                                   id="detail_type_{{ detail_type.type }}" 
+                                                   name="detail_types" 
+                                                   value="{{ detail_type.type }}"
+                                                   {% if detail_type.type in existing_configs %}checked{% endif %}>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <label for="detail_type_{{ detail_type.type }}" class="form-check-label">
+                                            <strong>{{ detail_type.name }}</strong>
+                                        </label>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            Auto-creates a {{ detail_type.name|lower }} record for the make/model 
+                                            when an asset of this type is created.
+                                        </small>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="3" class="text-center text-muted">
+                                        No model detail table types available
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="alert alert-info mt-3">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Note:</strong> Model detail tables are associated with the make/model, not individual assets. 
+                        These provide information about the model itself (like emissions standards, model specifications, etc.).
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{{ url_for('core_assets.list') }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Save Configuration
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

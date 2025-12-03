@@ -8,6 +8,9 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1>Asset Type Details</h1>
             <div>
+                <a href="{{ url_for('assets.detail_template_config.configure_asset_type', asset_type_id=asset_type.id) }}" class="btn btn-info">
+                    <i class="bi bi-gear"></i> Configure Detail Templates
+                </a>
                 <a href="{{ url_for('asset_types.edit', asset_type_id=asset_type.id) }}" class="btn btn-secondary">
                     <i class="bi bi-pencil"></i> Edit Asset Type
                 </a>

@@ -1,0 +1,20 @@
+{% if error %}
+<div class="search-dropdown-item text-danger">Error: {{ error }}</div>
+{% elif assets|length == 0 %}
+<div class="search-dropdown-item text-muted">No assets found</div>
+{% else %}
+{% for asset in assets %}
+<div class="search-dropdown-item" 
+     onclick="selectAsset({{ asset.id }}, '{{ asset.name|e }}', '{{ asset.location or '-' }}', '{{ asset.asset_type or '-' }}', '{{ asset.make_model or '-' }}')">
+    {{ asset.name }}{% if asset.serial_number %} ({{ asset.serial_number }}){% endif %}
+</div>
+{% endfor %}
+<div class="search-match-count">
+    {% if total_count > showing %}
+    Showing {{ showing }} of {{ total_count }} matches
+    {% else %}
+    {{ total_count }} {{ 'match' if total_count == 1 else 'matches' }}
+    {% endif %}
+</div>
+{% endif %}
+

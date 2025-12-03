@@ -8,7 +8,7 @@ On import, it registers an enhanced asset factory with AssetContext.
 from .asset_details_context import AssetDetailsContext
 from .make_model_context import MakeModelDetailsContext
 from .model_detail_context import ModelDetailContext
-from .asset_details.asset_details_struct import AssetDetailsStruct
+from .asset_type_details.asset_details_struct import AssetDetailsStruct
 from .model_details.model_details_struct import ModelDetailsStruct
 
 # Import AssetContext from core to access its factory attribute

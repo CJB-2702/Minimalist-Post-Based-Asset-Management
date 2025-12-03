@@ -295,8 +295,8 @@
         "description": "In progress brake inspection for FTK-001",
         "maintenance_plan_name": "Truck Brake Inspection",
         "asset_name": "FTK-001",
-        "planned_start_datetime": "2024-01-16 09:00:00",
-        "start_date": "2024-01-16 09:15:00",
+        "planned_start_datetime": null,
+        "start_date": null,
         "status": "In Progress",
         "priority": "High",
         "actions": [

@@ -71,9 +71,9 @@ def create():
             asset_data = {
                 'name': request.form.get('name'),
                 'serial_number': request.form.get('serial_number'),
-                'status': request.form.get('status', 'Active'),
-                'major_location_id': request.form.get('major_location_id', type=int),
-                'make_model_id': request.form.get('make_model_id', type=int),
+                'status': request.form.get('status'),  # Required field
+                'major_location_id': request.form.get('major_location_id', type=int),  # Required field
+                'make_model_id': request.form.get('make_model_id', type=int),  # Required field
                 'meter1': request.form.get('meter1', type=float),
                 'meter2': request.form.get('meter2', type=float),
                 'meter3': request.form.get('meter3', type=float),

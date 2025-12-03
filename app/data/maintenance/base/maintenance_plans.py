@@ -17,7 +17,7 @@ class MaintenancePlan(UserCreatedBase):
 
     #frequency fields
     frequency_type = db.Column(db.String(20), nullable=False)
-    delta_hours = db.Column(db.Float, nullable=True)
+    delta_days = db.Column(db.Float, nullable=True)
     delta_m1 = db.Column(db.Float, nullable=True)
     delta_m2 = db.Column(db.Float, nullable=True)
     delta_m3 = db.Column(db.Float, nullable=True)

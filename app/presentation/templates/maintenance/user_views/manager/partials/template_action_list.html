@@ -1,0 +1,171 @@
+{% if error %}
+<div class="list-group-item text-danger">Error: {{ error }}</div>
+{% elif list_type == 'template_sets' %}
+    {% if items|length == 0 %}
+    <div class="list-group-item text-muted">No template action sets found</div>
+    {% else %}
+    {% for template_set in items %}
+    <div class="list-group-item action-item" 
+         data-template-set-id="{{ template_set.id }}" 
+         style="cursor: pointer;"
+         onclick="selectTemplateActionSet({{ template_set.id }}, {{ builder_id }})">
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <h6 class="mb-1">{{ template_set.task_name }}</h6>
+                <small class="text-muted">
+                    Template action set with {{ template_set.template_action_items|length }} actions
+                </small>
+            </div>
+            <span class="badge bg-primary">{{ template_set.template_action_items|length }} actions</span>
+        </div>
+    </div>
+    {% endfor %}
+    {% if total_count > showing %}
+    <div class="list-group-item text-muted small">
+        Showing {{ showing }} of {{ total_count }} matches
+    </div>
+    {% elif total_count > 0 %}
+    <div class="list-group-item text-muted small">
+        {{ total_count }} {{ 'match' if total_count == 1 else 'matches' }}
+    </div>
+    {% endif %}
+    {% endif %}
+{% elif list_type == 'template_actions' %}
+    {% if items|length == 0 %}
+    <div class="list-group-item text-muted">No template action items found</div>
+    {% else %}
+    {% for template_item in items %}
+    <div class="list-group-item action-item" 
+         data-template-action-id="{{ template_item.id }}" 
+         style="cursor: pointer;"
+         onclick="selectTemplateAction({{ template_item.id }}, {{ builder_id }})">
+        <div class="d-flex justify-content-between align-items-start">
+            <div class="flex-grow-1">
+                <div class="d-flex align-items-center mb-1">
+                    <span class="badge bg-secondary me-2">#{{ template_item.sequence_order }}</span>
+                    <h6 class="mb-0">{{ template_item.action_name }}</h6>
+                    <span class="badge bg-info ms-2">{{ template_item.template_action_set.task_name }}</span>
+                </div>
+                <small class="text-muted">{{ template_item.description or 'No description' }}</small>
+                <div class="mt-1">
+                    {% if template_item.estimated_duration %}
+                        <span class="badge bg-info">Est: {{ template_item.estimated_duration }}h</span>
+                    {% endif %}
+                    {% if template_item.safety_notes %}
+                        <span class="badge bg-warning ms-1">Safety Notes</span>
+                    {% endif %}
+                    {% if template_item.template_part_demands %}
+                        <span class="badge bg-success ms-1">{{ template_item.template_part_demands|length }} Parts</span>
+                    {% endif %}
+                    {% if template_item.template_action_tools %}
+                        <span class="badge bg-primary ms-1">{{ template_item.template_action_tools|length }} Tools</span>
+                    {% endif %}
+                </div>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-primary ms-2" onclick="event.stopPropagation(); selectTemplateAction({{ template_item.id }}, {{ builder_id }})">
+                <i class="bi bi-check-circle"></i> Select
+            </button>
+        </div>
+    </div>
+    {% endfor %}
+    {% if total_count > showing %}
+    <div class="list-group-item text-muted small">
+        Showing {{ showing }} of {{ total_count }} matches
+    </div>
+    {% elif total_count > 0 %}
+    <div class="list-group-item text-muted small">
+        {{ total_count }} {{ 'match' if total_count == 1 else 'matches' }}
+    </div>
+    {% endif %}
+    {% endif %}
+{% elif list_type == 'template_items_for_set' %}
+    {% if items|length == 0 %}
+    <div class="list-group-item text-muted">No action items in this template</div>
+    {% else %}
+    {% for template_item in items %}
+    <div class="list-group-item action-item" 
+         data-template-action-id="{{ template_item.id }}" 
+         style="cursor: pointer;"
+         onclick="selectTemplateAction({{ template_item.id }}, {{ builder_id }})">
+        <div class="d-flex justify-content-between align-items-start">
+            <div class="flex-grow-1">
+                <div class="d-flex align-items-center mb-1">
+                    <span class="badge bg-secondary me-2">#{{ template_item.sequence_order }}</span>
+                    <h6 class="mb-0">{{ template_item.action_name }}</h6>
+                </div>
+                <small class="text-muted">{{ template_item.description or 'No description' }}</small>
+                <div class="mt-1">
+                    {% if template_item.estimated_duration %}
+                        <span class="badge bg-info">Est: {{ template_item.estimated_duration }}h</span>
+                    {% endif %}
+                    {% if template_item.safety_notes %}
+                        <span class="badge bg-warning ms-1">Safety Notes</span>
+                    {% endif %}
+                    {% if template_item.template_part_demands %}
+                        <span class="badge bg-success ms-1">{{ template_item.template_part_demands|length }} Parts</span>
+                    {% endif %}
+                    {% if template_item.template_action_tools %}
+                        <span class="badge bg-primary ms-1">{{ template_item.template_action_tools|length }} Tools</span>
+                    {% endif %}
+                </div>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-primary ms-2" onclick="event.stopPropagation(); selectTemplateAction({{ template_item.id }}, {{ builder_id }})">
+                <i class="bi bi-check-circle"></i> Select
+            </button>
+        </div>
+    </div>
+    {% endfor %}
+    {% endif %}
+{% elif list_type == 'proto_actions' %}
+    {% if items|length == 0 %}
+    <div class="list-group-item text-muted">No proto actions found</div>
+    {% else %}
+    {% for proto_action in items %}
+    <div class="list-group-item action-item" 
+         data-proto-action-id="{{ proto_action.id }}" 
+         style="cursor: pointer;"
+         onclick="selectProtoAction({{ proto_action.id }}, {{ builder_id }})">
+        <div class="d-flex justify-content-between align-items-start">
+            <div class="flex-grow-1">
+                <h6 class="mb-1">{{ proto_action.action_name }}</h6>
+                <small class="text-muted">{{ proto_action.description or 'No description' }}</small>
+                <div class="mt-1">
+                    {% if proto_action.estimated_duration %}
+                        <span class="badge bg-info">Est: {{ proto_action.estimated_duration }}h</span>
+                    {% endif %}
+                    {% if proto_action.safety_notes %}
+                        <span class="badge bg-warning ms-1">Safety Notes</span>
+                    {% endif %}
+                    {% if proto_action.proto_part_demands %}
+                        <span class="badge bg-success ms-1">{{ proto_action.proto_part_demands|length }} Parts</span>
+                    {% endif %}
+                    {% if proto_action.proto_action_tools %}
+                        <span class="badge bg-primary ms-1">{{ proto_action.proto_action_tools|length }} Tools</span>
+                    {% endif %}
+                </div>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-primary ms-2" onclick="event.stopPropagation(); selectProtoAction({{ proto_action.id }}, {{ builder_id }})">
+                <i class="bi bi-check-circle"></i> Select
+            </button>
+        </div>
+    </div>
+    {% endfor %}
+    {% if total_count > showing %}
+    <div class="list-group-item text-muted small">
+        Showing {{ showing }} of {{ total_count }} matches
+    </div>
+    {% elif total_count > 0 %}
+    <div class="list-group-item text-muted small">
+        {{ total_count }} {{ 'match' if total_count == 1 else 'matches' }}
+    </div>
+    {% endif %}
+    {% endif %}
+{% else %}
+<div class="list-group-item text-muted">Unknown list type: {{ list_type }}</div>
+{% endif %}
+
+
+
+
+
+

@@ -64,23 +64,46 @@ def insert_core_debug_data(debug_data, system_user_id):
 
 
 def _insert_users(users_data, system_user_id):
-    """Insert users using find_or_create_from_dict"""
-    from app.data.core.user_info.user import User
+    """Insert users using UserContext.create()"""
+    from app.buisness.core.user_context import UserContext
     
     for user_key, user_data in users_data.items():
         # Skip if user already exists (by ID or username)
         if 'id' in user_data:
+            from app.data.core.user_info.user import User
             existing = User.query.filter_by(id=user_data['id']).first()
             if existing:
                 logger.debug(f"User {user_data.get('username')} already exists, skipping")
                 continue
         
-        User.find_or_create_from_dict(
-            user_data,
-            user_id=system_user_id,
-            lookup_fields=['username']
-        )
-        logger.debug(f"Inserted user: {user_data.get('username')}")
+        # Check if username already exists
+        from app.data.core.user_info.user import User
+        existing = User.query.filter_by(username=user_data.get('username')).first()
+        if existing:
+            logger.debug(f"User {user_data.get('username')} already exists, skipping")
+            continue
+        
+        # Extract password - required for UserContext.create()
+        password = user_data.pop('password', 'defaultpassword123')
+        if not password:
+            password = 'defaultpassword123'
+        
+        # Create user using UserContext (creates user + portal_user_data)
+        try:
+            UserContext.create(
+                username=user_data.get('username'),
+                email=user_data.get('email'),
+                password=password,
+                is_admin=user_data.get('is_admin', False),
+                is_active=user_data.get('is_active', True),
+                created_by_id=system_user_id,
+                commit=False,  # Commit all at once at the end
+                **{k: v for k, v in user_data.items() if k not in ['username', 'email', 'is_admin', 'is_active']}
+            )
+            logger.debug(f"Inserted user: {user_data.get('username')}")
+        except ValueError as e:
+            logger.warning(f"Failed to create user {user_data.get('username')}: {e}")
+            continue
 
 
 def _insert_locations(locations_data, system_user_id):

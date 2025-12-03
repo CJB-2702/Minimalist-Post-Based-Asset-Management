@@ -1,0 +1,490 @@
+{# Helper to get comment data by comment id #}
+
+<div class="card mb-4" id="event-widget-card">
+    <div class="card-header">
+        <h5 class="mb-0 d-flex justify-content-between align-items-center">
+            <span>
+                <i class="bi bi-activity"></i>
+                Event Activity
+            </span>
+            <small class="text-muted">
+                {{ event.event_type }} · {{ event.timestamp.strftime('%Y-%m-%d %H:%M') if event.timestamp else 'No timestamp' }}
+            </small>
+        </h5>
+    </div>
+    <div class="card-body">
+        <!-- Tabs -->
+        <ul class="nav nav-tabs mb-3" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="event-comments-tab"
+                        data-bs-toggle="tab" data-bs-target="#event-comments-pane"
+                        type="button" role="tab" aria-controls="event-comments-pane"
+                        aria-selected="true">
+                    Comments ({{ comments|length }})
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="event-attachments-tab"
+                        data-bs-toggle="tab" data-bs-target="#event-attachments-pane"
+                        type="button" role="tab" aria-controls="event-attachments-pane"
+                        aria-selected="false">
+                    Attachments
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="event-metadata-tab"
+                        data-bs-toggle="tab" data-bs-target="#event-metadata-pane"
+                        type="button" role="tab" aria-controls="event-metadata-pane"
+                        aria-selected="false">
+                    Metadata
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+            <!-- Comments tab -->
+            <div class="tab-pane fade show active" id="event-comments-pane"
+                 role="tabpanel" aria-labelledby="event-comments-tab">
+                <details open>
+                    <summary class="mb-3" style="cursor: pointer;">
+                        <strong>Show / Hide Comments</strong>
+                    </summary>
+
+                    <!-- Filter Section with Scroll Buttons -->
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            {% if filter_human_only|default(false) %}
+                                <a href="{{ url_for('comments.event_widget', event_id=event.id) }}"
+                                   class="btn btn-sm btn-outline-secondary"
+                                   hx-get="{{ url_for('comments.event_widget', event_id=event.id) }}"
+                                   hx-target="#event-widget-card"
+                                   hx-swap="outerHTML"
+                                   id="human-filter-btn-{{ event.id }}">
+                                    <i class="bi bi-funnel-fill"></i> Show All Comments
+                                </a>
+                            {% else %}
+                                <a href="{{ url_for('comments.event_widget', event_id=event.id, human_only='true') }}"
+                                   class="btn btn-sm btn-outline-secondary"
+                                   hx-get="{{ url_for('comments.event_widget', event_id=event.id, human_only='true') }}"
+                                   hx-target="#event-widget-card"
+                                   hx-swap="outerHTML"
+                                   id="human-filter-btn-{{ event.id }}">
+                                    <i class="bi bi-funnel"></i> Show Human Comments Only
+                                </a>
+                            {% endif %}
+                        </div>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button type="button" class="btn btn-outline-secondary" id="scroll-to-top-btn" title="Scroll to top">
+                                <i class="bi bi-arrow-up"></i> Top
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" id="scroll-to-bottom-btn" title="Scroll to bottom">
+                                <i class="bi bi-arrow-down"></i> Bottom
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Comments List -->
+                    <div id="comments-list-container" style="max-height: 400px; overflow-y: auto;" class="mb-3">
+                        {% if comments %}
+                            <!-- Pre-rendered Modals for each comment (only if user owns the comment) -->
+                        {% for comment in pre_rendered_comments %}
+                        {{ comment | safe }}
+                        {% endfor %}
+                        {% else %}
+                            <p class="text-muted text-center mb-0">No comments yet</p>
+                        {% endif %}
+                    </div>
+
+                    <hr>
+
+                    <!-- Add Comment Section (at bottom) -->
+                    <div class="add-comment-section">
+                        <h6 class="mb-3">
+                            <i class="bi bi-plus-circle"></i> Add Comment
+                        </h6>
+                        
+                        <!-- Reply Context (hidden by default, shown via JS) -->
+                        <div id="reply-context" class="alert alert-info mb-3" style="display: none;">
+                            <strong>Replying to:</strong>
+                            <span id="reply-context-text"></span>
+                            <button 
+                                type="button" 
+                                class="btn btn-sm btn-link float-end" 
+                                id="cancel-reply-btn">
+                                Cancel
+                            </button>
+                        </div>
+                        
+                        <form method="POST"
+                              action="{{ url_for('comments.create', event_id=event.id) }}"
+                              hx-post="{{ url_for('comments.create', event_id=event.id) }}{% if filter_human_only|default(false) %}?human_only=true{% endif %}"
+                              hx-target="#event-widget-card"
+                              hx-swap="outerHTML"
+                              enctype="multipart/form-data">
+                            <input type="hidden" name="replied_to_comment_id" id="replied_to_comment_id" value="">
+                            <div class="mb-2">
+                                <label for="comment-content-{{ event.id }}" class="form-label">Comment</label>
+                                <textarea class="form-control"
+                                          id="comment-content-{{ event.id }}"
+                                          name="content"
+                                          rows="3"
+                                          placeholder="Add a comment..." required></textarea>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">Attachments (optional)</label>
+                                <input type="file" name="attachments" multiple class="form-control form-control-sm">
+                                <small class="text-muted">You can attach documents, images, or other files.</small>
+                            </div>
+                            <div class="d-flex justify-content-end">
+                                <button type="submit" class="btn btn-primary btn-sm">
+                                    <i class="bi bi-plus-circle"></i> Add Comment
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </details>
+            </div>
+
+            <!-- Attachments tab -->
+            <div class="tab-pane fade" id="event-attachments-pane"
+                 role="tabpanel" aria-labelledby="event-attachments-tab">
+                {% set has_attachments = false %}
+                <div class="list-group" style="max-height: 400px; overflow-y: auto;">
+                    {% for comment in comments %}
+                        {% for ca in comment.comment_attachments %}
+                            {% set has_attachments = true %}
+                            {% set att = ca.attachment %}
+                            <div class="list-group-item d-flex justify-content-between align-items-start">
+                                <div class="ms-2 me-auto">
+                                    <div class="fw-bold">
+                                        <i class="bi bi-paperclip"></i> {{ att.filename }}
+                                    </div>
+                                    <small class="text-muted">
+                                        From comment by {{ comment.created_by.username if comment.created_by else 'Unknown' }}
+                                        on {{ comment.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                    </small>
+                                </div>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{{ url_for('attachments.view', attachment_id=att.id) }}"
+                                       class="btn btn-outline-secondary" target="_blank">
+                                        View
+                                    </a>
+                                    <a href="{{ url_for('attachments.download', attachment_id=att.id) }}"
+                                       class="btn btn-outline-primary">
+                                        Download
+                                    </a>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% endfor %}
+                    {% if not has_attachments %}
+                        <p class="text-muted text-center mb-0">No attachments for this event.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Metadata tab -->
+            <div class="tab-pane fade" id="event-metadata-pane"
+                 role="tabpanel" aria-labelledby="event-metadata-tab">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Event ID:</dt>
+                    <dd class="col-sm-8"><code>{{ event.id }}</code></dd>
+
+                    <dt class="col-sm-4">Type:</dt>
+                    <dd class="col-sm-8">{{ event.event_type }}</dd>
+
+                    <dt class="col-sm-4">Description:</dt>
+                    <dd class="col-sm-8">{{ event.description }}</dd>
+
+                    <dt class="col-sm-4">Created:</dt>
+                    <dd class="col-sm-8">
+                        {{ event.created_at.strftime('%Y-%m-%d %H:%M') if event.created_at else 'N/A' }}
+                    </dd>
+
+                    <dt class="col-sm-4">Created By:</dt>
+                    <dd class="col-sm-8">
+                        {{ event.created_by.username if event.created_by else 'System' }}
+                    </dd>
+
+                    <dt class="col-sm-4">Asset:</dt>
+                    <dd class="col-sm-8">
+                        {% if event.asset %}
+                            <a href="{{ url_for('core_assets.detail', asset_id=event.asset.id) }}">
+                                {{ event.asset.name }}
+                            </a>
+                        {% else %}
+                            <span class="text-muted">None</span>
+                        {% endif %}
+                    </dd>
+
+                    <dt class="col-sm-4">Location:</dt>
+                    <dd class="col-sm-8">
+                        {% if event.major_location %}
+                            <a href="{{ url_for('locations.detail', location_id=event.major_location.id) }}">
+                                {{ event.major_location.name }}
+                            </a>
+                        {% else %}
+                            <span class="text-muted">None</span>
+                        {% endif %}
+                    </dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<style>
+.comment-box {
+    padding: 12px;
+    border-bottom: 1px solid #e9ecef;
+    margin-bottom: 12px;
+    transition: background-color 0.2s;
+}
+
+.comment-box:hover {
+    background-color: #f8f9fa;
+}
+
+.comment-box:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.reply-indicator {
+    padding: 6px 10px;
+    background-color: #e7f3ff;
+    border-left: 3px solid #0d6efd;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    font-size: 0.85rem;
+}
+
+.reply-indicator a {
+    color: #0d6efd;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.reply-indicator a:hover {
+    text-decoration: underline;
+}
+
+.comment-content {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.add-comment-section {
+    border-top: 2px solid #dee2e6;
+    padding-top: 20px;
+    margin-top: 20px;
+}
+
+.highlight-comment {
+    background-color: #fff3cd !important;
+    animation: highlight-fade 2s ease-out;
+}
+
+@keyframes highlight-fade {
+    0% {
+        background-color: #fff3cd;
+    }
+    100% {
+        background-color: transparent;
+    }
+}
+
+.comment-attachments {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #dee2e6;
+}
+
+.attachment-mini-card {
+    transition: transform 0.2s ease-in-out;
+    border: 1px solid #dee2e6;
+}
+
+.attachment-mini-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Edit History Styles */
+.edit-history-timeline {
+    position: relative;
+    padding-left: 20px;
+}
+
+.edit-history-item {
+    position: relative;
+    padding: 12px;
+    margin-bottom: 12px;
+    background-color: #f8f9fa;
+    border-left: 3px solid #dee2e6;
+    border-radius: 4px;
+}
+
+.edit-history-item.current-version {
+    background-color: #e7f3ff;
+    border-left-color: #0d6efd;
+}
+
+.edit-history-item:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: -11px;
+    top: 30px;
+    width: 2px;
+    height: calc(100% + 12px);
+    background-color: #dee2e6;
+}
+
+.edit-history-content {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-size: 0.9rem;
+    color: #495057;
+    max-height: 150px;
+    overflow-y: auto;
+    padding: 8px;
+    background-color: white;
+    border-radius: 3px;
+    border: 1px solid #dee2e6;
+}
+
+.edit-history-item.current-version .edit-history-content {
+    border-color: #0d6efd;
+}
+</style>
+
+<script>
+// JavaScript for reply functionality, scroll buttons, and modal management
+(function() {
+    // Scroll to top button functionality
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('#scroll-to-top-btn')) {
+            const container = document.getElementById('comments-list-container');
+            if (container) {
+                container.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+        
+        // Scroll to bottom button functionality
+        if (e.target.closest('#scroll-to-bottom-btn')) {
+            const container = document.getElementById('comments-list-container');
+            if (container) {
+                container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+            }
+        }
+    });
+    
+    // Close any open Bootstrap modals after successful swap
+    document.body.addEventListener('htmx:afterSwap', function(evt) {
+        const target = evt.detail.target;
+        const xhr = evt.detail.xhr;
+        const isSuccessful = xhr && xhr.status >= 200 && xhr.status < 300;
+        
+        // Close modals if target is a comment element and response was successful
+        if (isSuccessful && target) {
+            const targetId = target.id || (target.getAttribute && target.getAttribute('id'));
+            if (targetId && targetId.startsWith('comment-')) {
+                // Close all open modals
+                const openModals = document.querySelectorAll('.modal.show');
+                openModals.forEach(function(modal) {
+                    const modalInstance = bootstrap.Modal.getInstance(modal);
+                    if (modalInstance) {
+                        modalInstance.hide();
+                    }
+                });
+            }
+        }
+    });
+    
+    // Handle successful delete operations - close modals even if target element was removed
+    document.body.addEventListener('htmx:afterRequest', function(evt) {
+        const xhr = evt.detail.xhr;
+        const isSuccessful = xhr && xhr.status >= 200 && xhr.status < 300;
+        const path = evt.detail.pathInfo?.requestPath || '';
+        
+        // If this was a delete request and it was successful, close modals
+        // This handles the case where the comment element is removed (empty response)
+        if (isSuccessful && path.includes('/delete')) {
+            setTimeout(function() {
+                const openModals = document.querySelectorAll('.modal.show');
+                openModals.forEach(function(modal) {
+                    const modalInstance = bootstrap.Modal.getInstance(modal);
+                    if (modalInstance) {
+                        modalInstance.hide();
+                    }
+                });
+            }, 50); // Small delay to ensure swap completes
+        }
+    });
+
+    // Reply button functionality
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.reply-btn')) {
+            const btn = e.target.closest('.reply-btn');
+            const commentId = btn.getAttribute('data-comment-id');
+            const preview = btn.getAttribute('data-comment-preview');
+            
+            document.getElementById('replied_to_comment_id').value = commentId;
+            document.getElementById('reply-context-text').textContent = preview || 'this comment';
+            document.getElementById('reply-context').style.display = 'block';
+            
+            // Scroll to add comment section
+            setTimeout(() => {
+                const section = document.querySelector('.add-comment-section');
+                if (section) {
+                    section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            }, 100);
+        }
+        
+        if (e.target.closest('#cancel-reply-btn')) {
+            document.getElementById('replied_to_comment_id').value = '';
+            document.getElementById('reply-context').style.display = 'none';
+        }
+        
+        // Scroll to comment functionality
+        if (e.target.closest('.scroll-to-comment')) {
+            e.preventDefault();
+            const link = e.target.closest('.scroll-to-comment');
+            const commentId = link.getAttribute('data-comment-id');
+            const element = document.getElementById('comment-' + commentId);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                element.classList.add('highlight-comment');
+                setTimeout(() => {
+                    element.classList.remove('highlight-comment');
+                }, 2000);
+            }
+        }
+        
+        // Copy JSON to clipboard
+        if (e.target.closest('.copy-json-btn')) {
+            const btn = e.target.closest('.copy-json-btn');
+            const jsonData = btn.getAttribute('data-json');
+            if (jsonData) {
+                navigator.clipboard.writeText(jsonData).then(() => {
+                    const originalHtml = btn.innerHTML;
+                    btn.innerHTML = '<i class="bi bi-check"></i> Copied!';
+                    btn.classList.add('btn-success');
+                    btn.classList.remove('btn-outline-secondary');
+                    setTimeout(() => {
+                        btn.innerHTML = originalHtml;
+                        btn.classList.remove('btn-success');
+                        btn.classList.add('btn-outline-secondary');
+                    }, 2000);
+                }).catch(err => {
+                    console.error('Failed to copy:', err);
+                    alert('Failed to copy to clipboard');
+                });
+            }
+        }
+    });
+})();
+</script>

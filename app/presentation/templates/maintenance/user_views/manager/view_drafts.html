@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}View Draft Templates - Manager Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="bi bi-file-earmark-text text-info"></i> View Draft Templates
+                    </h1>
+                    <p class="text-muted mb-0">View and manage your incomplete template builder drafts</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('manager_portal.build_maintenance') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Build Templates
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-funnel"></i> Filters</h5>
+                </div>
+                <div class="card-body">
+                    <form method="GET" action="{{ url_for('template_builder.view_drafts') }}">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label for="search_name" class="form-label">Draft Name</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="search_name" 
+                                       name="search_name" 
+                                       value="{{ search_name }}"
+                                       placeholder="Search by name...">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="search_id" class="form-label">Draft ID</label>
+                                <input type="number" 
+                                       class="form-control" 
+                                       id="search_id" 
+                                       name="search_id" 
+                                       value="{{ search_id or '' }}"
+                                       placeholder="Enter ID">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="search_user_id" class="form-label">User ID</label>
+                                <input type="number" 
+                                       class="form-control" 
+                                       id="search_user_id" 
+                                       name="search_user_id" 
+                                       value="{{ search_user_id or '' }}"
+                                       placeholder="Enter User ID">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="search_content" class="form-label">Search Content</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="search_content" 
+                                       name="search_content" 
+                                       value="{{ search_content }}"
+                                       placeholder="Search in content...">
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-search"></i> Apply Filters
+                                </button>
+                                <a href="{{ url_for('template_builder.view_drafts', search_user_id=current_user.id) }}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-x-circle"></i> Clear Filters
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Drafts List -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-list-ul"></i> Draft Templates
+                        <span class="badge bg-secondary ms-2">{{ drafts|length }}</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if drafts %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Draft Name</th>
+                                    <th>Task Name</th>
+                                    <th>Build Type</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                    <th>Created By</th>
+                                    <th>Last Updated</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for draft in drafts %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-info">#{{ draft.id }}</span>
+                                    </td>
+                                    <td>
+                                        <strong>{{ draft.name or 'Unnamed Draft' }}</strong>
+                                    </td>
+                                    <td>
+                                        {{ draft.task_name or '—' }}
+                                    </td>
+                                    <td>
+                                        {% if draft.build_type %}
+                                        <span class="badge bg-secondary">{{ draft.build_type }}</span>
+                                        {% else %}
+                                        <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{% if draft.build_status == 'Draft' %}secondary{% elif draft.build_status == 'In Progress' %}primary{% elif draft.build_status == 'Ready for Review' %}warning{% else %}info{% endif %}">
+                                            {{ draft.build_status }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-primary">{{ draft.total_actions }} action{{ 's' if draft.total_actions != 1 else '' }}</span>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ draft.created_by_username }}</small>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            {% if draft.updated_at %}
+                                            {{ draft.updated_at.strftime('%Y-%m-%d %H:%M') }}
+                                            {% else %}
+                                            N/A
+                                            {% endif %}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('template_builder.view_builder', builder_id=draft.id) }}" 
+                                           class="btn btn-sm btn-primary">
+                                            <i class="bi bi-pencil"></i> Edit
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center text-muted py-5">
+                        <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                        <p class="mt-3">No draft templates found.</p>
+                        <a href="{{ url_for('template_builder.new_builder') }}" class="btn btn-primary mt-2">
+                            <i class="bi bi-plus-circle"></i> Create New Draft
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

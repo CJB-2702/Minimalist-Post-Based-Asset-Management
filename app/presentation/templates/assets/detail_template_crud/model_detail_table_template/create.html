@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Create Model Detail Table Template - Asset Management{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Create Model Detail Table Template</h1>
+            <a href="{{ url_for('assets.detail_template_crud.list_model_detail_table_template') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to List
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Template Information</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="asset_type_id" class="form-label">Asset Type</label>
+                        <select class="form-select" id="asset_type_id" name="asset_type_id">
+                            <option value="">Global (All Asset Types)</option>
+                            {% for asset_type in asset_types %}
+                            <option value="{{ asset_type.id }}" {% if request.form.get('asset_type_id')|int == asset_type.id %}selected{% endif %}>
+                                {{ asset_type.name }}
+                                {% if asset_type.category %} ({{ asset_type.category }}){% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Leave blank for global template that applies to all asset types</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="detail_table_type" class="form-label">Detail Table Type <span class="text-danger">*</span></label>
+                        <select class="form-select" id="detail_table_type" name="detail_table_type" required>
+                            <option value="">Select Detail Table Type</option>
+                            {% for detail_type in available_detail_types %}
+                            <option value="{{ detail_type.type }}" {% if request.form.get('detail_table_type') == detail_type.type %}selected{% endif %}>
+                                {{ detail_type.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('assets.detail_template_crud.list_model_detail_table_template') }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Create Template
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

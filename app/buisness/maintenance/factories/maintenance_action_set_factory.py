@@ -35,6 +35,9 @@ class MaintenanceActionSetFactory:
         planned_start_datetime: Optional[datetime] = None,
         maintenance_plan_id: Optional[int] = None,
         user_id: Optional[int] = None,
+        assigned_user_id: Optional[int] = None,
+        assigned_by_id: Optional[int] = None,
+        priority: str = 'Medium',
         commit: bool = True
     ) -> MaintenanceActionSet:
         """
@@ -46,6 +49,9 @@ class MaintenanceActionSetFactory:
             planned_start_datetime: Planned start datetime (defaults to now)
             maintenance_plan_id: Optional maintenance plan ID
             user_id: User ID creating the maintenance event
+            assigned_user_id: Optional user ID to assign the maintenance to
+            assigned_by_id: Optional user ID of the manager assigning the maintenance
+            priority: Priority level (Low, Medium, High, Critical) - defaults to 'Medium'
             commit: Whether to commit the transaction (default: True)
             
         Returns:
@@ -109,7 +115,11 @@ class MaintenanceActionSetFactory:
             
             # Execution tracking - initialize
             status='Planned',
-            priority='Medium',
+            priority=priority,
+            
+            # Assignment
+            assigned_user_id=assigned_user_id,
+            assigned_by_id=assigned_by_id,
             
             # Audit fields
             created_by_id=user_id,

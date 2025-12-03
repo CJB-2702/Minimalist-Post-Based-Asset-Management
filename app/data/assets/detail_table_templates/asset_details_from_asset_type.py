@@ -18,6 +18,7 @@ class AssetDetailTemplateByAssetType(UserCreatedBase):
     # Configuration fields
     asset_type_id = db.Column(db.Integer, db.ForeignKey('asset_types.id'), nullable=False)
     detail_table_type = db.Column(db.String(100), nullable=False)  # e.g., 'purchase_info', 'vehicle_registration'
+    many_to_one = db.Column(db.Boolean, default=False)
 
     
     # Relationships

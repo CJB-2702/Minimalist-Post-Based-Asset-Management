@@ -14,6 +14,8 @@ from typing import Optional, Dict, Any
 from app.buisness.core.factories.asset_factory_base import AssetFactoryBase
 from app.data.core.asset_info.asset import Asset
 from app.data.core.event_info.event import Event
+from app.data.core.asset_info.make_model import MakeModel   
+from app.data.core.asset_info.asset_type import AssetType
 from app import db
 from app.logger import get_logger
 
@@ -53,6 +55,26 @@ class CoreAssetFactory(AssetFactoryBase):
             kwargs['updated_by_id'] = created_by_id
         
         # Create asset
+        if not kwargs.get('make_model_id'):
+            raise ValueError("Make model ID is required")
+            
+        make_model = MakeModel.query.get(kwargs['make_model_id'])
+
+        if not make_model:
+            raise ValueError(f"Make model with ID {kwargs['make_model_id']} not found")
+
+        if not kwargs.get('asset_type_id'): 
+            kwargs['asset_type_id'] = make_model.asset_type_id
+        
+        if not kwargs['asset_type_id'] == make_model.asset_type_id:
+            logger.warning(f"Asset type ID {kwargs['asset_type_id']} does not match make model asset type ID {make_model.asset_type_id} overiding with make model asset type ID")
+            kwargs['asset_type_id'] = make_model.asset_type_id
+
+        asset_type = AssetType.query.get(kwargs['asset_type_id'])
+        if not asset_type:
+            raise ValueError(f"Asset type with ID {kwargs['asset_type_id']} not found")
+        
+
         asset = Asset(**kwargs)
         db.session.add(asset)
         

@@ -40,7 +40,7 @@ class AssetDetailFactory(DetailFactory):
                 logger.warning(f"No creation event found for asset {asset.id}")
             
             # Create asset detail rows based on asset type
-            asset_type_id = asset.get_asset_type_id(force_reload=True)
+            asset_type_id = asset.asset_type_id
             if asset_type_id:
                 logger.debug(f"Creating asset type detail rows for asset type: {asset_type_id}")
                 cls._create_asset_type_detail_rows(asset, asset_type_id, event_id=event_id)
@@ -71,7 +71,8 @@ class AssetDetailFactory(DetailFactory):
             logger.debug(f"Found {len(detail_configs)} asset type detail configurations")
 
             for config in detail_configs:
-                logger.debug(f"Creating asset type detail row for {config.detail_table_type}")
+                many_to_one = getattr(config, 'many_to_one', False)
+                logger.debug(f"Creating asset type detail row for {config.detail_table_type} (many_to_one={many_to_one})")
                 cls._create_single_detail_row(
                     config=config,
                     detail_table_type=config.detail_table_type,
@@ -100,7 +101,8 @@ class AssetDetailFactory(DetailFactory):
             logger.debug(f"Found {len(detail_configs)} model type detail configurations")
 
             for config in detail_configs:
-                logger.debug(f"Creating model type detail row for {config.detail_table_type}")
+                many_to_one = getattr(config, 'many_to_one', False)
+                logger.debug(f"Creating model type detail row for {config.detail_table_type} (many_to_one={many_to_one})")
                 cls._create_single_detail_row(
                     config=config,
                     detail_table_type=config.detail_table_type,

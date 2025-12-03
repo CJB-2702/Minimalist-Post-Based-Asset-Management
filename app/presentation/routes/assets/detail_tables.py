@@ -7,9 +7,9 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from app.logger import get_logger
 from flask_login import login_required, current_user
 from app.data.core.asset_info.asset import Asset
-from app.data.assets.asset_details.purchase_info import PurchaseInfo
-from app.data.assets.asset_details.vehicle_registration import VehicleRegistration
-from app.data.assets.asset_details.toyota_warranty_receipt import ToyotaWarrantyReceipt
+from app.data.assets.asset_type_details.purchase_info import PurchaseInfo
+from app.data.assets.asset_type_details.vehicle_registration import VehicleRegistration
+from app.data.assets.asset_type_details.toyota_warranty_receipt import ToyotaWarrantyReceipt
 from app.buisness.assets.detail_table_context import DetailTableContext
 from app.services.assets.asset_detail_service import AssetDetailService
 from app import db

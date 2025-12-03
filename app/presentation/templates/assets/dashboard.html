@@ -76,7 +76,7 @@
                 </div>
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-3 mb-3">
                             <div class="card h-100 border-primary">
                                 <div class="card-body text-center">
                                     <i class="bi bi-cart display-4 text-primary"></i>
@@ -96,7 +96,7 @@
                             </div>
                         </div>
                         
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-3 mb-3">
                             <div class="card h-100 border-success">
                                 <div class="card-body text-center">
                                     <i class="bi bi-file-earmark-text display-4 text-success"></i>
@@ -116,7 +116,7 @@
                             </div>
                         </div>
                         
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-3 mb-3">
                             <div class="card h-100 border-warning">
                                 <div class="card-body text-center">
                                     <i class="bi bi-shield-check display-4 text-warning"></i>
@@ -129,6 +129,26 @@
                                         </a>
                                         <a href="{{ url_for('assets.detail_tables.create', detail_type='toyota_warranty_receipt') }}" 
                                            class="btn btn-outline-warning">
+                                            <i class="bi bi-plus"></i> Create New
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-3 mb-3">
+                            <div class="card h-100 border-info">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-cloud display-4 text-info"></i>
+                                    <h5 class="card-title">Smog Record</h5>
+                                    <p class="card-text">Track smog test dates, results, certificates, and expiration dates for vehicles.</p>
+                                    <div class="btn-group-vertical w-100">
+                                        <a href="{{ url_for('assets.detail_tables.list', detail_type='smog_record') }}" 
+                                           class="btn btn-info">
+                                            <i class="bi bi-list"></i> View All
+                                        </a>
+                                        <a href="{{ url_for('assets.detail_tables.create', detail_type='smog_record') }}" 
+                                           class="btn btn-outline-info">
                                             <i class="bi bi-plus"></i> Create New
                                         </a>
                                     </div>
