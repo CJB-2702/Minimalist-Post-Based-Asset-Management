@@ -1,4 +1,4 @@
-from .maintenance_plans import MaintenancePlan
+from ..planning.maintenance_plans import MaintenancePlan
 from .maintenance_action_sets import MaintenanceActionSet
 from .actions import Action
 from .part_demands import PartDemand

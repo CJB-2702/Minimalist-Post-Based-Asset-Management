@@ -1,0 +1,36 @@
+{% if error %}
+<div class="list-group-item text-danger">Error: {{ error }}</div>
+{% elif template_action_sets|length == 0 %}
+<div class="list-group-item text-muted">No template action sets found</div>
+{% else %}
+{% for template_set in template_action_sets %}
+<div class="list-group-item action-item" 
+     data-template-set-id="{{ template_set.id }}" 
+     style="cursor: pointer;"
+     onclick="selectTemplateForPlan({{ template_set.id }})">
+    <div class="d-flex justify-content-between align-items-start">
+        <div>
+            <h6 class="mb-1">{{ template_set.task_name }}</h6>
+            <small class="text-muted">
+                {% if template_set.description %}
+                    {{ template_set.description[:100] }}{% if template_set.description|length > 100 %}...{% endif %}
+                {% else %}
+                    Template action set with {{ template_set.template_action_items|length }} actions
+                {% endif %}
+            </small>
+        </div>
+        <span class="badge bg-primary">{{ template_set.template_action_items|length }} actions</span>
+    </div>
+</div>
+{% endfor %}
+{% if total_count > showing %}
+<div class="list-group-item text-muted small">
+    Showing {{ showing }} of {{ total_count }} matches
+</div>
+{% else %}
+<div class="list-group-item text-muted small">
+    {{ total_count }} {{ 'match' if total_count == 1 else 'matches' }}
+</div>
+{% endif %}
+{% endif %}
+

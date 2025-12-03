@@ -7,7 +7,7 @@ Provides plan scheduling, frequency management, and maintenance event creation.
 from typing import List, Optional, Union, Dict, Any
 from datetime import datetime, timedelta
 from app import db
-from app.data.maintenance.base.maintenance_plans import MaintenancePlan
+from app.data.maintenance.planning.maintenance_plans import MaintenancePlan
 from app.data.maintenance.base.maintenance_action_sets import MaintenanceActionSet
 from app.data.core.asset_info.asset import Asset
 from app.data.core.event_info.event import Event

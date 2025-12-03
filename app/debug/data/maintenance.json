@@ -211,12 +211,23 @@
     ],
     "maintenance_plans": [
       {
-        "name": "Vehicle Oil Change",
-        "description": "Regular oil change maintenance for all vehicles",
+        "name": "Vehicle Oil Change 6 Months",
+        "description": "Regular oil change maintenance every 6 months for Toyota Corolla",
         "asset_type_name": "Vehicle",
+        "make_model_name": "Toyota Corolla",
         "status": "Active",
         "frequency_type": "Time-based",
-        "delta_hours": 2160.0,
+        "delta_days": 180.0,
+        "template_action_set_task_name": "Toyota Corolla Oil Change Procedure"
+      },
+      {
+        "name": "Vehicle Oil Change 5k miles",
+        "description": "Regular oil change maintenance every 5,000 miles for Toyota Corolla",
+        "asset_type_name": "Vehicle",
+        "make_model_name": "Toyota Corolla",
+        "status": "Active",
+        "frequency_type": "Meter 1",
+        "delta_m1": 5000.0,
         "template_action_set_task_name": "Toyota Corolla Oil Change Procedure"
       },
       {
@@ -225,7 +236,7 @@
         "asset_type_name": "Vehicle",
         "status": "Active",
         "frequency_type": "Time-based",
-        "delta_hours": 4320.0,
+        "delta_days": 0.001,
         "template_action_set_task_name": "Brake Inspection Procedure"
       }
     ],
@@ -233,7 +244,7 @@
       {
         "task_name": "Oil Change for VTC-002",
         "description": "In progress oil change for VTC-002",
-        "maintenance_plan_name": "Vehicle Oil Change",
+        "maintenance_plan_name": "Vehicle Oil Change 6 Months",
         "asset_name": "VTC-002",
         "planned_start_datetime": "2024-01-15 08:00:00",
         "start_date": "2024-01-15 08:30:00",

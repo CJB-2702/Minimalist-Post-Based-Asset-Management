@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Maintenance Plans - Asset Management System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Maintenance Plans</h1>
+            <a href="{{ url_for('maintenance_plan.create_plan') }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Create Maintenance Plan
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Maintenance Plans Table -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Maintenance Plans ({{ plans|length }} total)</h5>
+            </div>
+            <div class="card-body">
+                {% if plans %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Asset Type</th>
+                                <th>Model</th>
+                                <th>Frequency Type</th>
+                                <th>Template</th>
+                                <th>Status</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for plan in plans %}
+                            <tr>
+                                <td>
+                                    <small class="text-muted">
+                                        <code>{{ plan.id }}</code>
+                                    </small>
+                                </td>
+                                <td>
+                                    <strong>{{ plan.name }}</strong>
+                                </td>
+                                <td>
+                                    {% if plan.asset_type %}
+                                        {{ plan.asset_type.name }}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if plan.model %}
+                                        {{ plan.model.make }} {{ plan.model.model }}
+                                    {% else %}
+                                        <span class="text-muted">All Models</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">{{ plan.frequency_type }}</span>
+                                </td>
+                                <td>
+                                    {% if plan.template_action_set %}
+                                        <a href="{{ url_for('maintenance_plan.view_plan', plan_id=plan.id) }}">
+                                            {{ plan.template_action_set.task_name }}
+                                        </a>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if plan.status == 'Active' %}
+                                        <span class="badge bg-success">Active</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">{{ plan.status }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small class="text-muted">
+                                        {{ plan.created_at.strftime('%Y-%m-%d') if plan.created_at else 'N/A' }}
+                                    </small>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="{{ url_for('maintenance_plan.view_plan', plan_id=plan.id) }}" 
+                                           class="btn btn-outline-primary" title="View Details">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a href="{{ url_for('maintenance_plan.edit_plan', plan_id=plan.id) }}" 
+                                           class="btn btn-outline-secondary" title="Edit">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-calendar-check display-1 text-muted"></i>
+                    <h3 class="mt-3">No Maintenance Plans Found</h3>
+                    <p class="text-muted">Get started by creating your first maintenance plan.</p>
+                    <a href="{{ url_for('maintenance_plan.create_plan') }}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Create First Maintenance Plan
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

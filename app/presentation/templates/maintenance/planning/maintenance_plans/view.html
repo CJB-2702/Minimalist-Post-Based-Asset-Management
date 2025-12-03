@@ -1,0 +1,284 @@
+{% extends "base.html" %}
+
+{% block title %}{{ plan.name }} - Maintenance Plan{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>{{ plan.name }}</h1>
+            <div>
+                {% if plan.status == 'Active' %}
+                <a href="{{ url_for('maintenance_plan.plan_maintenance', plan_id=plan.id) }}" class="btn btn-primary">
+                    <i class="bi bi-calendar-check"></i> Plan Maintenance
+                </a>
+                {% endif %}
+                <a href="{{ url_for('maintenance_plan.edit_plan', plan_id=plan.id) }}" class="btn btn-secondary">
+                    <i class="bi bi-pencil"></i> Edit Plan
+                </a>
+                <a href="{{ url_for('maintenance_plan.list_plans') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Plans
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Plan Information -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Plan Information</h5>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-4">ID:</dt>
+                    <dd class="col-sm-8"><code>{{ plan.id }}</code></dd>
+                    
+                    <dt class="col-sm-4">Name:</dt>
+                    <dd class="col-sm-8"><strong>{{ plan.name }}</strong></dd>
+                    
+                    <dt class="col-sm-4">Description:</dt>
+                    <dd class="col-sm-8">{{ plan.description or 'No description' }}</dd>
+                    
+                    <dt class="col-sm-4">Status:</dt>
+                    <dd class="col-sm-8">
+                        {% if plan.status == 'Active' %}
+                            <span class="badge bg-success">Active</span>
+                        {% else %}
+                            <span class="badge bg-warning">{{ plan.status }}</span>
+                        {% endif %}
+                    </dd>
+                    
+                    <dt class="col-sm-4">Asset Type ID:</dt>
+                    <dd class="col-sm-8">
+                        <code>{{ plan.asset_type_id }}</code>
+                        {% if plan.asset_type %}
+                            <span class="text-muted">({{ plan.asset_type.name }})</span>
+                        {% endif %}
+                    </dd>
+                    
+                    <dt class="col-sm-4">Model ID:</dt>
+                    <dd class="col-sm-8">
+                        {% if plan.model_id %}
+                            <code>{{ plan.model_id }}</code>
+                            {% if plan.model %}
+                                <span class="text-muted">({{ plan.model.make }} {{ plan.model.model }}{% if plan.model.year %} {{ plan.model.year }}{% endif %})</span>
+                            {% endif %}
+                        {% else %}
+                            <span class="text-muted">All Models</span>
+                        {% endif %}
+                    </dd>
+                    
+                    <dt class="col-sm-4">Template Action Set ID:</dt>
+                    <dd class="col-sm-8">
+                        <code>{{ plan.template_action_set_id }}</code>
+                        {% if plan.template_action_set %}
+                            <span class="text-muted">({{ plan.template_action_set.task_name }})</span>
+                        {% endif %}
+                    </dd>
+                    
+                    <dt class="col-sm-4">Created:</dt>
+                    <dd class="col-sm-8">
+                        <small class="text-muted">
+                            {{ plan.created_at.strftime('%Y-%m-%d %H:%M:%S') if plan.created_at else 'N/A' }}
+                            {% if plan.created_by %}
+                                by {{ plan.created_by.username }}
+                            {% elif plan.created_by_id %}
+                                (User ID: {{ plan.created_by_id }})
+                            {% endif %}
+                        </small>
+                    </dd>
+                    
+                    <dt class="col-sm-4">Created By ID:</dt>
+                    <dd class="col-sm-8">
+                        <code>{{ plan.created_by_id or 'N/A' }}</code>
+                    </dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Frequency Configuration</h5>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-4">Frequency Type:</dt>
+                    <dd class="col-sm-8">
+                        <span class="badge bg-info">{{ plan.frequency_type }}</span>
+                    </dd>
+                    
+                    <dt class="col-sm-4">Delta Days:</dt>
+                    <dd class="col-sm-8">
+                        {% if plan.delta_days is not none %}
+                            {{ plan.delta_days }}
+                        {% else %}
+                            <span class="text-muted">-</span>
+                        {% endif %}
+                    </dd>
+                    
+                    <dt class="col-sm-4">Delta Meter 1:</dt>
+                    <dd class="col-sm-8">
+                        {% if plan.delta_m1 is not none %}
+                            {{ plan.delta_m1 }}
+                        {% else %}
+                            <span class="text-muted">-</span>
+                        {% endif %}
+                    </dd>
+                    
+                    <dt class="col-sm-4">Delta Meter 2:</dt>
+                    <dd class="col-sm-8">
+                        {% if plan.delta_m2 is not none %}
+                            {{ plan.delta_m2 }}
+                        {% else %}
+                            <span class="text-muted">-</span>
+                        {% endif %}
+                    </dd>
+                    
+                    <dt class="col-sm-4">Delta Meter 3:</dt>
+                    <dd class="col-sm-8">
+                        {% if plan.delta_m3 is not none %}
+                            {{ plan.delta_m3 }}
+                        {% else %}
+                            <span class="text-muted">-</span>
+                        {% endif %}
+                    </dd>
+                    
+                    <dt class="col-sm-4">Delta Meter 4:</dt>
+                    <dd class="col-sm-8">
+                        {% if plan.delta_m4 is not none %}
+                            {{ plan.delta_m4 }}
+                        {% else %}
+                            <span class="text-muted">-</span>
+                        {% endif %}
+                    </dd>
+                    
+                    <dt class="col-sm-4">Last Updated:</dt>
+                    <dd class="col-sm-8">
+                        <small class="text-muted">
+                            {{ plan.updated_at.strftime('%Y-%m-%d %H:%M:%S') if plan.updated_at else 'N/A' }}
+                            {% if plan.updated_by %}
+                                by {{ plan.updated_by.username }}
+                            {% elif plan.updated_by_id %}
+                                (User ID: {{ plan.updated_by_id }})
+                            {% endif %}
+                        </small>
+                    </dd>
+                    
+                    <dt class="col-sm-4">Updated By ID:</dt>
+                    <dd class="col-sm-8">
+                        <code>{{ plan.updated_by_id or 'N/A' }}</code>
+                    </dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Template Action Set Preview -->
+{% if template_action_set %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Template Action Set: {{ template_action_set.task_name }}</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <dl class="row">
+                            <dt class="col-sm-4">Task Name:</dt>
+                            <dd class="col-sm-8">{{ template_action_set.task_name }}</dd>
+                            
+                            <dt class="col-sm-4">Description:</dt>
+                            <dd class="col-sm-8">{{ template_action_set.description or 'No description' }}</dd>
+                            
+                            <dt class="col-sm-4">Estimated Hours:</dt>
+                            <dd class="col-sm-8">{{ template_action_set.estimated_duration or 'N/A' }}</dd>
+                        </dl>
+                    </div>
+                    <div class="col-md-6">
+                        <dl class="row">
+                            <dt class="col-sm-4">Action Items:</dt>
+                            <dd class="col-sm-8">
+                                <span class="badge bg-primary">{{ template_action_items|length }}</span>
+                            </dd>
+                            
+                            <dt class="col-sm-4">Status:</dt>
+                            <dd class="col-sm-8">
+                                {% if template_action_set.is_active %}
+                                    <span class="badge bg-success">Active</span>
+                                {% else %}
+                                    <span class="badge bg-warning">Inactive</span>
+                                {% endif %}
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+                
+                {% if template_action_items %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Order</th>
+                                <th>Action Name</th>
+                                <th>Description</th>
+                                <th>Required</th>
+                                <th>Estimated Duration</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in template_action_items %}
+                            <tr>
+                                <td>
+                                    <span class="badge bg-secondary">#{{ item.sequence_order }}</span>
+                                </td>
+                                <td><strong>{{ item.action_name }}</strong></td>
+                                <td>
+                                    <div class="text-truncate" style="max-width: 300px;" 
+                                         title="{{ item.description or 'No description' }}">
+                                        {{ item.description or 'No description' }}
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if item.is_required %}
+                                        <span class="badge bg-success">Required</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Optional</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if item.estimated_duration %}
+                                        {{ item.estimated_duration }}h
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">No action items in this template.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle"></i> No template action set assigned to this plan.
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+

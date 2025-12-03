@@ -9,7 +9,7 @@ from app.buisness.maintenance.base.part_demand_struct import PartDemandStruct
 from app.buisness.maintenance.base.action_tool_struct import ActionToolStruct
 from app.buisness.maintenance.base.maintenance_context import MaintenanceContext
 from app.buisness.maintenance.base.action_context import ActionContext
-from app.buisness.maintenance.base.maintenance_plan_context import MaintenancePlanContext
+from app.buisness.maintenance.planning.maintenance_plan_context import MaintenancePlanContext
 
 __all__ = [
     'MaintenanceActionSetStruct',

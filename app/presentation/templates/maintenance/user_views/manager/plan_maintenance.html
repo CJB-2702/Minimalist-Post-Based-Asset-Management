@@ -23,12 +23,45 @@
     </div>
     
     <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-body text-center py-5">
-                    <i class="bi bi-tools display-1 text-muted"></i>
-                    <h4 class="mt-3 text-muted">Coming Soon</h4>
-                    <p class="text-muted">Plan maintenance functionality will be implemented here</p>
+        <!-- Maintenance Plans Card -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h5 class="card-title">
+                                <i class="bi bi-calendar-check text-primary"></i> Maintenance Plans
+                            </h5>
+                            <p class="card-text text-muted mb-0">Create and manage maintenance plans</p>
+                        </div>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('maintenance_plan.list_plans') }}" class="btn btn-primary">
+                            <i class="bi bi-list-ul"></i> View All Plans
+                        </a>
+                        <a href="{{ url_for('maintenance_plan.create_plan') }}" class="btn btn-outline-primary">
+                            <i class="bi bi-plus-circle"></i> Create New Plan
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Planning Tools Card -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h5 class="card-title">
+                                <i class="bi bi-graph-up text-success"></i> Planning Tools
+                            </h5>
+                            <p class="card-text text-muted mb-0">Schedule and assign maintenance</p>
+                        </div>
+                    </div>
+                    <div class="card-body text-center py-3">
+                        <p class="text-muted mb-0">Coming Soon</p>
+                    </div>
                 </div>
             </div>
         </div>

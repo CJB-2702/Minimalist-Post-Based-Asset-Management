@@ -101,6 +101,14 @@ def init_app(app):
         except ImportError as e:
             logger.debug(f"Maintenance search utilities blueprint not available: {e}")
         
+        # Register maintenance plan planning routes
+        try:
+            from .maintenance.planning.maintenance_plan_routes import bp as maintenance_plan_bp
+            app.register_blueprint(maintenance_plan_bp, url_prefix='/maintenance')
+            logger.info("Registered maintenance plan planning blueprint")
+        except ImportError as e:
+            logger.debug(f"Maintenance plan planning blueprint not available: {e}")
+        
         # Try to register sub-blueprints if they exist
         try:
             from .maintenance import (

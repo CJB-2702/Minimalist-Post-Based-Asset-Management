@@ -185,7 +185,7 @@ class MaintenanceFactory:
         Raises:
             ValueError: If maintenance plan not found or invalid
         """
-        from app.data.maintenance.base.maintenance_plans import MaintenancePlan
+        from app.data.maintenance.planning.maintenance_plans import MaintenancePlan
         
         maintenance_plan = MaintenancePlan.query.get_or_404(maintenance_plan_id)
         

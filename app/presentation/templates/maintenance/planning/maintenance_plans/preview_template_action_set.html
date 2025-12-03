@@ -1,0 +1,91 @@
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="bi bi-eye"></i> Template Preview: {{ template_action_set.task_name }}
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <dl class="row mb-0">
+                    <dt class="col-sm-5">Task Name:</dt>
+                    <dd class="col-sm-7">{{ template_action_set.task_name }}</dd>
+                    
+                    <dt class="col-sm-5">Description:</dt>
+                    <dd class="col-sm-7">{{ template_action_set.description or 'No description' }}</dd>
+                    
+                    <dt class="col-sm-5">Estimated Hours:</dt>
+                    <dd class="col-sm-7">{{ template_action_set.estimated_duration or 'N/A' }}</dd>
+                </dl>
+            </div>
+            <div class="col-md-6">
+                <dl class="row mb-0">
+                    
+                    <dt class="col-sm-5">Action Items:</dt>
+                    <dd class="col-sm-7">
+                        <span class="badge bg-primary">{{ template_action_items|length }}</span>
+                    </dd>
+                    
+                    <dt class="col-sm-5">Status:</dt>
+                    <dd class="col-sm-7">
+                        {% if template_action_set.is_active %}
+                            <span class="badge bg-success">Active</span>
+                        {% else %}
+                            <span class="badge bg-warning">Inactive</span>
+                        {% endif %}
+                    </dd>
+                </dl>
+            </div>
+        </div>
+        
+        {% if template_action_items %}
+        <hr>
+        <h6>Action Items ({{ template_action_items|length }})</h6>
+        <div class="table-responsive">
+            <table class="table table-sm table-striped">
+                <thead>
+                    <tr>
+                        <th>Order</th>
+                        <th>Action Name</th>
+                        <th>Description</th>
+                        <th>Required</th>
+                        <th>Est. Duration</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in template_action_items %}
+                    <tr>
+                        <td>
+                            <span class="badge bg-secondary">#{{ item.sequence_order }}</span>
+                        </td>
+                        <td><strong>{{ item.action_name }}</strong></td>
+                        <td>
+                            <small class="text-muted">
+                                {{ item.description or 'No description' }}
+                            </small>
+                        </td>
+                        <td>
+                            {% if item.is_required %}
+                                <span class="badge bg-success">Required</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Optional</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if item.estimated_duration %}
+                                {{ item.estimated_duration }}h
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted">No action items in this template.</p>
+        {% endif %}
+    </div>
+</div>
+

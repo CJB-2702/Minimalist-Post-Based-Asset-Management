@@ -421,8 +421,9 @@ def _insert_template_action_tools(tools_data, system_user_id):
 
 def _insert_maintenance_plans(plans_data, system_user_id):
     """Insert maintenance plans"""
-    from app.data.maintenance.base.maintenance_plans import MaintenancePlan
+    from app.data.maintenance.planning.maintenance_plans import MaintenancePlan
     from app.data.core.asset_info.asset_type import AssetType
+    from app.data.core.asset_info.make_model import MakeModel
     from app.data.maintenance.templates.template_action_sets import TemplateActionSet
     
     for plan_data in plans_data:
@@ -436,6 +437,21 @@ def _insert_maintenance_plans(plans_data, system_user_id):
                 logger.warning(f"Asset type '{asset_type_name}' not found")
                 continue
         
+        # Handle make_model_name reference (format: "Toyota Corolla")
+        if 'make_model_name' in plan_data:
+            make_model_name = plan_data.pop('make_model_name')
+            # Split by space, first part is make, rest is model
+            parts = make_model_name.split(' ', 1)
+            if len(parts) == 2:
+                make, model = parts
+                make_model = MakeModel.query.filter_by(make=make, model=model).first()
+                if make_model:
+                    plan_data['model_id'] = make_model.id
+                else:
+                    logger.warning(f"Make/Model '{make_model_name}' not found")
+            else:
+                logger.warning(f"Invalid make_model_name format: '{make_model_name}' (expected 'Make Model')")
+        
         # Handle template_action_set reference
         if 'template_action_set_task_name' in plan_data:
             task_name = plan_data.pop('template_action_set_task_name')
@@ -445,6 +461,29 @@ def _insert_maintenance_plans(plans_data, system_user_id):
             else:
                 logger.warning(f"Template action set '{task_name}' not found")
                 continue
+        
+        # Convert frequency_type from display format to database format
+        if 'frequency_type' in plan_data:
+            freq_type = plan_data['frequency_type']
+            if freq_type == 'Time-based':
+                # Check if delta_hours exists, if so use 'hours', otherwise 'days'
+                if 'delta_hours' in plan_data and plan_data.get('delta_hours'):
+                    plan_data['frequency_type'] = 'hours'
+                    # Convert delta_hours to delta_days if needed
+                    if 'delta_days' not in plan_data or not plan_data.get('delta_days'):
+                        plan_data['delta_days'] = plan_data.get('delta_hours', 0) / 24
+                else:
+                    plan_data['frequency_type'] = 'days'
+            elif freq_type.startswith('Meter'):
+                # Extract meter number (e.g., "Meter 1" -> "meter1")
+                meter_num = freq_type.split()[-1] if len(freq_type.split()) > 1 else '1'
+                plan_data['frequency_type'] = f'meter{meter_num}'
+        
+        # Remove delta_hours if it exists (we use delta_days for time-based)
+        if 'delta_hours' in plan_data:
+            delta_hours = plan_data.pop('delta_hours')
+            if 'delta_days' not in plan_data or not plan_data.get('delta_days'):
+                plan_data['delta_days'] = delta_hours / 24
         
         MaintenancePlan.find_or_create_from_dict(
             plan_data,
@@ -463,7 +502,7 @@ def _insert_maintenance_action_sets(events_data, system_user_id):
     """
     from app.buisness.maintenance.factories.maintenance_factory import MaintenanceFactory
     from app.data.core.asset_info.asset import Asset
-    from app.data.maintenance.base.maintenance_plans import MaintenancePlan
+    from app.data.maintenance.planning.maintenance_plans import MaintenancePlan
     from app.data.maintenance.templates.template_action_sets import TemplateActionSet
     
     for event_data in events_data:

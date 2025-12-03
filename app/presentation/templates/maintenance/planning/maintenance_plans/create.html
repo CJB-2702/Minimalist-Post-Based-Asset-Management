@@ -1,0 +1,349 @@
+{% extends "base.html" %}
+
+{% block title %}Create Maintenance Plan - Asset Management System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Create Maintenance Plan</h1>
+            <div>
+                <a href="{{ url_for('maintenance_plan.list_plans') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Plans
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-10 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Maintenance Plan Information</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <!-- Basic Information -->
+                    <h6 class="mb-3">Basic Information</h6>
+                    
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Plan Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="name" name="name" 
+                               value="{{ request.form.get('name', '') }}" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3">{{ request.form.get('description', '') }}</textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="asset_type_id" class="form-label">Asset Type <span class="text-danger">*</span></label>
+                                <select class="form-select" id="asset_type_id" name="asset_type_id" required>
+                                    <option value="">Select Asset Type</option>
+                                    {% for asset_type in asset_types %}
+                                    <option value="{{ asset_type.id }}" 
+                                            {% if request.form.get('asset_type_id')|int == asset_type.id %}selected{% endif %}>
+                                        {{ asset_type.name }}
+                                        {% if asset_type.category %}
+                                            ({{ asset_type.category }})
+                                        {% endif %}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="model_id" class="form-label">Model</label>
+                                <select class="form-select" id="model_id" name="model_id">
+                                    <option value="">All Models</option>
+                                    {% for make_model in make_models %}
+                                    <option value="{{ make_model.id }}" 
+                                            {% if request.form.get('model_id')|int == make_model.id %}selected{% endif %}>
+                                        {{ make_model.make }} {{ make_model.model }}
+                                        {% if make_model.year %} ({{ make_model.year }}){% endif %}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">Leave blank to apply to all models of the selected asset type.</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="status" class="form-label">Status <span class="text-danger">*</span></label>
+                        <select class="form-select" id="status" name="status" required>
+                            <option value="Active" {% if request.form.get('status', 'Active') == 'Active' %}selected{% endif %}>Active</option>
+                            <option value="Inactive" {% if request.form.get('status') == 'Inactive' %}selected{% endif %}>Inactive</option>
+                        </select>
+                    </div>
+                    
+                    <hr>
+                    
+                    <!-- Template Selection -->
+                    <h6 class="mb-3">Maintenance Template</h6>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Template Action Set <span class="text-danger">*</span></label>
+                        
+                        <!-- Hidden input for form submission -->
+                        <input type="hidden" id="template_action_set_id" name="template_action_set_id" 
+                               value="{{ request.form.get('template_action_set_id', '') }}" required>
+                        
+                        <!-- Search Bar -->
+                        <div class="mb-3">
+                            <div class="input-group">
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="templateSearch" 
+                                       placeholder="Search templates by name or description..." 
+                                       value=""
+                                       name="search">
+                                <button class="btn btn-primary" 
+                                        type="button"
+                                        id="templateSearchButton"
+                                        hx-get="{{ url_for('maintenance_plan.search_template_action_sets') }}"
+                                        hx-target="#template-action-sets-results"
+                                        hx-swap="innerHTML"
+                                        hx-include="#templateSearch">
+                                    <i class="bi bi-search"></i> Search
+                                </button>
+                            </div>
+                            <small class="text-muted">Enter search term and click Search to filter templates</small>
+                        </div>
+                        
+                        <!-- Template Action Sets List -->
+                        <div class="mb-3">
+                            <div class="list-group" style="max-height: 300px; overflow-y: auto;" id="template-action-sets-results">
+                                {% if template_action_sets %}
+                                    {% for template_set in template_action_sets %}
+                                    <div class="list-group-item action-item" 
+                                         data-template-set-id="{{ template_set.id }}" 
+                                         style="cursor: pointer;"
+                                         onclick="selectTemplateForPlan({{ template_set.id }})">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <h6 class="mb-1">{{ template_set.task_name }}</h6>
+                                                <small class="text-muted">
+                                                    {% if template_set.description %}
+                                                        {{ template_set.description[:100] }}{% if template_set.description|length > 100 %}...{% endif %}
+                                                    {% else %}
+                                                        Template with {{ template_set.template_action_items|length }} actions
+                                                    {% endif %}
+                                                </small>
+                                            </div>
+                                            <span class="badge bg-primary">{{ template_set.template_action_items|length }} actions</span>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="list-group-item text-muted">No templates available</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Template Preview -->
+                        <div id="template-preview-container">
+                            <!-- Preview will be loaded here via HTMX when template is selected -->
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <!-- Frequency Configuration -->
+                    <h6 class="mb-3">Frequency Configuration</h6>
+                    
+                    <div class="mb-3">
+                        <label for="frequency_type" class="form-label">Frequency Type <span class="text-danger">*</span></label>
+                        <select class="form-select" id="frequency_type" name="frequency_type" required>
+                            <option value="">Select Frequency Type</option>
+                            <option value="days" {% if request.form.get('frequency_type') == 'days' %}selected{% endif %}>Days</option>
+                            <option value="meter1" {% if request.form.get('frequency_type') == 'meter1' %}selected{% endif %}>Meter 1</option>
+                            <option value="meter2" {% if request.form.get('frequency_type') == 'meter2' %}selected{% endif %}>Meter 2</option>
+                            <option value="meter3" {% if request.form.get('frequency_type') == 'meter3' %}selected{% endif %}>Meter 3</option>
+                            <option value="meter4" {% if request.form.get('frequency_type') == 'meter4' %}selected{% endif %}>Meter 4</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Delta fields - shown based on frequency type -->
+                    <div id="delta_days_section" class="mb-3" style="display: {% if request.form.get('frequency_type') == 'days' %}block{% else %}none{% endif %};">
+                        <label for="delta_days" class="form-label">Delta Days</label>
+                        <input type="number" class="form-control" id="delta_days" name="delta_days" 
+                               value="{{ request.form.get('delta_days', '') }}" step="0.01" min="0">
+                        <div class="form-text">Number of days between maintenance.</div>
+                    </div>
+                    
+                    <div id="delta_m1_section" class="mb-3" style="display: {% if request.form.get('frequency_type') == 'meter1' %}block{% else %}none{% endif %};">
+                        <label for="delta_m1" class="form-label">Delta Meter 1</label>
+                        <input type="number" class="form-control" id="delta_m1" name="delta_m1" 
+                               value="{{ request.form.get('delta_m1', '') }}" step="0.01" min="0">
+                        <div class="form-text">Meter 1 reading delta between maintenance.</div>
+                    </div>
+                    
+                    <div id="delta_m2_section" class="mb-3" style="display: {% if request.form.get('frequency_type') == 'meter2' %}block{% else %}none{% endif %};">
+                        <label for="delta_m2" class="form-label">Delta Meter 2</label>
+                        <input type="number" class="form-control" id="delta_m2" name="delta_m2" 
+                               value="{{ request.form.get('delta_m2', '') }}" step="0.01" min="0">
+                        <div class="form-text">Meter 2 reading delta between maintenance.</div>
+                    </div>
+                    
+                    <div id="delta_m3_section" class="mb-3" style="display: {% if request.form.get('frequency_type') == 'meter3' %}block{% else %}none{% endif %};">
+                        <label for="delta_m3" class="form-label">Delta Meter 3</label>
+                        <input type="number" class="form-control" id="delta_m3" name="delta_m3" 
+                               value="{{ request.form.get('delta_m3', '') }}" step="0.01" min="0">
+                        <div class="form-text">Meter 3 reading delta between maintenance.</div>
+                    </div>
+                    
+                    <div id="delta_m4_section" class="mb-3" style="display: {% if request.form.get('frequency_type') == 'meter4' %}block{% else %}none{% endif %};">
+                        <label for="delta_m4" class="form-label">Delta Meter 4</label>
+                        <input type="number" class="form-control" id="delta_m4" name="delta_m4" 
+                               value="{{ request.form.get('delta_m4', '') }}" step="0.01" min="0">
+                        <div class="form-text">Meter 4 reading delta between maintenance.</div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('maintenance_plan.list_plans') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary" id="submitButton" disabled>
+                            <i class="bi bi-check-circle"></i> Create Maintenance Plan
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Enable Enter key to trigger search
+    const templateSearchInput = document.getElementById('templateSearch');
+    const templateSearchButton = document.getElementById('templateSearchButton');
+    if (templateSearchInput && templateSearchButton) {
+        templateSearchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                templateSearchButton.click();
+            }
+        });
+    }
+    
+    // Check if submit button should be enabled
+    function checkSubmitButton() {
+        const submitButton = document.getElementById('submitButton');
+        const templateInput = document.getElementById('template_action_set_id');
+        const frequencyTypeSelect = document.getElementById('frequency_type');
+        
+        if (submitButton && templateInput && frequencyTypeSelect) {
+            const hasTemplate = templateInput.value && templateInput.value !== '';
+            const hasFrequencyType = frequencyTypeSelect.value && frequencyTypeSelect.value !== '';
+            
+            if (hasTemplate && hasFrequencyType) {
+                submitButton.disabled = false;
+                submitButton.classList.remove('btn-secondary');
+                submitButton.classList.add('btn-primary');
+            } else {
+                submitButton.disabled = true;
+                submitButton.classList.remove('btn-primary');
+                submitButton.classList.add('btn-secondary');
+            }
+        }
+    }
+    
+    // Check on page load (button starts disabled)
+    checkSubmitButton();
+    
+    // Check when frequency type changes
+    const frequencyTypeSelect = document.getElementById('frequency_type');
+    const deltaDaysSection = document.getElementById('delta_days_section');
+    const deltaM1Section = document.getElementById('delta_m1_section');
+    const deltaM2Section = document.getElementById('delta_m2_section');
+    const deltaM3Section = document.getElementById('delta_m3_section');
+    const deltaM4Section = document.getElementById('delta_m4_section');
+    
+    frequencyTypeSelect.addEventListener('change', function() {
+        // Hide all delta sections
+        deltaDaysSection.style.display = 'none';
+        deltaM1Section.style.display = 'none';
+        deltaM2Section.style.display = 'none';
+        deltaM3Section.style.display = 'none';
+        deltaM4Section.style.display = 'none';
+        
+        // Show relevant section
+        if (this.value === 'days') {
+            deltaDaysSection.style.display = 'block';
+        } else if (this.value === 'meter1') {
+            deltaM1Section.style.display = 'block';
+        } else if (this.value === 'meter2') {
+            deltaM2Section.style.display = 'block';
+        } else if (this.value === 'meter3') {
+            deltaM3Section.style.display = 'block';
+        } else if (this.value === 'meter4') {
+            deltaM4Section.style.display = 'block';
+        }
+        
+        // Check submit button state
+        checkSubmitButton();
+    });
+    
+    // Make checkSubmitButton available globally
+    window.checkSubmitButton = checkSubmitButton;
+});
+
+// Template selection function
+function selectTemplateForPlan(templateSetId) {
+    // Remove selected class from all items
+    document.querySelectorAll('[data-template-set-id]').forEach(item => {
+        item.classList.remove('selected');
+        item.style.backgroundColor = '';
+    });
+    
+    // Add selected class
+    const selectedItem = document.querySelector(`[data-template-set-id="${templateSetId}"]`);
+    if (selectedItem) {
+        selectedItem.classList.add('selected');
+        selectedItem.style.backgroundColor = '#cfe2ff';
+    }
+    
+    // Update hidden input
+    document.getElementById('template_action_set_id').value = templateSetId;
+    
+    // Load template preview
+    loadTemplatePreview(templateSetId);
+    
+    // Check submit button state
+    if (window.checkSubmitButton) {
+        window.checkSubmitButton();
+    }
+}
+
+// Load template preview via HTMX
+function loadTemplatePreview(templateSetId) {
+    const previewContainer = document.getElementById('template-preview-container');
+    if (!previewContainer) return;
+    
+    // Create preview div if it doesn't exist
+    let previewDiv = document.getElementById('template-preview');
+    if (!previewDiv) {
+        previewDiv = document.createElement('div');
+        previewDiv.id = 'template-preview';
+        previewContainer.appendChild(previewDiv);
+    }
+    
+    // Load preview via HTMX
+    const url = `{{ url_for('maintenance_plan.preview_template_action_set', template_action_set_id=0) }}`.replace('0', templateSetId);
+    htmx.ajax('GET', url, {
+        target: previewDiv,
+        swap: 'innerHTML'
+    });
+}
+</script>
+{% endblock %}
+

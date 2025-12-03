@@ -23,7 +23,7 @@ def build_models():
     # Import base models
     import app.data.maintenance.base.actions
     import app.data.maintenance.base.maintenance_action_sets
-    import app.data.maintenance.base.maintenance_plans
+    import app.data.maintenance.planning.maintenance_plans
     import app.data.maintenance.base.maintenance_delays
     import app.data.maintenance.base.part_demands
     import app.data.maintenance.base.action_tools

@@ -22,7 +22,7 @@ from app.data.core.user_info.user import User
 from app.data.maintenance.base.actions import Action
 from app.data.maintenance.base.action_tools import ActionTool
 from app.data.maintenance.base.maintenance_delays import MaintenanceDelay
-from app.data.maintenance.base.maintenance_plans import MaintenancePlan
+from app.data.maintenance.planning.maintenance_plans import MaintenancePlan
 from app.data.maintenance.base.part_demands import PartDemand
 from app.data.maintenance.proto_templates.proto_actions import ProtoActionItem
 from app.services.maintenance.assign_monitor_service import AssignMonitorService

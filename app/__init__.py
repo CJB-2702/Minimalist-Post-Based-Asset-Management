@@ -82,7 +82,7 @@ def create_app():
         from app.data.maintenance.templates.template_action_sets import TemplateActionSet
         from app.data.maintenance.templates.template_actions import TemplateActionItem
         from app.data.maintenance.proto_templates.proto_actions import ProtoActionItem
-        from app.data.maintenance.base.maintenance_plans import MaintenancePlan
+        from app.data.maintenance.planning.maintenance_plans import MaintenancePlan
         from app.data.maintenance.base.maintenance_action_sets import MaintenanceActionSet
         from app.data.maintenance.base.actions import Action
         from app.data.maintenance.base.part_demands import PartDemand
