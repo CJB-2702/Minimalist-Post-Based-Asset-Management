@@ -1,33 +1,29 @@
-# Asset Management System
+# EBAMS - Event Based Asset Maintenance System
 
-A comprehensive asset management system built with Flask, SQLAlchemy, and HTMX. This application manages assets, maintenance, dispatch, supply chain, and planning operations with minimal JavaScript and CSS.
+A comprehensive fleet and asset management system designed to streamline operations and maximize uptime. EBAMS provides a complete solution for managing assets, maintenance workflows, inventory, dispatching, and operational planning.
 
-## Features
+This is a temporary demo. Data is deleted every day on server reset. 
+Login with Username and password (admin,admin)
 
-- **Asset Management**: Track physical assets with types, models, and locations
-- **Maintenance System**: Schedule and track maintenance events with templates
-- **Dispatch System**: Manage work orders and assignments
-- **Inventory Management**: Track parts, stock levels, and movements
-- **Planning System**: Automated maintenance scheduling
-- **User Management**: Role-based access control with system user initialization
 
-## Technology Stack
 
-- **Backend**: Flask with SQLAlchemy ORM
-- **Frontend**: HTMX for dynamic interactions, minimal Alpine.js
-- **Database**: SQLite (development)
-- **Authentication**: Flask-Login
-- **Styling**: Minimal CSS, focus on functionality
+## 🚀 Quick Start
 
-## Installation
+### Prerequisites
+
+- Python 3.8 or higher
+- pip (Python package installer)
+- Git
+
+### Installation
 
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
-   cd asset_management
+   cd "Public Asset Managment"
    ```
 
-2. **Create a virtual environment**
+2. **Create and activate virtual environment**
    ```bash
    python -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
@@ -38,158 +34,320 @@ A comprehensive asset management system built with Flask, SQLAlchemy, and HTMX. 
    pip install -r requirements.txt
    ```
 
-4. **Build the database**
-   ```bash
-   # Build all phases (default)
-   python app.py --build-only
-   
-   # Or build specific phases
-   python app.py --phase1 --build-only  # Core foundation only
-   python app.py --phase2 --build-only  # Core + asset details
-   ```
-
-5. **Run the application**
+4. **Run the application**
    ```bash
    python app.py
    ```
 
+The application will automatically:
+- Initialize the database with all required tables
+- Create critical system data
+- Insert debug/demo data for testing
+- Start the development server at `http://localhost:5000`
+
+### First Login
+
+After starting the application, navigate to `http://localhost:5000/login` and use the default credentials:
+
+- **Username**: `admin`
+- **Password**: `password`
+
+> ⚠️ **Important**: Change the default admin password after first login in production environments.
+
+## 📋 Application Overview
+
+EBAMS is built on an event-driven architecture that tracks all changes and activities across your asset fleet. The system is organized into several integrated modules:
+
+### Core Modules
+
+- **Asset Management** - Track assets with detailed specifications, history, and relationships
+- **Maintenance System** - Schedule and execute maintenance with customizable workflows
+- **Inventory Management** - Manage parts, stock levels, locations, and procurement
+- **Dispatching** - Assign and track work orders across your fleet
+- **Reporting & Analytics** - Gain insights into asset performance and operational efficiency
+
+## 🏗️ Application Structure
+
+```
+Public Asset Managment/
+├── app/
+│   ├── data/                    # Database models (SQLAlchemy)
+│   │   ├── core/               # Core entities (User, Location, Asset, Event)
+│   │   ├── assets/             # Asset detail models
+│   │   ├── maintenance/        # Maintenance system models
+│   │   ├── inventory/          # Inventory and procurement models
+│   │   └── dispatching/        # Dispatch and work order models
+│   │
+│   ├── buisness/               # Business logic layer
+│   │   ├── core/               # Core business contexts
+│   │   ├── assets/             # Asset management logic
+│   │   ├── maintenance/        # Maintenance workflow logic
+│   │   ├── inventory/          # Inventory management logic
+│   │   └── dispatching/        # Dispatching logic
+│   │
+│   ├── services/               # Application services
+│   │   ├── core/               # Core services
+│   │   ├── assets/             # Asset services
+│   │   ├── inventory/          # Inventory services
+│   │   └── maintenance/        # Maintenance services
+│   │
+│   ├── presentation/           # Web interface layer
+│   │   ├── routes/             # Flask route handlers
+│   │   ├── templates/          # Jinja2 HTML templates
+│   │   └── static/             # CSS, JavaScript, and static assets
+│   │
+│   ├── debug/                  # Debug and test data utilities
+│   ├── utils/                  # Utility functions and helpers
+│   ├── __init__.py            # Flask app factory
+│   ├── auth.py                # Authentication routes
+│   └── build.py               # Database builder
+│
+├── instance/                   # Instance-specific files (database, uploads)
+├── logs/                      # Application logs
+├── app.py                     # Application entry point
+├── requirements.txt           # Python dependencies
+├── Dockerfile                 # Docker container definition
+└── docker-compose.yml         # Docker Compose configuration
+```
+
+### Architecture Layers
+
+1. **Data Layer** (`app/data/`)
+   - SQLAlchemy models defining database schema
+   - Virtual models for computed properties
+   - Organized by business domain
+
+2. **Business Layer** (`app/buisness/`)
+   - Business logic and validation
+   - Context managers for complex operations
+   - Factories for object creation
+
+3. **Service Layer** (`app/services/`)
+   - Application services and orchestration
+   - Cross-domain operations
+   - API-like interfaces
+
+4. **Presentation Layer** (`app/presentation/`)
+   - Flask routes and blueprints
+   - HTML templates with HTMX
+   - RESTful endpoints
+
+## 🔧 Technology Stack
+
+- **Backend Framework**: Flask 2.x
+- **ORM**: SQLAlchemy with Flask-SQLAlchemy
+- **Database**: SQLite (development), supports PostgreSQL/MySQL
+- **Authentication**: Flask-Login with password hashing
+- **Frontend**: 
+  - HTMX for dynamic interactions
+  - Bootstrap 5 for responsive UI
+  - Alpine.js for lightweight reactivity
+  - Minimal custom JavaScript
+- **Logging**: Python logging with JSON structured logs
+
+## 🎯 Key Features
+
+### Asset Management
+- Create and track assets with customizable types
+- Link assets to makes/models with automatic detail population
+- Track asset parent-child relationships
+- Complete audit trail of all changes
+
+### Maintenance System
+- Event-based maintenance tracking
+- Template-based maintenance workflows
+- Action items with checklist functionality
+- Part and tool demand tracking
+- Technician, manager, and fleet portals
+
+### Inventory Management
+- Multi-location inventory tracking
+- Purchase order management
+- Arrival processing and receiving
+- Part linking to maintenance events
+- Stock level monitoring
+
+### Dispatching
+- Work order creation and assignment
+- Status tracking with history
+- Asset-dispatch relationships
+- Outcome recording
+
+## 📊 Database Build System
+
+EBAMS uses a phased database build system for flexibility:
+
+```bash
+# Build all phases (recommended)
+python app.py
+
+# Build specific phases
+python app.py --phase1    # Core foundation only
+python app.py --phase2    # Core + asset details
+python app.py --phase3    # Core + asset details + auto-creation
+python app.py --phase4    # Full system with UI
+
+# Build without demo data
+python app.py --no-debug-data
+
+# Create tables only (no data)
+python app.py --build-only
+```
+
+### Build Phases
+
+- **Phase 1**: Core foundation tables (User, Location, Asset, Event)
+- **Phase 2**: Asset detail tables and templates
+- **Phase 3**: Automatic detail creation on asset/model creation
+- **Phase 4**: Full system including maintenance, inventory, and dispatching
+- **Phase 5**: Maintenance system tables
+- **Phase 6**: Inventory and purchasing tables
+
+## 🐳 Docker Deployment
+
+### Using Docker Compose (Recommended)
+
+```bash
+# Start the application
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop the application
+docker-compose down
+```
+
 The application will be available at `http://localhost:5000`
 
-## Project Structure
+### Container Startup Process
 
+Every time the container starts, it automatically:
+1. Runs `z_clear_data.py` to clean up:
+   - Python cache files (`.pyc`, `__pycache__`)
+   - Log files (`.log`)
+   - **All database files** (`.db`, `.sqlite`, `.sqlite3`) - **ALL DATA WILL BE LOST**
+   - **All attachment files** in `instance/large_attachments/` - **ALL ATTACHMENTS WILL BE LOST**
+2. Starts the Flask application with a fresh database
+
+⚠️ **WARNING**: This setup DELETES ALL DATABASE DATA AND ATTACHMENTS on every container start!
+This is ideal for development/testing environments that need a fresh start daily.
+For production, modify `docker-entrypoint.sh` to skip the cleanup step.
+
+### Manual Docker Build
+
+```bash
+# Build image
+docker build -t ebams:latest .
+
+# Run container
+docker run -p 5000:5000 -v $(pwd)/instance:/app/instance ebams:latest
 ```
-asset_management/
-├── app/
-│   ├── models/           # Database models organized by domain
-│   │   ├── core/         # Core entities (User, Location, etc.)
-│   │   ├── assets/       # Asset management models
-│   │   ├── maintenance/  # Maintenance system models
-│   │   ├── inventory/    # Inventory management models
-│   │   ├── dispatch/     # Dispatch system models
-│   │   ├── planning/     # Planning system models
-│   │   └── communication/ # Communication models
-│   ├── routes/           # Flask routes organized by domain
-│   ├── templates/        # Jinja2 templates
-│   ├── static/           # Static files (CSS, JS, uploads)
-│   ├── services/         # Business logic services
-│   └── utils/            # Utility functions
-├── migrations/           # Database migrations
-├── tests/               # Test files
-├── requirements.txt     # Python dependencies
-├── config.py           # Configuration settings
-└── run.py              # Application entry point
-```
 
-## Development Phases
-
-The system is developed in phases:
-
-- **Phase 1**: Core Foundation (✅ Complete) - Core models, system initialization
-- **Phase 2**: Asset Detail Tables (🔄 In Progress) - Extended asset information
-- **Phase 3**: Maintenance & Operations (📋 Planned) - Maintenance system
-- **Phase 4**: Advanced Features (📋 Planned) - Advanced functionality
-
-## Key Models
-- **User**: User management with role-based access
-- **UserCreatedBase**: Abstract base class for audit trails
-- **SystemUser**: Special user for initial data creation
-- **MajorLocation**: Geographic locations
-- **StatusSet**: Reusable status configurations
-- **Event**: Activity tracking
-
-### Asset Models
-- **Asset**: Main asset entity
-- **AssetType**: Asset categorization
-- **MakeModel**: Manufacturer and model information
-
-### Maintenance Models
-- **MaintenanceEvent**: Scheduled and reactive maintenance
-- **TemplateActions**: Reusable maintenance procedures
-- **Action**: Individual maintenance tasks
-- **MaintenanceStatus**: Status tracking
-
-### Inventory Models
-- **Part**: Inventory items
-- **Inventory**: Stock management
-- **PartDemand**: Parts needed for maintenance
-- **PurchaseOrder**: Procurement management
-
-### Dispatch Models
-- **Dispatch**: Work orders and assignments
-- **DispatchStatus**: Status tracking
-- **DispatchChangeHistory**: Audit trail
-
-## User Management
-
-The system implements a hierarchical user management system:
-
-1. **System User**: Special user (ID 1) that handles all initial data creation
-2. **Admin User**: First human user with full system access
-3. **Regular Users**: Role-based access (Manager, Technician, Viewer)
+## 🔐 User Management
 
 ### User Roles
-- **Admin**: Full system access, user management
-- **Manager**: Asset management, maintenance planning
-- **Technician**: Maintenance execution, inventory access
-- **Viewer**: Read-only access
 
-## Database Design
+- **System User** (ID: 1) - Internal system account for data initialization
+- **Admin** - Full system access, user management, configuration
+- **Manager** - Asset management, maintenance planning, reporting
+- **Technician** - Maintenance execution, inventory access
+- **Viewer** - Read-only access to data
 
-The system follows these design principles:
+### Creating Users
 
-- **Atomic Models**: Each table has its own dedicated model file
-- **Audit Trail**: All user-created entities track creation and modification
-- **Foreign Key Relationships**: Proper referential integrity
-- **System Initialization**: All seed data created by system user
+Users can be created through:
+1. Web UI: Core Management → User Info → Users
+2. Python console: Using `User` model and `UserContext`
+3. Debug data: Automatically created with `--enable-debug-data`
 
-## HTMX Implementation
+## 📝 Development
 
-The application uses HTMX for dynamic interactions:
+### Adding New Features
 
-- **Form Handling**: Standard HTML forms with HTMX attributes
-- **Dynamic Content**: Real-time updates without page refresh
-- **Loading States**: Built-in loading indicators
-- **Error Handling**: Server-side validation and error display
+1. **Models** - Define in `app/data/<domain>/`
+2. **Business Logic** - Implement in `app/buisness/<domain>/`
+3. **Services** - Create in `app/services/<domain>/`
+4. **Routes** - Add to `app/presentation/routes/<domain>/`
+5. **Templates** - Create in `app/presentation/templates/<domain>/`
 
-## Development
+### Code Organization Principles
 
-### Adding New Models
+- **Atomic Models**: Each table has its own model file
+- **Domain-Driven Design**: Code organized by business domain
+- **Separation of Concerns**: Clear boundaries between layers
+- **Audit Trail**: All user actions tracked with created_by/modified_by
+- **HTMX-First**: Minimize JavaScript, use HTMX for dynamic behavior
 
-1. Create the model file in the appropriate domain folder
-2. Inherit from `UserCreatedBase` for user-created entities
-3. Add relationships and foreign keys
-4. Import the model in `app/models/__init__.py`
-
-### Adding New Routes
-
-1. Create route files in the appropriate domain folder
-2. Register blueprints in `app/__init__.py`
-3. Create corresponding templates
-4. Add navigation links in `base.html`
-
-### Database Migrations
+### Running Tests
 
 ```bash
-flask db init
-flask db migrate -m "Description of changes"
-flask db upgrade
+# Run all tests
+python -m pytest app/debug/
+
+# Run specific test file
+python app/debug/test_build_system.py
 ```
 
-## Testing
+## 📁 Key Directories
 
-Run tests with:
-```bash
-python -m pytest tests/
-```
+- `app/data/core/` - Core system models (User, Asset, Event, Location)
+- `app/presentation/templates/` - All HTML templates
+- `app/debug/data/` - JSON files with demo/debug data
+- `instance/` - SQLite database and uploaded files
+- `logs/` - Application and error logs
 
-## Contributing
+## 🔍 Logging
 
-1. Follow the existing code structure and patterns
-2. Use atomic models and proper separation of concerns
-3. Minimize JavaScript usage - prefer HTMX solutions
-4. Write tests for new functionality
-5. Update documentation as needed
+EBAMS uses structured JSON logging:
 
-## License
+- **Application logs**: `logs/asset_management.log`
+- **Error logs**: `logs/errors.log`
+- **Log levels**: DEBUG, INFO, WARNING, ERROR, CRITICAL
 
-This project is licensed under the MIT License. 
+View logs in real-time through the web interface: System → Log Viewer
+
+## ⚙️ Configuration
+
+Key configuration options in the Flask app:
+
+- `SECRET_KEY` - Session encryption key (auto-generated)
+- `SQLALCHEMY_DATABASE_URI` - Database connection string
+- `DEBUG` - Debug mode (enabled by default)
+- `HOST` - Server host (default: 127.0.0.1)
+- `PORT` - Server port (default: 5000)
+
+## 🤝 Contributing
+
+1. Follow the existing code structure and naming conventions
+2. Use type hints for function parameters and returns
+3. Add docstrings to classes and functions
+4. Test changes with debug data enabled
+5. Update documentation for new features
+
+## 📄 License
+
+This project is licensed under the MIT License.
+
+## 🆘 Support
+
+For issues, questions, or contributions:
+
+1. Check the System → Help page in the application
+2. Review the logs in System → Log Viewer
+3. Examine debug data in `app/debug/data/`
+4. Refer to model docstrings for data structure details
+
+## 🗺️ Roadmap
+
+- [ ] Advanced reporting and analytics dashboard
+- [ ] Mobile-responsive technician portal
+- [ ] Barcode/QR code scanning for assets and parts
+- [ ] Email notifications for maintenance events
+- [ ] REST API for external integrations
+- [ ] Multi-language support
+- [ ] Advanced scheduling and planning algorithms
+
+---
+
+Built with ❤️ for efficient fleet and asset management operations.

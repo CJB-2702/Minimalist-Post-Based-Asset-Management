@@ -9,7 +9,7 @@ from urllib.parse import urlparse
 from app.logger import get_logger
 from app import db
 
-from app.buisness.maintenance.base.maintenance_action_set_struct import MaintenanceActionSetStruct
+from app.buisness.maintenance.base.structs.maintenance_action_set_struct import MaintenanceActionSetStruct
 from app.buisness.maintenance.base.maintenance_context import MaintenanceContext
 from app.data.maintenance.base.actions import Action
 from app.buisness.core.event_context import EventContext
@@ -17,8 +17,8 @@ from app.buisness.maintenance.base.action_context import ActionContext
 import traceback 
 from app.data.maintenance.base.part_demands import PartDemand
 from app.data.maintenance.base.action_tools import ActionTool
-from app.data.core.supply.part import Part
-from app.data.core.supply.tool import Tool
+from app.data.core.supply.part_definition import PartDefinition
+from app.data.core.supply.tool_definition import ToolDefinition
 
 
 logger = get_logger("asset_management.routes.maintenance.action_managment")
@@ -128,7 +128,8 @@ def update_action_status(action_id):
             return redirect(url_for('maintenance_event.work_maintenance_event', event_id=event_id))
         
         # ===== BUSINESS LOGIC SECTION =====
-        maintenance_context.update_action_status(
+        action_orchestrator = maintenance_context.get_action_orchestrator()
+        comment_text = action_orchestrator.update_action_status(
             action_id=action_id,
             user_id=current_user.id,
             username=current_user.username,
@@ -142,6 +143,10 @@ def update_action_status(action_id):
             duplicate_part_demands=duplicate_part_demands,
             cancel_part_demands=cancel_part_demands
         )
+        
+        # Comments are now automatically added by MaintenanceActionOrchestrator
+        # Sync event status
+        maintenance_context._sync_event_status()
         
         flash(f'Action status updated to {new_status}', 'success')
         return redirect(url_for('maintenance_event.work_maintenance_event', event_id=event_id))
@@ -344,14 +349,19 @@ def edit_action(action_id):
             return redirect(url_for('maintenance_event.work_maintenance_event', event_id=event_id))
         
         # ===== BUSINESS LOGIC SECTION =====
-        # Delegate all business logic to MaintenanceContext
-        maintenance_context.edit_action(
+        # Delegate all business logic to action orchestrator
+        action_orchestrator = maintenance_context.get_action_orchestrator()
+        comment_text = action_orchestrator.edit_action(
             action_id=action_id,
             user_id=current_user.id,
             username=current_user.username,
             updates=updates,
             old_status=old_status
         )
+        
+        # Comments are now automatically added by MaintenanceActionOrchestrator
+        # Sync event status
+        maintenance_context._sync_event_status()
         
         flash('Action updated successfully', 'success')
         
@@ -444,7 +454,8 @@ def update_action_billable_hours(action_id):
         db.session.commit()
         
         # Auto-update MaintenanceActionSet billable hours if sum is greater
-        maintenance_context.update_actual_billable_hours_auto()
+        billable_hours_manager = maintenance_context.get_billable_hours_manager()
+        billable_hours_manager.auto_update_if_greater()
         
         flash('Billable hours updated', 'success')
         return redirect(url_for('maintenance_event.work_maintenance_event', event_id=event_id))
@@ -527,7 +538,7 @@ def create_part_demand(action_id):
         if struct.event_id:
             event_context = EventContext(struct.event_id)
             
-            part = Part.query.get(part_id)
+            part = PartDefinition.query.get(part_id)
             part_name = part.part_name if part else f"Part #{part_id}"
             comment_text = f"Part demand created: {part_name} x{quantity} by {current_user.username}"
             if notes:
@@ -596,7 +607,7 @@ def create_action_tool(action_id):
         
         # Verify tool exists
         
-        tool = Tool.query.get(tool_id)
+        tool = ToolDefinition.query.get(tool_id)
         if not tool:
             flash('Tool not found', 'error')
             return redirect(url_for('maintenance_event.render_edit_page', event_id=event_id))

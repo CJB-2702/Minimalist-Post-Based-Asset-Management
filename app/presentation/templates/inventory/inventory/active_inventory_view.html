@@ -1,0 +1,587 @@
+{% extends "base.html" %}
+
+{% block title %}Active Inventory{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="bi bi-inboxes text-primary"></i> Active Inventory
+                    </h1>
+                    <p class="text-muted mb-0">View and filter current inventory levels by part and location</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('inventory.index') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Inventory
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-funnel"></i> Filters</h5>
+                </div>
+                <div class="card-body">
+                    <form method="GET" action="{{ url_for('inventory.active_inventory_view') }}" class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Part Number</label>
+                            <input type="text" class="form-control" name="part_number" value="{{ current_filters.part_number }}" placeholder="Part number">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Part Name</label>
+                            <input type="text" class="form-control" name="part_name" value="{{ current_filters.part_name }}" placeholder="Part name">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Location</label>
+                            <select class="form-select" name="location_id">
+                                <option value="">All Locations</option>
+                                {% for loc in locations %}
+                                <option value="{{ loc.id }}" {% if current_filters.location_id == loc.id %}selected{% endif %}>{{ loc.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Storeroom</label>
+                            <select class="form-select" name="storeroom_id">
+                                <option value="">All Storerooms</option>
+                                {% for s in storerooms %}
+                                <option value="{{ s.id }}" {% if current_filters.storeroom_id == s.id %}selected{% endif %}>{{ s.room_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Search</label>
+                            <input type="text" class="form-control" name="search" value="{{ current_filters.search }}" placeholder="Part number or name">
+                        </div>
+
+                        <div class="col-12">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" name="low_stock_only" id="low_stock_only" value="1" {% if current_filters.low_stock_only %}checked{% endif %}>
+                                <label class="form-check-label" for="low_stock_only">Low Stock Only (0 < qty ≤ 10)</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" name="out_of_stock_only" id="out_of_stock_only" value="1" {% if current_filters.out_of_stock_only %}checked{% endif %}>
+                                <label class="form-check-label" for="out_of_stock_only">Out of Stock Only</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" name="has_stock_only" id="has_stock_only" value="1" {% if current_filters.has_stock_only %}checked{% endif %}>
+                                <label class="form-check-label" for="has_stock_only">Has Stock Only</label>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <button class="btn btn-primary" type="submit">
+                                <i class="bi bi-search"></i> Apply Filters
+                            </button>
+                            <a class="btn btn-outline-secondary" href="{{ url_for('inventory.active_inventory_view') }}">
+                                <i class="bi bi-x-circle"></i> Clear
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-box-seam"></i> Inventory Items
+                        <span class="badge bg-secondary">{{ pagination.total }} total</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if pagination.items %}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Part</th>
+                                    <th>Major Location</th>
+                                    <th>Storeroom</th>
+                                    <th>Location</th>
+                                    <th>Bin</th>
+                                    <th class="text-end">Qty On Hand</th>
+                                    <th class="text-end">Qty Allocated</th>
+                                    <th class="text-end">Available</th>
+                                    <th class="text-end">Avg Unit Cost</th>
+                                    <th>Last Movement</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for inv in pagination.items %}
+                                <tr class="{% if inv.quantity_on_hand <= 0 %}table-danger{% elif inv.quantity_on_hand <= 10 %}table-warning{% endif %}">
+                                    <td>
+                                        {% if inv.part %}
+                                        <div><strong>{{ inv.part.part_number }}</strong></div>
+                                        <div class="text-muted small">{{ inv.part.part_name }}</div>
+                                        {% else %}
+                                        <div><strong>Part #{{ inv.part_id }}</strong></div>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if inv.storeroom and inv.storeroom.major_location %}
+                                        {{ inv.storeroom.major_location.name }}
+                                        {% else %}
+                                        <span class="text-muted">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if inv.storeroom %}
+                                        {{ inv.storeroom.room_name }}
+                                        {% else %}
+                                        <span class="text-muted">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if inv.location %}
+                                        {{ inv.location.display_name or inv.location.location }}
+                                        {% else %}
+                                        <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if inv.bin %}
+                                        {{ inv.bin.bin_tag }}
+                                        {% else %}
+                                        <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <strong>{{ '%.2f'|format(inv.quantity_on_hand) }}</strong>
+                                    </td>
+                                    <td class="text-end">{{ '%.2f'|format(inv.quantity_allocated) }}</td>
+                                    <td class="text-end">
+                                        <strong>{{ '%.2f'|format(inv.quantity_on_hand - inv.quantity_allocated) }}</strong>
+                                    </td>
+                                    <td class="text-end">
+                                        {% if inv.unit_cost_avg %}
+                                        ${{ '%.2f'|format(inv.unit_cost_avg) }}
+                                        {% else %}
+                                        <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if inv.last_movement_date %}
+                                        {{ inv.last_movement_date.strftime('%Y-%m-%d %H:%M') }}
+                                        {% else %}
+                                        <span class="text-muted">Never</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-outline-primary" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#moveInventoryModal"
+                                                data-inventory-id="{{ inv.id }}"
+                                                data-part-number="{% if inv.part %}{{ inv.part.part_number }}{% else %}Part #{{ inv.part_id }}{% endif %}"
+                                                data-part-name="{% if inv.part %}{{ inv.part.part_name }}{% endif %}"
+                                                data-available-qty="{{ inv.quantity_on_hand - inv.quantity_allocated }}"
+                                                data-quantity-on-hand="{{ inv.quantity_on_hand }}"
+                                                data-source-major-location-id="{% if inv.storeroom and inv.storeroom.major_location %}{{ inv.storeroom.major_location.id }}{% endif %}"
+                                                data-source-storeroom-id="{% if inv.storeroom %}{{ inv.storeroom.id }}{% endif %}"
+                                                data-source-location="{% if inv.location %}{{ inv.location.location }}{% endif %}"
+                                                data-source-bin="{% if inv.bin %}{{ inv.bin.bin_tag }}{% endif %}">
+                                            <i class="bi bi-arrow-right"></i> Move
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    {% if pagination.pages > 1 %}
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination justify-content-center mt-3">
+                            {% if pagination.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('inventory.active_inventory_view', page=pagination.prev_num, part_id=current_filters.part_id, part_number=current_filters.part_number, part_name=current_filters.part_name, location_id=current_filters.location_id, storeroom_id=current_filters.storeroom_id, low_stock_only=current_filters.low_stock_only, out_of_stock_only=current_filters.out_of_stock_only, has_stock_only=current_filters.has_stock_only, search=current_filters.search) }}">Previous</a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">Previous</span>
+                            </li>
+                            {% endif %}
+
+                            {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                                {% if page_num %}
+                                    {% if page_num == pagination.page %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ page_num }}</span>
+                                    </li>
+                                    {% else %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('inventory.active_inventory_view', page=page_num, part_id=current_filters.part_id, part_number=current_filters.part_number, part_name=current_filters.part_name, location_id=current_filters.location_id, storeroom_id=current_filters.storeroom_id, low_stock_only=current_filters.low_stock_only, out_of_stock_only=current_filters.out_of_stock_only, has_stock_only=current_filters.has_stock_only, search=current_filters.search) }}">{{ page_num }}</a>
+                                    </li>
+                                    {% endif %}
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">…</span>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if pagination.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('inventory.active_inventory_view', page=pagination.next_num, part_id=current_filters.part_id, part_number=current_filters.part_number, part_name=current_filters.part_name, location_id=current_filters.location_id, storeroom_id=current_filters.storeroom_id, low_stock_only=current_filters.low_stock_only, out_of_stock_only=current_filters.out_of_stock_only, has_stock_only=current_filters.has_stock_only, search=current_filters.search) }}">Next</a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">Next</span>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                    {% else %}
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-info-circle"></i> No inventory items found matching the filters.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Move Inventory Modal -->
+<div class="modal fade" id="moveInventoryModal" tabindex="-1" aria-labelledby="moveInventoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="moveInventoryModalLabel">
+                    <i class="bi bi-arrow-right"></i> Move Inventory
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="moveInventoryForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Part:</strong></label>
+                        <div id="movePartInfo" class="text-muted"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Available Quantity:</strong></label>
+                        <div id="moveAvailableQty" class="text-muted"></div>
+                    </div>
+                    
+                    <input type="hidden" id="moveActiveInventoryId" name="active_inventory_id">
+                    
+                    <div class="mb-3">
+                        <label for="moveQuantity" class="form-label">Quantity to Move <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" id="moveQuantity" name="quantity" 
+                               step="0.01" min="0.01" required>
+                        <div class="form-text">Enter the quantity to move</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="moveMajorLocation" class="form-label">Major Location <span class="text-danger">*</span></label>
+                        <select class="form-select" id="moveMajorLocation" name="to_major_location_id" required>
+                            <option value="">Select Major Location</option>
+                            {% for loc in locations %}
+                            <option value="{{ loc.id }}">{{ loc.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="moveStoreroom" class="form-label">Storeroom <span class="text-danger">*</span></label>
+                        <select class="form-select" id="moveStoreroom" name="to_storeroom_id" required>
+                            <option value="">Select Storeroom</option>
+                            {% for s in storerooms %}
+                            <option value="{{ s.id }}" data-major-location-id="{{ s.major_location_id }}">{{ s.room_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="moveLocation" class="form-label">Location (Optional)</label>
+                        <input type="text" class="form-control" id="moveLocation" name="to_location" 
+                               placeholder="Enter location name or leave blank">
+                        <div class="form-text">Leave blank for unassigned location. Will be created if it doesn't exist.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="moveBin" class="form-label">Bin (Optional)</label>
+                        <input type="text" class="form-control" id="moveBin" name="to_bin" 
+                               placeholder="Enter bin tag or leave blank">
+                        <div class="form-text">Leave blank for unassigned bin. Requires a location. Will be created if it doesn't exist.</div>
+                    </div>
+                    
+                    <div id="moveErrorAlert" class="alert alert-danger d-none" role="alert"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-arrow-right"></i> Move Inventory
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('moveInventoryModal');
+    const form = document.getElementById('moveInventoryForm');
+    const errorAlert = document.getElementById('moveErrorAlert');
+    const partInfo = document.getElementById('movePartInfo');
+    const availableQty = document.getElementById('moveAvailableQty');
+    const quantityInput = document.getElementById('moveQuantity');
+    const majorLocationSelect = document.getElementById('moveMajorLocation');
+    const storeroomSelect = document.getElementById('moveStoreroom');
+    const locationInput = document.getElementById('moveLocation');
+    const binInput = document.getElementById('moveBin');
+    
+    // Store source location info for validation
+    let sourceStoreroomId = null;
+    let sourceLocation = null;
+    let sourceBin = null;
+    
+    // Filter storerooms based on selected major location
+    majorLocationSelect.addEventListener('change', function() {
+        const selectedMajorLocationId = this.value;
+        const options = storeroomSelect.querySelectorAll('option');
+        
+        options.forEach(option => {
+            if (option.value === '') {
+                option.style.display = '';
+            } else {
+                const optionMajorLocationId = option.getAttribute('data-major-location-id');
+                if (selectedMajorLocationId && optionMajorLocationId !== selectedMajorLocationId) {
+                    option.style.display = 'none';
+                } else {
+                    option.style.display = '';
+                }
+            }
+        });
+        
+        // Reset storeroom selection if it doesn't match
+        if (selectedMajorLocationId) {
+            const selectedStoreroomMajorLocation = storeroomSelect.options[storeroomSelect.selectedIndex]?.getAttribute('data-major-location-id');
+            if (selectedStoreroomMajorLocation && selectedStoreroomMajorLocation !== selectedMajorLocationId) {
+                storeroomSelect.value = '';
+            }
+        }
+    });
+    
+    // Validate bin requires location
+    binInput.addEventListener('blur', function() {
+        const binValue = this.value.trim();
+        const locationValue = locationInput.value.trim();
+        
+        if (binValue && !locationValue) {
+            this.setCustomValidity('Bin requires a location');
+            this.reportValidity();
+        } else {
+            this.setCustomValidity('');
+        }
+    });
+    
+    locationInput.addEventListener('blur', function() {
+        binInput.dispatchEvent(new Event('blur'));
+    });
+    
+    // Handle modal show event
+    modal.addEventListener('show.bs.modal', function(event) {
+        const button = event.relatedTarget;
+        const inventoryId = button.getAttribute('data-inventory-id');
+        const partNumber = button.getAttribute('data-part-number');
+        const partName = button.getAttribute('data-part-name');
+        const availableQtyValue = parseFloat(button.getAttribute('data-available-qty'));
+        const quantityOnHandValue = parseFloat(button.getAttribute('data-quantity-on-hand')) || availableQtyValue;
+        
+        // Store source location info
+        const sourceMajorLocationIdAttr = button.getAttribute('data-source-major-location-id');
+        const sourceStoreroomIdAttr = button.getAttribute('data-source-storeroom-id');
+        const sourceLocationAttr = button.getAttribute('data-source-location');
+        const sourceBinAttr = button.getAttribute('data-source-bin');
+        
+        sourceStoreroomId = sourceStoreroomIdAttr ? parseInt(sourceStoreroomIdAttr) : null;
+        sourceLocation = sourceLocationAttr || null;
+        sourceBin = sourceBinAttr || null;
+        
+        // Reset form
+        form.reset();
+        errorAlert.classList.add('d-none');
+        errorAlert.textContent = '';
+        
+        // Set part info
+        let partInfoText = partNumber;
+        if (partName) {
+            partInfoText += ' - ' + partName;
+        }
+        partInfo.textContent = partInfoText;
+        
+        // Set available quantity
+        availableQty.textContent = availableQtyValue.toFixed(2);
+        
+        // Pre-fill quantity with available quantity
+        quantityInput.value = availableQtyValue.toFixed(2);
+        quantityInput.setAttribute('max', availableQtyValue);
+        quantityInput.setAttribute('placeholder', `Max: ${availableQtyValue.toFixed(2)}`);
+        
+        // Set hidden inventory ID
+        document.getElementById('moveActiveInventoryId').value = inventoryId;
+        
+        // Pre-fill major location if available
+        if (sourceMajorLocationIdAttr) {
+            const sourceMajorLocationId = parseInt(sourceMajorLocationIdAttr);
+            majorLocationSelect.value = sourceMajorLocationId;
+            // Trigger change to filter storerooms
+            majorLocationSelect.dispatchEvent(new Event('change'));
+            
+            // Pre-fill storeroom if available (use setTimeout to ensure filtering happens first)
+            setTimeout(function() {
+                if (sourceStoreroomId) {
+                    storeroomSelect.value = sourceStoreroomId;
+                }
+            }, 0);
+        } else {
+            // Reset storeroom filter if no major location
+            majorLocationSelect.dispatchEvent(new Event('change'));
+        }
+        
+        // Pre-fill location if available
+        if (sourceLocation) {
+            locationInput.value = sourceLocation;
+        }
+        
+        // Pre-fill bin if available
+        if (sourceBin) {
+            binInput.value = sourceBin;
+        }
+    });
+    
+    // Handle form submission
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Hide previous errors
+        errorAlert.classList.add('d-none');
+        errorAlert.textContent = '';
+        
+        // Strip trailing whitespace from location and bin
+        const locationValue = locationInput.value.trim();
+        const binValue = binInput.value.trim();
+        
+        locationInput.value = locationValue;
+        binInput.value = binValue;
+        
+        // Validate bin requires location
+        if (binValue && !locationValue) {
+            errorAlert.textContent = 'Bin requires a location';
+            errorAlert.classList.remove('d-none');
+            locationInput.focus();
+            return;
+        }
+        
+        // Get form data
+        const formData = {
+            active_inventory_id: document.getElementById('moveActiveInventoryId').value,
+            quantity: parseFloat(quantityInput.value),
+            to_major_location_id: parseInt(majorLocationSelect.value),
+            to_storeroom_id: parseInt(storeroomSelect.value),
+            to_location: locationValue || null,
+            to_bin: binValue || null
+        };
+        
+        // Validate required fields
+        if (!formData.quantity || formData.quantity <= 0) {
+            errorAlert.textContent = 'Quantity must be greater than 0';
+            errorAlert.classList.remove('d-none');
+            quantityInput.focus();
+            return;
+        }
+        
+        if (!formData.to_major_location_id || !formData.to_storeroom_id) {
+            errorAlert.textContent = 'Major location and storeroom are required';
+            errorAlert.classList.remove('d-none');
+            return;
+        }
+        
+        // Validate: prevent transfer to self (same location)
+        const toStoreroomId = formData.to_storeroom_id;
+        const toLocation = locationValue || null;
+        const toBin = binValue || null;
+        
+        // Compare source and destination
+        // Both storerooms must match
+        const storeroomsMatch = sourceStoreroomId && toStoreroomId && sourceStoreroomId === toStoreroomId;
+        
+        // Both locations must match (both null or both same value)
+        const locationsMatch = (sourceLocation === null && toLocation === null) || 
+                               (sourceLocation && toLocation && sourceLocation === toLocation);
+        
+        // Both bins must match (both null or both same value)
+        const binsMatch = (sourceBin === null && toBin === null) || 
+                          (sourceBin && toBin && sourceBin === toBin);
+        
+        if (storeroomsMatch && locationsMatch && binsMatch) {
+            errorAlert.textContent = 'Cannot transfer inventory to the same location';
+            errorAlert.classList.remove('d-none');
+            return;
+        }
+        
+        // Disable submit button
+        const submitButton = form.querySelector('button[type="submit"]');
+        submitButton.disabled = true;
+        submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Moving...';
+        
+        // Submit form
+        fetch('{{ url_for("inventory.move_inventory") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Close modal and reload page
+                const modalInstance = bootstrap.Modal.getInstance(modal);
+                modalInstance.hide();
+                window.location.reload();
+            } else {
+                // Show error
+                errorAlert.textContent = data.error || 'An error occurred';
+                errorAlert.classList.remove('d-none');
+                submitButton.disabled = false;
+                submitButton.innerHTML = '<i class="bi bi-arrow-right"></i> Move Inventory';
+            }
+        })
+        .catch(error => {
+            errorAlert.textContent = 'An unexpected error occurred: ' + error.message;
+            errorAlert.classList.remove('d-none');
+            submitButton.disabled = false;
+            submitButton.innerHTML = '<i class="bi bi-arrow-right"></i> Move Inventory';
+        });
+    });
+});
+</script>
+{% endblock %}
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block title %}Storeroom Designer{% endblock %}
+
+{% block head %}
+<style>
+    .storeroom-card {
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        border: none;
+        border-radius: 8px;
+        height: 100%;
+    }
+    
+    .storeroom-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+    }
+    
+    .storeroom-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.5rem;
+    }
+    
+    .badge-svg {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="bi bi-map text-primary"></i> Storeroom Designer
+                    </h1>
+                    <p class="text-muted mb-0">Manage storerooms, locations, and bins</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('inventory.index') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Inventory
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Storeroom Section -->
+    <div class="row mb-4">
+        <div class="col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-plus-circle"></i> Create New Storeroom</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('inventory.storeroom_create') }}">
+                        <div class="mb-3">
+                            <label for="room_name" class="form-label">Storeroom Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="room_name" name="room_name" required 
+                                   placeholder="e.g., Los Angeles Main Storeroom">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="major_location_id" class="form-label">Major Location <span class="text-danger">*</span></label>
+                            <select class="form-select" id="major_location_id" name="major_location_id" required>
+                                <option value="">Select a location...</option>
+                                {% for location in major_locations %}
+                                <option value="{{ location.id }}">{{ location.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="address" class="form-label">Address/Notes</label>
+                            <textarea class="form-control" id="address" name="address" rows="3" 
+                                      placeholder="Optional address or notes"></textarea>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-plus-lg"></i> Create Storeroom
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Storerooms List -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-building"></i> Existing Storerooms ({{ storerooms|length }})</h5>
+                </div>
+                <div class="card-body">
+                    {% if storerooms %}
+                        <div class="storeroom-grid">
+                            {% for storeroom in storerooms %}
+                            <div class="card storeroom-card shadow-sm">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ storeroom.room_name }}</h5>
+                                    <h6 class="card-subtitle mb-2 text-muted">
+                                        <i class="bi bi-geo-alt"></i> {{ storeroom.major_location.name if storeroom.major_location else 'N/A' }}
+                                    </h6>
+                                    
+                                    {% if storeroom.address %}
+                                    <p class="card-text small text-muted mb-2">{{ storeroom.address[:100] }}...</p>
+                                    {% endif %}
+                                    
+                                    <div class="mb-3">
+                                        <span class="badge bg-info">{{ storeroom.locations.count() }} Locations</span>
+                                        {% if storeroom.svg_content %}
+                                        <span class="badge badge-svg">
+                                            <i class="bi bi-diagram-3"></i> Has Layout
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="d-grid gap-2">
+                                        <a href="{{ url_for('inventory.storeroom_view', storeroom_id=storeroom.id) }}" 
+                                           class="btn btn-sm btn-info">
+                                            <i class="bi bi-eye"></i> View Summary
+                                        </a>
+                                        <a href="{{ url_for('inventory.storeroom_build', storeroom_id=storeroom.id) }}" 
+                                           class="btn btn-sm btn-primary">
+                                            <i class="bi bi-tools"></i> Build & Manage
+                                        </a>
+                                        <div class="btn-group">
+                                            <a href="{{ url_for('inventory.storeroom_edit', storeroom_id=storeroom.id) }}" 
+                                               class="btn btn-sm btn-outline-secondary">
+                                                <i class="bi bi-pencil"></i> Edit
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                    onclick="confirmDelete('{{ storeroom.id }}', '{{ storeroom.room_name }}')">
+                                                <i class="bi bi-trash"></i> Delete
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center text-muted py-5">
+                            <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                            <p class="mt-3">No storerooms yet. Create your first storeroom above.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Form (hidden) -->
+<form id="deleteForm" method="POST" style="display:none;">
+</form>
+
+<script>
+function confirmDelete(storeroomId, storeroomName) {
+    if (confirm(`Are you sure you want to delete storeroom "${storeroomName}"?\n\nThis will also delete all locations and bins. This action cannot be undone.`)) {
+        const form = document.getElementById('deleteForm');
+        form.action = "{{ url_for('inventory.storeroom_delete', storeroom_id=0) }}".replace('/0/', '/' + storeroomId + '/');
+        form.submit();
+    }
+}
+</script>
+{% endblock %}
+

@@ -211,8 +211,34 @@ class DispatchContext:
         db.session.add(dispatch)
         db.session.flush()
         
-        # Add comment to request event
-        comment = f"Dispatch created: {dispatch.status} from {dispatch.scheduled_start} to {dispatch.scheduled_end}"
+        # Set event asset_id to the dispatched asset if provided
+        if dispatch.assett_dispatched_id and self.event:
+            self.event.asset_id = dispatch.assett_dispatched_id
+        
+        # Build comprehensive comment with dispatch details
+        comment_parts = [
+            f"Dispatch outcome created (ID: {dispatch.id})",
+            f"Status: {dispatch.status}",
+            f"Scheduled: {dispatch.scheduled_start.strftime('%Y-%m-%d %H:%M') if dispatch.scheduled_start else 'N/A'} to {dispatch.scheduled_end.strftime('%Y-%m-%d %H:%M') if dispatch.scheduled_end else 'N/A'}"
+        ]
+        
+        # Add asset information if available
+        if dispatch.assett_dispatched_id:
+            from app.data.core.asset_info.asset import Asset
+            asset = Asset.query.get(dispatch.assett_dispatched_id)
+            if asset:
+                comment_parts.append(f"Asset: {asset.name} (ID: {asset.id})")
+            else:
+                comment_parts.append(f"Asset ID: {dispatch.assett_dispatched_id}")
+        
+        # Add assigned user information if available
+        if dispatch.assigned_to_id:
+            from app.data.core.user_info.user import User
+            assigned_user = User.query.get(dispatch.assigned_to_id)
+            if assigned_user:
+                comment_parts.append(f"Assigned to: {assigned_user.username}")
+        
+        comment = " | ".join(comment_parts)
         event_context = EventContext(self.event)
         event_context.add_comment(created_by_id or dispatch.created_by_id, comment)
         

@@ -1,0 +1,689 @@
+{% extends "base.html" %}
+
+{% block title %}Arrival Linkage Portal - {{ package.package_number }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('inventory.index') }}">Inventory</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('inventory.po_arrivals') }}">Arrivals</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('inventory.po_arrival_detail', id=package.id) }}">{{ package.package_number }}</a></li>
+                <li class="breadcrumb-item active">Linkage Portal</li>
+            </ol>
+        </nav>
+        
+        <h2><i class="bi bi-link-45deg text-success"></i> Arrival Linkage Portal</h2>
+        <p class="text-muted">Package: {{ package.package_number }} | Received: {{ package.received_date.strftime('%Y-%m-%d') if package.received_date else 'N/A' }}</p>
+    </div>
+
+    <!-- Part Arrivals and PO Lines Section -->
+    <div class="card mb-4 border-success">
+        <div class="card-header bg-success bg-opacity-10">
+            <h5 class="mb-0">
+                <i class="bi bi-box-seam text-success"></i> Part Arrivals
+            </h5>
+        </div>
+        <div class="card-body">
+            {% for arrival_data in arrivals_with_po_lines %}
+            <!-- SECTION: ARRIVAL {{ loop.index }} -->
+            <div class="row g-3 align-items-stretch" data-arrival-id="{{ arrival_data.part_arrival.id }}">
+                <div class="col-md-6">
+                    <h6 class="fw-bold mb-2"><i class="bi bi-box-seam"></i> Arrival and Summary</h6>
+                    <div class="card arrival-item clickable-arrival" data-part-id="{{ arrival_data.part_arrival.part.id }}" data-part-number="{{ arrival_data.part_arrival.part.part_number }}">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <h6 class="mb-1">Arrival #{{ arrival_data.part_arrival.id }}</h6>
+                                    <small class="text-muted">Location: {{ arrival_data.part_arrival.major_location.name if arrival_data.part_arrival.major_location else 'N/A' }}</small>
+                                </div>
+                                <span class="badge bg-info">{{ arrival_data.part_arrival.status }}</span>
+                            </div>
+                            <hr class="my-2">
+                            <div class="row">
+                                <div class="col-6">
+                                    <small class="text-muted">Part:</small><br>
+                                    <strong>{{ arrival_data.part_arrival.part.part_number }}</strong> - {{ arrival_data.part_arrival.part.part_name }}
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted">Quantity Received:</small><br>
+                                    <strong>{{ arrival_data.part_arrival.quantity_received }} {{ arrival_data.part_arrival.part.unit_of_measure or 'units' }}</strong>
+                                </div>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col-6">
+                                    <small class="text-muted">Received:</small> <strong class="text-success">{{ arrival_data.part_arrival.quantity_received }}</strong>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted">Linked:</small> <strong class="text-warning linked-qty">{{ arrival_data.part_arrival.quantity_linked_to_purchase_order_line or 0.0 }}</strong>
+                                </div>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col-12">
+                                    <small class="text-muted">Available:</small>
+                                    <strong class="text-primary available-qty">{{ arrival_data.quantity_available }} {{ arrival_data.part_arrival.part.unit_of_measure or 'units' }}</strong>
+                                    <span class="badge bg-{% if arrival_data.allocation_percentage >= 75 %}danger{% elif arrival_data.allocation_percentage >= 50 %}warning{% else %}success{% endif %} allocation-badge ms-2 availability-pct">{{ "%.1f"|format(100 - arrival_data.allocation_percentage) }}% Available</span>
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <small class="text-muted">Condition:</small> <strong>{{ arrival_data.part_arrival.condition or 'Good' }}</strong>
+                            </div>
+                            {% if arrival_data.part_arrival.inspection_notes %}
+                            <div class="mt-2">
+                                <small class="text-muted">Notes:</small><br>
+                                <small>{{ arrival_data.part_arrival.inspection_notes }}</small>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <h6 class="fw-bold mb-2"><i class="bi bi-receipt"></i> Linked PO Line</h6>
+                    <div class="card border-0">
+                        <div class="list-group po-lines-list" data-arrival-id="{{ arrival_data.part_arrival.id }}">
+                            {% if arrival_data.linked_po_line %}
+                                <div class="list-group-item po-line-item border-success" data-po-line-id="{{ arrival_data.linked_po_line.id }}">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div>
+                                            <h6 class="mb-1">PO: {{ arrival_data.linked_po_line.purchase_order.po_number }} - Line {{ arrival_data.linked_po_line.line_number }}</h6>
+                                            <small class="text-muted">Vendor: {{ arrival_data.linked_po_line.purchase_order.vendor_name }}</small>
+                                        </div>
+                                        <span class="badge bg-success">Linked</span>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <small class="text-muted">Part:</small><br>
+                                            <strong>{{ arrival_data.linked_po_line.part.part_number }}</strong> - {{ arrival_data.linked_po_line.part.part_name }}
+                                        </div>
+                                        <div class="col-6">
+                                            <small class="text-muted">Ordered:</small><br>
+                                            <strong>{{ arrival_data.linked_po_line.quantity_ordered }}</strong>
+                                        </div>
+                                    </div>
+                                    <div class="row mt-2">
+                                        <div class="col-6">
+                                            <small class="text-muted">Accepted:</small><br>
+                                            <strong class="text-success">{{ arrival_data.linked_po_line.quantity_accepted or 0.0 }}</strong>
+                                        </div>
+                                        <div class="col-6">
+                                            <small class="text-muted">Linked from this arrival:</small><br>
+                                            <strong>{{ arrival_data.part_arrival.quantity_linked_to_purchase_order_line or 0.0 }}</strong>
+                                        </div>
+                                    </div>
+                                    <div class="mt-2">
+                                        <button class="btn btn-sm btn-outline-danger unlink-btn" data-arrival-id="{{ arrival_data.part_arrival.id }}">
+                                            <i class="bi bi-unlink"></i> Unlink
+                                        </button>
+                                    </div>
+                                </div>
+                            {% endif %}
+
+                            {% if not arrival_data.linked_po_line %}
+                            <div class="list-group-item">
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle"></i>
+                                    No linked PO line for this arrival yet. Use the <span class="fw-bold">Arrival Linkage Tool</span> below to find and link matching PO lines.
+                                </small>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% if not loop.last %}
+            <hr class="my-4">
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="alert alert-primary mb-4" role="alert">
+        <div class="d-flex align-items-start">
+            <i class="bi bi-shield-check me-2"></i>
+            <div>
+                <div class="fw-bold">Matching rule enforced</div>
+                <div class="small">
+                    This section only shows PO Lines whose Part ID matches the selected Arrival Part ID.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Arrival Linkage Tool Section -->
+    <div class="card border-success">
+        <div class="card-header bg-success bg-opacity-10">
+            <h5 class="mb-0">
+                <i class="bi bi-link-45deg text-success"></i> Arrival Linkage Tool
+            </h5>
+        </div>
+        <div class="card-body">
+            <!-- Selected Arrival (populated via JS) -->
+            <div class="alert alert-light border mb-3" id="selectedArrivalSummary" role="status">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="fw-bold">Selected Arrival</div>
+                        <div class="small text-muted" id="selectedArrivalSummaryText">
+                            None selected. Click an arrival above to filter matching PO Lines.
+                        </div>
+                    </div>
+                    <button class="btn btn-sm btn-outline-secondary" id="clearSelectedArrivalBtn" disabled>
+                        <i class="bi bi-x"></i> Clear
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <ul class="nav nav-tabs mb-3" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="by-po-tab" data-bs-toggle="tab" data-bs-target="#by-po-pane" type="button" role="tab">
+                        <i class="bi bi-receipt"></i> By Purchase Order
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="by-part-tab" data-bs-toggle="tab" data-bs-target="#by-part-pane" type="button" role="tab">
+                        <i class="bi bi-box-seam"></i> Link by PO Line ID
+                    </button>
+                </li>
+            </ul>
+
+            <!-- Tab Content -->
+            <div class="tab-content">
+                <!-- By Purchase Order Tab -->
+                <div class="tab-pane fade show active" id="by-po-pane" role="tabpanel">
+                    <h6 class="fw-bold mb-3"><i class="bi bi-funnel"></i> By Purchase Order</h6>
+
+                    <div class="row g-3">
+                        <!-- Filters (full width) -->
+                        <div class="col-12">
+                            <div class="card border-0">
+                                <div class="card-body p-0">
+                                    <div class="row g-2">
+                                        <div class="col-md-3 col-6">
+                                            <label class="form-label small mb-1">PO Number</label>
+                                            <input type="text" class="form-control form-control-sm" id="filterPONumber" placeholder="e.g. PO-2024-001">
+                                        </div>
+                                        <div class="col-md-3 col-6">
+                                            <label class="form-label small mb-1">Vendor Name</label>
+                                            <input type="text" class="form-control form-control-sm" id="filterVendorName" placeholder="e.g. Acme Corp">
+                                        </div>
+                                        <div class="col-md-3 col-6">
+                                            <label class="form-label small mb-1">Status</label>
+                                            <select class="form-select form-select-sm" id="filterStatus">
+                                                <option value="">All</option>
+                                                <option value="Pending">Pending</option>
+                                                <option value="Ordered">Ordered</option>
+                                                <option value="Shipped">Shipped</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3 col-6">
+                                            <label class="form-label small mb-1">Major Location ID</label>
+                                            <input type="number" class="form-control form-control-sm" id="filterMajorLocationId" placeholder="e.g. 5">
+                                        </div>
+                                        <div class="col-12 d-flex gap-2 mt-1">
+                                            <button class="btn btn-sm btn-outline-secondary" type="button" id="clearPOFiltersBtn">
+                                                <i class="bi bi-x-circle"></i> Clear filters
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-primary" type="button" id="applyPOFiltersBtn">
+                                                <i class="bi bi-arrow-repeat"></i> Apply
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Side-by-side lists -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">List of Purchase Orders</label>
+                            <div class="list-group" style="max-height: 400px; overflow-y: auto;" id="purchase-orders-list">
+                                <div class="list-group-item">
+                                    <p class="text-muted mb-0"><i class="bi bi-arrow-up"></i> Select an arrival above to load matching purchase orders</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">PO Lines from Selected PO</label>
+                            <div class="list-group" style="max-height: 400px; overflow-y: auto;" id="po-lines-list">
+                                <div class="list-group-item">
+                                    <p class="text-muted mb-0"><i class="bi bi-info-circle"></i> Select a purchase order to view its lines</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- By Part ID Tab -->
+                <div class="tab-pane fade" id="by-part-pane" role="tabpanel">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h6 class="fw-bold mb-3"><i class="bi bi-box-seam"></i> All Unlinked PO Lines for Selected Part</h6>
+                            <div class="alert alert-info" role="alert">
+                                <div class="d-flex align-items-start">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    <div>
+                                        <div class="small">
+                                            Current Part: <span class="fw-bold" id="selectedPartIdText">None selected</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <h6 class="fw-bold mb-3">Unlinked PO Lines</h6>
+                            <div class="list-group" style="max-height: 400px; overflow-y: auto;" id="part-po-lines-list">
+                                <div class="list-group-item">
+                                    <p class="text-muted mb-0"><i class="bi bi-arrow-up"></i> Select an arrival above to view unlinked PO lines for that part</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Notifications -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+    <div id="linkToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+            <strong class="me-auto">Link Status</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body" id="linkToastBody"></div>
+    </div>
+</div>
+
+<style>
+    .clickable-arrival {
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .clickable-arrival:hover {
+        background-color: #e9ecef;
+    }
+    .clickable-arrival.selected-item {
+        background-color: #cfe2ff !important;
+        border-color: #0d6efd !important;
+    }
+    .allocation-badge {
+        font-size: 0.75rem;
+    }
+</style>
+
+<script>
+    const packageId = {{ package.id }};
+    let selectedArrivalId = null;
+    let selectedPartId = null;
+    let selectedPartNumber = null;
+    let currentPOs = [];
+    
+    // Toast helper
+    function showToast(message, isSuccess = true) {
+        const toast = new bootstrap.Toast(document.getElementById('linkToast'));
+        const toastBody = document.getElementById('linkToastBody');
+        toastBody.textContent = message;
+        toastBody.className = `toast-body text-${isSuccess ? 'success' : 'danger'}`;
+        toast.show();
+    }
+    
+    // Update selected arrival summary
+    function updateSelectedArrivalSummary() {
+        const textEl = document.getElementById('selectedArrivalSummaryText');
+        const clearBtn = document.getElementById('clearSelectedArrivalBtn');
+        
+        if (!selectedArrivalId || !selectedPartId) {
+            textEl.textContent = 'None selected. Click an arrival above to filter matching PO Lines.';
+            clearBtn.disabled = true;
+            return;
+        }
+        
+        textEl.textContent = `Part: ${selectedPartNumber || selectedPartId}`;
+        clearBtn.disabled = false;
+    }
+    
+    // Load purchase orders for selected part
+    function buildPOsQueryParams() {
+        const params = new URLSearchParams();
+        if (selectedPartId) params.set('part_id', selectedPartId);
+
+        const poNumber = document.getElementById('filterPONumber')?.value;
+        const vendorName = document.getElementById('filterVendorName')?.value;
+        const status = document.getElementById('filterStatus')?.value;
+        const majorLocationId = document.getElementById('filterMajorLocationId')?.value;
+
+        if (poNumber) params.set('po_number', poNumber);
+        if (vendorName) params.set('vendor_name', vendorName);
+        if (status) params.set('status', status);
+        if (majorLocationId) params.set('major_location_id', majorLocationId);
+
+        return params;
+    }
+
+    function loadPurchaseOrders() {
+        const posList = document.getElementById('purchase-orders-list');
+        const linesList = document.getElementById('po-lines-list');
+        
+        if (!selectedPartId) {
+            posList.innerHTML = '<div class="list-group-item"><p class="text-muted mb-0"><i class="bi bi-arrow-up"></i> Select an arrival above to load matching purchase orders</p></div>';
+            linesList.innerHTML = '<div class="list-group-item"><p class="text-muted mb-0"><i class="bi bi-info-circle"></i> Select a purchase order to view its lines</p></div>';
+            return;
+        }
+        
+        posList.innerHTML = '<div class="list-group-item"><p class="text-muted mb-0"><i class="bi bi-hourglass-split"></i> Loading...</p></div>';
+
+        const params = buildPOsQueryParams();
+        fetch(`/inventory/arrivals/${packageId}/link/api/purchase-orders?${params.toString()}`)
+            .then(r => r.json())
+            .then(pos => {
+                currentPOs = pos;
+                
+                if (pos.length === 0) {
+                    posList.innerHTML = '<div class="list-group-item"><p class="text-muted mb-0">No purchase orders with unlinked lines for this part.</p></div>';
+                    return;
+                }
+                
+                let html = '';
+                pos.forEach(po => {
+                    html += `
+                        <a href="#" class="list-group-item list-group-item-action po-item" data-po-id="${po.purchase_order_id}">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">${po.po_number}</h6>
+                                    <small class="text-muted">Vendor: ${po.vendor_name || 'N/A'}</small><br>
+                                    <small class="text-muted">Date: ${po.order_date || 'TBD'}</small>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge bg-warning">${po.status}</span><br>
+                                    <small class="text-muted">${po.po_lines.length} lines</small>
+                                </div>
+                            </div>
+                        </a>
+                    `;
+                });
+                
+                posList.innerHTML = html;
+                
+                // Add click handlers
+                document.querySelectorAll('.po-item').forEach(item => {
+                    item.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const poId = parseInt(this.dataset.poId);
+                        loadPOLines(poId);
+                    });
+                });
+            })
+            .catch(err => {
+                console.error('Failed to load POs:', err);
+                posList.innerHTML = '<div class="list-group-item"><p class="text-danger mb-0">Error loading purchase orders</p></div>';
+            });
+    }
+    
+    // Load lines for selected PO
+    function loadPOLines(poId) {
+        const linesList = document.getElementById('po-lines-list');
+        const po = currentPOs.find(p => p.purchase_order_id === poId);
+        
+        if (!po || po.po_lines.length === 0) {
+            linesList.innerHTML = '<div class="list-group-item"><p class="text-muted mb-0">No lines found for this PO</p></div>';
+            return;
+        }
+        
+        let html = '';
+        po.po_lines.forEach(line => {
+            html += `
+                <div class="list-group-item">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="mb-1">Line ${line.line_number}: ${line.part_number} - ${line.part_name}</h6>
+                            <small class="text-muted">Ordered: ${line.quantity_ordered} | Received: ${line.quantity_received}</small><br>
+                            <small class="text-muted">Needed: ${line.quantity_needed}</small>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-${line.status === 'Ordered' ? 'warning' : 'secondary'}">${line.status}</span><br>
+                            <small class="text-muted">$${line.unit_cost.toFixed(2)}</small>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <label class="form-label small">Quantity to Link:</label>
+                        <input type="number" class="form-control form-control-sm mb-2 link-qty-input" data-line-id="${line.id}" value="${Math.min(line.quantity_needed, selectedArrivalQtyAvailable || 0)}" min="0" max="${Math.min(line.quantity_needed, selectedArrivalQtyAvailable || 0)}" step="0.1">
+                        <button class="btn btn-sm btn-success tool-link-btn" data-line-id="${line.id}">
+                            <i class="bi bi-link-45deg"></i> Link to selected arrival
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+        
+        linesList.innerHTML = html;
+        
+        // Add click handlers
+        document.querySelectorAll('.tool-link-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                if (!selectedArrivalId) {
+                    showToast('Please select an arrival first', false);
+                    return;
+                }
+                const lineId = parseInt(this.dataset.lineId);
+                const qtyInput = document.querySelector(`input.link-qty-input[data-line-id="${lineId}"]`);
+                const qty = parseFloat(qtyInput.value) || 0;
+                
+                if (qty <= 0) {
+                    showToast('Please enter a valid quantity', false);
+                    return;
+                }
+                
+                linkArrivalToPOLine(selectedArrivalId, lineId, qty);
+            });
+        });
+    }
+    
+    // Load all PO lines for selected part (tab 2)
+    function loadPartPOLines() {
+        const linesList = document.getElementById('part-po-lines-list');
+        const partTextEl = document.getElementById('selectedPartIdText');
+        
+        if (!selectedPartId) {
+            linesList.innerHTML = '<div class="list-group-item"><p class="text-muted mb-0"><i class="bi bi-arrow-up"></i> Select an arrival above to view unlinked PO lines for that part</p></div>';
+            partTextEl.textContent = 'None selected';
+            return;
+        }
+        
+        partTextEl.textContent = selectedPartNumber || selectedPartId;
+        linesList.innerHTML = '<div class="list-group-item"><p class="text-muted mb-0"><i class="bi bi-hourglass-split"></i> Loading...</p></div>';
+
+        const params = buildPOsQueryParams();
+        fetch(`/inventory/arrivals/${packageId}/link/api/purchase-orders?${params.toString()}`)
+            .then(r => r.json())
+            .then(pos => {
+                const allLines = [];
+                pos.forEach(po => {
+                    po.po_lines.forEach(line => {
+                        line.po_number = po.po_number;
+                        line.vendor_name = po.vendor_name;
+                        allLines.push(line);
+                    });
+                });
+                
+                if (allLines.length === 0) {
+                    linesList.innerHTML = '<div class="list-group-item"><p class="text-muted mb-0">No unlinked PO lines for this part.</p></div>';
+                    return;
+                }
+                
+                let html = '';
+                allLines.forEach(line => {
+                    html += `
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">PO ${line.po_number} - Line ${line.line_number}</h6>
+                                    <small class="text-muted">Vendor: ${line.vendor_name}</small><br>
+                                    <small class="text-muted">Part: ${line.part_number} - ${line.part_name}</small><br>
+                                    <small class="text-muted">Needed: ${line.quantity_needed}</small>
+                                </div>
+                                <span class="badge bg-${line.status === 'Ordered' ? 'warning' : 'secondary'}">${line.status}</span>
+                            </div>
+                            <div class="mt-2">
+                                <label class="form-label small">Quantity to Link:</label>
+                                <input type="number" class="form-control form-control-sm mb-2 link-qty-input" data-line-id="${line.id}" value="${Math.min(line.quantity_needed, selectedArrivalQtyAvailable || 0)}" min="0" max="${Math.min(line.quantity_needed, selectedArrivalQtyAvailable || 0)}" step="0.1">
+                                <button class="btn btn-sm btn-success tool-link-btn" data-line-id="${line.id}">
+                                    <i class="bi bi-link-45deg"></i> Link to selected arrival
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                linesList.innerHTML = html;
+                
+                // Add click handlers
+                document.querySelectorAll('.tool-link-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        if (!selectedArrivalId) {
+                            showToast('Please select an arrival first', false);
+                            return;
+                        }
+                        const lineId = parseInt(this.dataset.lineId);
+                        const qtyInput = document.querySelector(`input.link-qty-input[data-line-id="${lineId}"]`);
+                        const qty = parseFloat(qtyInput.value) || 0;
+                        
+                        if (qty <= 0) {
+                            showToast('Please enter a valid quantity', false);
+                            return;
+                        }
+                        
+                        linkArrivalToPOLine(selectedArrivalId, lineId, qty);
+                    });
+                });
+            })
+            .catch(err => {
+                console.error('Failed to load PO lines:', err);
+                linesList.innerHTML = '<div class="list-group-item"><p class="text-danger mb-0">Error loading PO lines</p></div>';
+            });
+    }
+    
+    // Link arrival to PO line
+    function linkArrivalToPOLine(arrivalId, poLineId, quantity) {
+        fetch(`/inventory/arrivals/${packageId}/link/api/link`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({part_arrival_id: arrivalId, po_line_id: poLineId, quantity_to_link: quantity})
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showToast(data.message, true);
+                // Reload page to reflect changes
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showToast(data.message, false);
+            }
+        })
+        .catch(err => {
+            console.error('Link failed:', err);
+            showToast('Error linking arrival', false);
+        });
+    }
+    
+    // Unlink arrival
+    function unlinkArrival(arrivalId) {
+        if (!confirm('Are you sure you want to unlink this arrival?')) return;
+        
+        fetch(`/inventory/arrivals/${packageId}/link/api/unlink`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({part_arrival_id: arrivalId})
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showToast(data.message, true);
+                // Reload page to reflect changes
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showToast(data.message, false);
+            }
+        })
+        .catch(err => {
+            console.error('Unlink failed:', err);
+            showToast('Error unlinking arrival', false);
+        });
+    }
+    
+    let selectedArrivalQtyAvailable = 0;
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        // Filters
+        document.getElementById('applyPOFiltersBtn')?.addEventListener('click', function() {
+            loadPurchaseOrders();
+            loadPartPOLines();
+        });
+
+        document.getElementById('clearPOFiltersBtn')?.addEventListener('click', function() {
+            const ids = [
+                'filterPONumber',
+                'filterVendorName',
+                'filterStatus',
+                'filterMajorLocationId'
+            ];
+            ids.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+            loadPurchaseOrders();
+            loadPartPOLines();
+        });
+
+        // Arrival selection
+        document.querySelectorAll('.clickable-arrival').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.clickable-arrival').forEach(i => i.classList.remove('selected-item'));
+                this.classList.add('selected-item');
+                
+                selectedArrivalId = parseInt(this.closest('[data-arrival-id]').dataset.arrivalId);
+                selectedPartId = parseInt(this.dataset.partId);
+                selectedPartNumber = this.dataset.partNumber;
+                
+                // Get available quantity from the card
+                const availableQtyEl = this.querySelector('.available-qty');
+                selectedArrivalQtyAvailable = parseFloat(availableQtyEl.textContent.trim().split(' ')[0]) || 0;
+                
+                updateSelectedArrivalSummary();
+                loadPurchaseOrders();
+                loadPartPOLines();
+            });
+        });
+        
+        // Clear selection
+        document.getElementById('clearSelectedArrivalBtn').addEventListener('click', function() {
+            document.querySelectorAll('.clickable-arrival').forEach(i => i.classList.remove('selected-item'));
+            selectedArrivalId = null;
+            selectedPartId = null;
+            selectedPartNumber = null;
+            selectedArrivalQtyAvailable = 0;
+            
+            updateSelectedArrivalSummary();
+            loadPurchaseOrders();
+            loadPartPOLines();
+            
+            document.getElementById('po-lines-list').innerHTML = '<div class="list-group-item"><p class="text-muted mb-0"><i class="bi bi-info-circle"></i> Select a purchase order to view its lines</p></div>';
+        });
+        
+        // Unlink buttons
+        document.querySelectorAll('.unlink-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const arrivalId = parseInt(this.dataset.arrivalId);
+                unlinkArrival(arrivalId);
+            });
+        });
+        
+        updateSelectedArrivalSummary();
+    });
+</script>
+{% endblock %}
+

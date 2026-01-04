@@ -37,7 +37,7 @@ class MaintenanceActionSet(EventDetailVirtual, VirtualActionSet):
     
     # Notes
     completion_notes = db.Column(db.Text, nullable=True)
-    delay_notes = db.Column(db.Text, nullable=True)
+    blocker_notes = db.Column(db.Text, nullable=True)
     
     # Meter reading reference (linked to meter history record taken at completion)
     meter_reading_id = db.Column(db.Integer, db.ForeignKey('meter_history.id'), nullable=True)
@@ -47,7 +47,7 @@ class MaintenanceActionSet(EventDetailVirtual, VirtualActionSet):
     maintenance_plan = relationship('MaintenancePlan', back_populates='maintenance_action_sets', lazy='select')
     template_action_set = relationship('TemplateActionSet', foreign_keys=[template_action_set_id], back_populates='maintenance_action_sets', lazy='select', overlaps='maintenance_action_sets')
     actions = relationship('Action', back_populates='maintenance_action_set', lazy='selectin', order_by='Action.sequence_order', cascade='all, delete-orphan')
-    delays = relationship('MaintenanceDelay', back_populates='maintenance_action_set', lazy='selectin', cascade='all, delete-orphan')
+    blockers = relationship('MaintenanceBlocker', back_populates='maintenance_action_set', lazy='selectin', cascade='all, delete-orphan')
     
     # User relationships
     assigned_user = relationship('User', foreign_keys=[assigned_user_id], backref='assigned_maintenance_action_sets')
@@ -67,6 +67,9 @@ class MaintenanceActionSet(EventDetailVirtual, VirtualActionSet):
     # Class attributes for EventDetailVirtual
     event_type = 'maintenance'
     
+    property
+    def allowable_statuses(self):
+        return ['Planned', 'In Progress', 'Complete', 'Cancelled','Failed', 'Skipped', 'Blocked']
 
     
     def create_event(self):

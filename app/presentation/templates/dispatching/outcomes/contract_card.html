@@ -1,0 +1,50 @@
+<div class="card mb-3 info-card success">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="bi bi-file-earmark-text"></i> Contract Outcome
+        </h5>
+    </div>
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-4">Contract ID</dt>
+            <dd class="col-sm-8">#{{ contract.id }}</dd>
+            
+            <dt class="col-sm-4">Company Name</dt>
+            <dd class="col-sm-8"><strong>{{ contract.company_name }}</strong></dd>
+            
+            <dt class="col-sm-4">Cost</dt>
+            <dd class="col-sm-8">
+                <span class="badge bg-success">
+                    {{ contract.cost_currency }} {{ "{:,.2f}".format(contract.cost_amount) }}
+                </span>
+            </dd>
+            
+            {% if contract.contract_reference %}
+            <dt class="col-sm-4">Contract Reference</dt>
+            <dd class="col-sm-8">
+                <code>{{ contract.contract_reference }}</code>
+            </dd>
+            {% endif %}
+            
+            {% if contract.notes %}
+            <dt class="col-sm-12 mt-2">Notes</dt>
+            <dd class="col-sm-12">
+                <div class="text-muted">{{ contract.notes }}</div>
+            </dd>
+            {% endif %}
+            
+            <dt class="col-sm-4">Created</dt>
+            <dd class="col-sm-8">
+                <small class="text-muted">
+                    {{ contract.created_at.strftime('%Y-%m-%d %H:%M') if contract.created_at else 'N/A' }}
+                </small>
+            </dd>
+            
+            {% if contract.created_by %}
+            <dt class="col-sm-4">Created By</dt>
+            <dd class="col-sm-8">{{ contract.created_by.username if contract.created_by else 'N/A' }}</dd>
+            {% endif %}
+        </dl>
+    </div>
+</div>
+

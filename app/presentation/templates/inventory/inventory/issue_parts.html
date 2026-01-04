@@ -1,0 +1,974 @@
+{% extends "base.html" %}
+
+{% block title %}Issue Parts{% endblock %}
+
+{% block head %}
+<style>
+    .queue-item {
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        padding: 10px;
+        margin-bottom: 10px;
+        background-color: #f8f9fa;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .queue-item:hover {
+        background-color: #e9ecef;
+    }
+    .queue-item.selected-item {
+        background-color: #cfe2ff !important;
+        border-color: #0d6efd !important;
+    }
+    .queue-item.linked-demand {
+        border-color: #198754;
+        border-width: 2px;
+    }
+    .inventory-checkbox {
+        width: 20px;
+        height: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="bi bi-box-arrow-right text-success"></i> Issue Parts
+                    </h1>
+                    <p class="text-muted mb-0">Select inventory items and issue to users or assets</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('inventory.index') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Inventory
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-funnel"></i> Filters</h5>
+                </div>
+                <div class="card-body">
+                    <form method="GET" action="{{ url_for('inventory.issue_parts') }}" class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Part Number</label>
+                            <input type="text" class="form-control" name="part_number" value="{{ current_filters.part_number }}" placeholder="Part number">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Part Name</label>
+                            <input type="text" class="form-control" name="part_name" value="{{ current_filters.part_name }}" placeholder="Part name">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Location</label>
+                            <select class="form-select" name="location_id">
+                                <option value="">All Locations</option>
+                                {% for loc in locations %}
+                                <option value="{{ loc.id }}" {% if current_filters.location_id == loc.id %}selected{% endif %}>{{ loc.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Storeroom</label>
+                            <select class="form-select" name="storeroom_id">
+                                <option value="">All Storerooms</option>
+                                {% for s in storerooms %}
+                                <option value="{{ s.id }}" {% if current_filters.storeroom_id == s.id %}selected{% endif %}>{{ s.room_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Search</label>
+                            <input type="text" class="form-control" name="search" value="{{ current_filters.search }}" placeholder="Part number or name">
+                        </div>
+
+                        <div class="col-12">
+                            <button class="btn btn-primary" type="submit">
+                                <i class="bi bi-search"></i> Apply Filters
+                            </button>
+                            <a class="btn btn-outline-secondary" href="{{ url_for('inventory.issue_parts') }}">
+                                <i class="bi bi-x-circle"></i> Clear
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Available Inventory -->
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-box-seam"></i> Available Inventory
+                        <span class="badge bg-secondary">{{ pagination.total }} total</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if pagination.items %}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th style="width: 40px;"></th>
+                                    <th>Part</th>
+                                    <th>Location</th>
+                                    <th>Storeroom</th>
+                                    <th class="text-end">Available</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for inv in pagination.items %}
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" class="form-check-input inventory-checkbox" 
+                                               data-inventory-id="{{ inv.id }}"
+                                               data-part-id="{{ inv.part_id }}"
+                                               data-part-number="{% if inv.part %}{{ inv.part.part_number }}{% else %}Part #{{ inv.part_id }}{% endif %}"
+                                               data-part-name="{% if inv.part %}{{ inv.part.part_name }}{% endif %}"
+                                               data-available-qty="{{ inv.quantity_on_hand - inv.quantity_allocated }}"
+                                               data-storeroom-id="{% if inv.storeroom %}{{ inv.storeroom.id }}{% endif %}"
+                                               data-storeroom-name="{% if inv.storeroom %}{{ inv.storeroom.room_name }}{% endif %}"
+                                               data-major-location-id="{% if inv.storeroom and inv.storeroom.major_location %}{{ inv.storeroom.major_location.id }}{% endif %}"
+                                               data-location-id="{% if inv.location %}{{ inv.location.id }}{% endif %}"
+                                               data-bin-id="{% if inv.bin %}{{ inv.bin.id }}{% endif %}">
+                                    </td>
+                                    <td>
+                                        {% if inv.part %}
+                                        <div><strong>{{ inv.part.part_number }}</strong></div>
+                                        <div class="text-muted small">{{ inv.part.part_name }}</div>
+                                        {% else %}
+                                        <div><strong>Part #{{ inv.part_id }}</strong></div>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if inv.storeroom and inv.storeroom.major_location %}
+                                        {{ inv.storeroom.major_location.name }}
+                                        {% else %}
+                                        <span class="text-muted">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if inv.storeroom %}
+                                        {{ inv.storeroom.room_name }}
+                                        {% if inv.location %}
+                                        <br><small class="text-muted">{{ inv.location.display_name or inv.location.location }}</small>
+                                        {% endif %}
+                                        {% if inv.bin %}
+                                        <br><small class="text-muted">Bin: {{ inv.bin.bin_tag }}</small>
+                                        {% endif %}
+                                        {% else %}
+                                        <span class="text-muted">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <strong>{{ '%.2f'|format(inv.quantity_on_hand - inv.quantity_allocated) }}</strong>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    {% if pagination.pages > 1 %}
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination justify-content-center mt-3">
+                            {% if pagination.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('inventory.issue_parts', page=pagination.prev_num, **current_filters) }}">Previous</a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">Previous</span>
+                            </li>
+                            {% endif %}
+
+                            {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                                {% if page_num %}
+                                    {% if page_num == pagination.page %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ page_num }}</span>
+                                    </li>
+                                    {% else %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('inventory.issue_parts', page=page_num, **current_filters) }}">{{ page_num }}</a>
+                                    </li>
+                                    {% endif %}
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">…</span>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if pagination.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('inventory.issue_parts', page=pagination.next_num, **current_filters) }}">Next</a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">Next</span>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> No inventory items found with available stock.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Issue Queue and Form -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <!-- Issue Queue -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-list-check"></i> Issue Queue
+                        <span class="badge bg-primary" id="queue-count">0</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="issue-queue">
+                        <div class="text-muted text-center py-3">
+                            <i class="bi bi-inbox"></i><br>
+                            No items in queue. Check boxes to add items.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Part Demand Linkage Tool -->
+            <div class="card border-success mt-4">
+                <div class="card-header bg-success bg-opacity-10">
+                    <h5 class="mb-0">
+                        <i class="bi bi-link-45deg text-success"></i> Link to Part Demands
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Selected Queue Item Summary -->
+                    <div class="alert alert-light border mb-3" id="selectedQueueItemSummary" role="status">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="fw-bold">Selected Queue Item</div>
+                                <div class="small text-muted" id="selectedQueueItemText">
+                                    None selected. Click a queue item above to link to part demands.
+                                </div>
+                            </div>
+                            <button class="btn btn-sm btn-outline-secondary" id="clearSelectedQueueItemBtn" disabled>
+                                <i class="bi bi-x"></i> Clear
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Tabs -->
+                    <ul class="nav nav-tabs mb-3" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="by-event-tab" data-bs-toggle="tab" data-bs-target="#by-event-pane" type="button" role="tab">
+                                <i class="bi bi-calendar-event"></i> By Maintenance Event ID
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="by-part-tab" data-bs-toggle="tab" data-bs-target="#by-part-pane" type="button" role="tab">
+                                <i class="bi bi-box-seam"></i> Link Part Demand By Part ID
+                            </button>
+                        </li>
+                    </ul>
+
+                    <!-- Tab Content -->
+                    <div class="tab-content">
+                        <!-- By Maintenance Event Tab -->
+                        <div class="tab-pane fade show active" id="by-event-pane" role="tabpanel">
+                            <h6 class="fw-bold mb-3"><i class="bi bi-funnel"></i> By Maintenance Event ID</h6>
+
+                            <div class="row g-3">
+                                <!-- Filters -->
+                                <div class="col-12">
+                                    <div class="card border-0">
+                                        <div class="card-body p-0">
+                                            <div class="row g-2">
+                                                <div class="col-md-3 col-6">
+                                                    <label class="form-label small mb-1">Asset ID</label>
+                                                    <input type="number" class="form-control form-control-sm" id="filterAssetId" placeholder="e.g. 12">
+                                                </div>
+                                                <div class="col-md-3 col-6">
+                                                    <label class="form-label small mb-1">Assigned User ID</label>
+                                                    <input type="number" class="form-control form-control-sm" id="filterAssignedUserId" placeholder="e.g. 3">
+                                                </div>
+                                                <div class="col-md-3 col-6">
+                                                    <label class="form-label small mb-1">Major Location ID</label>
+                                                    <input type="number" class="form-control form-control-sm" id="filterMajorLocationId" placeholder="e.g. 5">
+                                                </div>
+                                                <div class="col-md-3 col-6">
+                                                    <label class="form-label small mb-1">Asset Type ID</label>
+                                                    <input type="number" class="form-control form-control-sm" id="filterAssetTypeId" placeholder="e.g. 2">
+                                                </div>
+                                                <div class="col-md-3 col-6">
+                                                    <label class="form-label small mb-1">Make</label>
+                                                    <input type="text" class="form-control form-control-sm" id="filterMake" placeholder="e.g. Toyota">
+                                                </div>
+                                                <div class="col-md-3 col-6">
+                                                    <label class="form-label small mb-1">Model</label>
+                                                    <input type="text" class="form-control form-control-sm" id="filterModel" placeholder="e.g. Corolla">
+                                                </div>
+                                                <div class="col-md-3 col-6">
+                                                    <label class="form-label small mb-1">Created From</label>
+                                                    <input type="datetime-local" class="form-control form-control-sm" id="filterCreatedFrom">
+                                                </div>
+                                                <div class="col-md-3 col-6">
+                                                    <label class="form-label small mb-1">Created To</label>
+                                                    <input type="datetime-local" class="form-control form-control-sm" id="filterCreatedTo">
+                                                </div>
+                                                <div class="col-12 d-flex gap-2 mt-1">
+                                                    <button class="btn btn-sm btn-outline-secondary" type="button" id="clearEventFiltersBtn">
+                                                        <i class="bi bi-x-circle"></i> Clear filters
+                                                    </button>
+                                                    <button class="btn btn-sm btn-outline-primary" type="button" id="applyEventFiltersBtn">
+                                                        <i class="bi bi-arrow-repeat"></i> Apply
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Side-by-side lists -->
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">List of Maintenance Events</label>
+                                    <div class="list-group" style="max-height: 400px; overflow-y: auto;" id="maintenance-events-list">
+                                        <div class="list-group-item">
+                                            <p class="text-muted mb-0"><i class="bi bi-arrow-up"></i> Select a queue item above to load matching maintenance events</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Part Demands from Selected Event</label>
+                                    <div class="list-group" style="max-height: 400px; overflow-y: auto;" id="event-demands-list">
+                                        <div class="list-group-item">
+                                            <p class="text-muted mb-0"><i class="bi bi-info-circle"></i> Select a maintenance event to view its part demands</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- By Part ID Tab -->
+                        <div class="tab-pane fade" id="by-part-pane" role="tabpanel">
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <h6 class="fw-bold mb-3"><i class="bi bi-box-seam"></i> All Unlinked Demands for Selected Part</h6>
+                                    <div class="alert alert-info" role="alert">
+                                        <div class="d-flex align-items-start">
+                                            <i class="bi bi-info-circle me-2"></i>
+                                            <div>
+                                                <div class="small">
+                                                    Current Part: <span class="fw-bold" id="selectedPartIdText">None selected</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <h6 class="fw-bold mb-3">Unlinked Part Demands</h6>
+                                    <div class="list-group" style="max-height: 400px; overflow-y: auto;" id="part-demands-list">
+                                        <div class="list-group-item">
+                                            <p class="text-muted mb-0"><i class="bi bi-arrow-up"></i> Select a queue item above to view unlinked demands for that part</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Issue Form -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-box-arrow-right"></i> Issue Details</h5>
+                </div>
+                <div class="card-body">
+                    <form id="issue-form" method="POST" action="{{ url_for('inventory.submit_issue') }}">
+                        <!-- Inline fields for full screen -->
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Issue Type <span class="text-danger">*</span></label>
+                                <select class="form-select" name="issue_type" id="issue_type" required>
+                                    <option value="">Select type...</option>
+                                    <option value="DirectToUser">Direct to User</option>
+                                    <option value="ForPartDemand">For Part Demand</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label">Issued To User <span class="text-danger">*</span></label>
+                                <select class="form-select" name="issued_to_user_id" id="issued_to_user_id" required>
+                                    <option value="">Select user...</option>
+                                    {% for user in users %}
+                                    <option value="{{ user.id }}" {% if user.id == current_user.id %}selected{% endif %}>{{ user.username }} ({{ user.first_name }} {{ user.last_name }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label">Asset (Optional)</label>
+                                <select class="form-select" name="asset_id" id="asset_id">
+                                    <option value="">Select asset...</option>
+                                    {% for asset in assets %}
+                                    <option value="{{ asset.id }}">{{ asset.serial_number }} - {{ asset.name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <small class="form-text text-muted">Optional: Link this issue to a specific asset</small>
+                            </div>
+                        </div>
+
+                        <!-- Date Issued field -->
+                        <div class="mb-3">
+                            <label class="form-label">Date Issued</label>
+                            <input type="datetime-local" class="form-control" name="date_issued" id="date_issued" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Issue Reason (Optional)</label>
+                            <input type="text" class="form-control" name="issue_reason" id="issue_reason" placeholder="e.g., Maintenance, Repair, etc.">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Notes (Optional)</label>
+                            <textarea class="form-control" name="issue_notes" id="issue_notes" rows="3" placeholder="Additional notes about this issue..."></textarea>
+                        </div>
+
+                        <input type="hidden" name="issued_by_id" value="{{ current_user.id }}">
+                        <input type="hidden" name="queue_data" id="queue_data">
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success btn-lg" id="submit-btn" disabled>
+                                <i class="bi bi-check-circle"></i> Issue Parts
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let issueQueue = [];
+let selectedQueueItem = null;
+let selectedPartId = null;
+let selectedPartNumber = null;
+let currentEvents = [];
+
+// Set default date issued to now
+document.addEventListener('DOMContentLoaded', function() {
+    const dateIssuedInput = document.getElementById('date_issued');
+    if (dateIssuedInput) {
+        const now = new Date();
+        // Format as YYYY-MM-DDTHH:mm for datetime-local input
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        dateIssuedInput.value = `${year}-${month}-${day}T${hours}:${minutes}`;
+    }
+    
+    // Initialize demand linkage handlers
+    initializeDemandLinkage();
+});
+
+// Enable/disable add to queue based on checkbox
+document.querySelectorAll('.inventory-checkbox').forEach(checkbox => {
+    checkbox.addEventListener('change', function() {
+        const inventoryId = this.dataset.inventoryId;
+        
+        if (this.checked) {
+            addToQueue(this);
+        } else {
+            removeFromQueue(inventoryId);
+        }
+    });
+});
+
+function addToQueue(checkbox) {
+    const inventoryId = checkbox.dataset.inventoryId;
+    const quantity = 1.00; // Default quantity
+    
+    const item = {
+        inventory_id: inventoryId,
+        part_id: checkbox.dataset.partId,
+        part_number: checkbox.dataset.partNumber,
+        part_name: checkbox.dataset.partName,
+        quantity: quantity,
+        available_qty: parseFloat(checkbox.dataset.availableQty),
+        storeroom_id: checkbox.dataset.storeroomId,
+        storeroom_name: checkbox.dataset.storeroomName,
+        major_location_id: checkbox.dataset.majorLocationId,
+        location_id: checkbox.dataset.locationId || null,
+        bin_id: checkbox.dataset.binId || null
+    };
+    
+    issueQueue.push(item);
+    renderQueue();
+}
+
+function removeFromQueue(inventoryId) {
+    issueQueue = issueQueue.filter(item => item.inventory_id !== inventoryId);
+    renderQueue();
+}
+
+function updateQueueItem(inventoryId, quantity) {
+    const item = issueQueue.find(item => item.inventory_id === inventoryId);
+    if (item) {
+        item.quantity = quantity;
+        renderQueue();
+    }
+}
+
+function renderQueue() {
+    const queueDiv = document.getElementById('issue-queue');
+    const queueCount = document.getElementById('queue-count');
+    const submitBtn = document.getElementById('submit-btn');
+    const queueDataInput = document.getElementById('queue_data');
+    
+    queueCount.textContent = issueQueue.length;
+    
+    if (issueQueue.length === 0) {
+        queueDiv.innerHTML = `
+            <div class="text-muted text-center py-3">
+                <i class="bi bi-inbox"></i><br>
+                No items in queue. Check boxes to add items.
+            </div>
+        `;
+        submitBtn.disabled = true;
+        queueDataInput.value = '';
+        // Clear selection if queue is empty
+        selectedQueueItem = null;
+        updateSelectedQueueItemSummary();
+    } else {
+        let html = '';
+        issueQueue.forEach(item => {
+            const isSelected = selectedQueueItem && selectedQueueItem.inventory_id === item.inventory_id;
+            const hasLinkedDemand = item.part_demand_id ? 'linked-demand' : '';
+            const selectedClass = isSelected ? 'selected-item' : '';
+            html += `
+                <div class="queue-item clickable-queue-item ${selectedClass} ${hasLinkedDemand}" 
+                     data-inventory-id="${item.inventory_id}" 
+                     data-part-id="${item.part_id}"
+                     data-part-number="${item.part_number}">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <strong>${item.part_number}</strong><br>
+                            <small class="text-muted">${item.part_name}</small><br>
+                            <small class="text-muted">${item.storeroom_name}</small><br>
+                            <div class="mt-2 d-flex align-items-center gap-2">
+                                <label class="form-label small mb-0">Quantity:</label>
+                                <input type="number" 
+                                       class="form-control form-control-sm queue-qty-input" 
+                                       data-inventory-id="${item.inventory_id}"
+                                       min="0.01" 
+                                       max="${item.available_qty}" 
+                                       step="0.01" 
+                                       value="${item.quantity.toFixed(2)}"
+                                       style="width: 100px;"
+                                       ${item.part_demand_id ? 'readonly' : ''}
+                                       onclick="event.stopPropagation();">
+                                <small class="text-muted">(Available: ${item.available_qty.toFixed(2)})</small>
+                                ${item.part_demand_id ? '<small class="text-success"><i class="bi bi-lock"></i> Locked to demand</small>' : ''}
+                            </div>
+                            ${item.part_demand_id ? `<br><span class="badge bg-success mt-1"><i class="bi bi-link-45deg"></i> Linked to Demand #${item.part_demand_id}</span>` : ''}
+                        </div>
+                        <button type="button" class="btn btn-sm btn-danger" onclick="event.stopPropagation(); removeFromQueueByButton('${item.inventory_id}')">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+        queueDiv.innerHTML = html;
+        submitBtn.disabled = false;
+        queueDataInput.value = JSON.stringify(issueQueue);
+        
+        // Re-attach click handlers for queue items
+        document.querySelectorAll('.clickable-queue-item').forEach(item => {
+            item.addEventListener('click', function() {
+                selectQueueItem(this.dataset.inventoryId);
+            });
+        });
+        
+        // Attach quantity change handlers
+        document.querySelectorAll('.queue-qty-input').forEach(input => {
+            input.addEventListener('change', function() {
+                const inventoryId = this.dataset.inventoryId;
+                const newQty = parseFloat(this.value);
+                const item = issueQueue.find(i => i.inventory_id === inventoryId);
+                if (item) {
+                    if (newQty > item.available_qty) {
+                        showToast(`Quantity exceeds available stock (${item.available_qty.toFixed(2)})`, false);
+                        this.value = item.quantity.toFixed(2);
+                        return;
+                    }
+                    if (newQty < 0.01) {
+                        showToast('Quantity must be at least 0.01', false);
+                        this.value = item.quantity.toFixed(2);
+                        return;
+                    }
+                    item.quantity = newQty;
+                    queueDataInput.value = JSON.stringify(issueQueue);
+                }
+            });
+        });
+    }
+}
+
+function removeFromQueueByButton(inventoryId) {
+    const checkbox = document.querySelector(`.inventory-checkbox[data-inventory-id="${inventoryId}"]`);
+    if (checkbox) {
+        checkbox.checked = false;
+    }
+    removeFromQueue(inventoryId);
+}
+
+// Demand Linkage Functions
+function selectQueueItem(inventoryId) {
+    const item = issueQueue.find(i => i.inventory_id === inventoryId);
+    if (!item) return;
+    
+    selectedQueueItem = item;
+    selectedPartId = item.part_id;
+    selectedPartNumber = item.part_number;
+    
+    // Update UI
+    document.querySelectorAll('.clickable-queue-item').forEach(i => i.classList.remove('selected-item'));
+    document.querySelector(`.clickable-queue-item[data-inventory-id="${inventoryId}"]`)?.classList.add('selected-item');
+    
+    updateSelectedQueueItemSummary();
+    loadMaintenanceEvents();
+    loadPartDemands();
+}
+
+function updateSelectedQueueItemSummary() {
+    const textEl = document.getElementById('selectedQueueItemText');
+    const clearBtn = document.getElementById('clearSelectedQueueItemBtn');
+    
+    if (!selectedQueueItem || !selectedPartId) {
+        textEl.textContent = 'None selected. Click a queue item above to link to part demands.';
+        clearBtn.disabled = true;
+        return;
+    }
+    
+    textEl.textContent = `${selectedPartNumber} - Qty: ${selectedQueueItem.quantity}`;
+    clearBtn.disabled = false;
+}
+
+function buildEventsQueryParams() {
+    const params = new URLSearchParams();
+    if (selectedPartId) params.set('part_id', selectedPartId);
+
+    const assetId = document.getElementById('filterAssetId')?.value;
+    const assignedUserId = document.getElementById('filterAssignedUserId')?.value;
+    const majorLocationId = document.getElementById('filterMajorLocationId')?.value;
+    const assetTypeId = document.getElementById('filterAssetTypeId')?.value;
+    const make = document.getElementById('filterMake')?.value;
+    const model = document.getElementById('filterModel')?.value;
+    const createdFrom = document.getElementById('filterCreatedFrom')?.value;
+    const createdTo = document.getElementById('filterCreatedTo')?.value;
+
+    if (assetId) params.set('asset_id', assetId);
+    if (assignedUserId) params.set('assigned_user_id', assignedUserId);
+    if (majorLocationId) params.set('major_location_id', majorLocationId);
+    if (assetTypeId) params.set('asset_type_id', assetTypeId);
+    if (make) params.set('make', make);
+    if (model) params.set('model', model);
+    if (createdFrom) params.set('created_from', createdFrom);
+    if (createdTo) params.set('created_to', createdTo);
+
+    return params;
+}
+
+function loadMaintenanceEvents() {
+    const eventsList = document.getElementById('maintenance-events-list');
+    const demandsList = document.getElementById('event-demands-list');
+    
+    if (!selectedPartId) {
+        eventsList.innerHTML = '<div class="list-group-item"><p class="text-muted mb-0"><i class="bi bi-arrow-up"></i> Select a queue item above to load matching maintenance events</p></div>';
+        demandsList.innerHTML = '<div class="list-group-item"><p class="text-muted mb-0"><i class="bi bi-info-circle"></i> Select a maintenance event to view its part demands</p></div>';
+        return;
+    }
+    
+    eventsList.innerHTML = '<div class="list-group-item"><p class="text-muted mb-0"><i class="bi bi-hourglass-split"></i> Loading...</p></div>';
+
+    const params = buildEventsQueryParams();
+    fetch(`/inventory/issue-parts/api/events?${params.toString()}`)
+        .then(r => r.json())
+        .then(events => {
+            currentEvents = events;
+            
+            if (events.length === 0) {
+                eventsList.innerHTML = '<div class="list-group-item"><p class="text-muted mb-0">No maintenance events with unlinked demands for this part.</p></div>';
+                return;
+            }
+            
+            let html = '';
+            events.forEach(ev => {
+                html += `
+                    <a href="#" class="list-group-item list-group-item-action event-item" data-event-id="${ev.event_id}">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">${ev.task_name}</h6>
+                                <small class="text-muted">Asset: ${ev.asset_name || 'N/A'}</small><br>
+                                <small class="text-muted">Start: ${ev.planned_start || 'TBD'}</small>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-warning">${ev.status}</span><br>
+                                <small class="text-muted">${ev.demands.length} demands</small>
+                            </div>
+                        </div>
+                    </a>
+                `;
+            });
+            
+            eventsList.innerHTML = html;
+            
+            // Add click handlers
+            document.querySelectorAll('.event-item').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const eventId = parseInt(this.dataset.eventId);
+                    loadEventDemands(eventId);
+                });
+            });
+        })
+        .catch(err => {
+            console.error('Failed to load events:', err);
+            eventsList.innerHTML = '<div class="list-group-item"><p class="text-danger mb-0">Error loading events</p></div>';
+        });
+}
+
+function loadEventDemands(eventId) {
+    const demandsList = document.getElementById('event-demands-list');
+    const event = currentEvents.find(e => e.event_id === eventId);
+    
+    if (!event || event.demands.length === 0) {
+        demandsList.innerHTML = '<div class="list-group-item"><p class="text-muted mb-0">No demands found for this event</p></div>';
+        return;
+    }
+    
+    let html = '';
+    event.demands.forEach(d => {
+        html += `
+            <div class="list-group-item">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6 class="mb-1">${d.part_number} - ${d.part_name}</h6>
+                        <small class="text-muted">Action: ${d.action_name}</small><br>
+                        <small class="text-muted">Required: ${d.quantity_required}</small>
+                    </div>
+                    <div class="text-end">
+                        <span class="badge bg-${d.status === 'Approved' ? 'warning' : 'secondary'}">${d.status}</span><br>
+                        <span class="badge bg-info">${d.priority}</span>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <button class="btn btn-sm btn-success tool-link-btn" data-demand-id="${d.id}" data-qty="${d.quantity_required}">
+                        <i class="bi bi-link-45deg"></i> Link to selected queue item
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+    
+    demandsList.innerHTML = html;
+    
+    // Add click handlers
+    document.querySelectorAll('.tool-link-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            if (!selectedQueueItem) {
+                showToast('Please select a queue item first', false);
+                return;
+            }
+            const demandQty = parseFloat(this.dataset.qty || '0');
+            linkDemandToQueueItem(parseInt(this.dataset.demandId), demandQty);
+        });
+    });
+}
+
+function loadPartDemands() {
+    const demandsList = document.getElementById('part-demands-list');
+    const partTextEl = document.getElementById('selectedPartIdText');
+    
+    if (!selectedPartId) {
+        demandsList.innerHTML = '<div class="list-group-item"><p class="text-muted mb-0"><i class="bi bi-arrow-up"></i> Select a queue item above to view unlinked demands for that part</p></div>';
+        partTextEl.textContent = 'None selected';
+        return;
+    }
+    
+    partTextEl.textContent = selectedPartNumber || selectedPartId;
+    demandsList.innerHTML = '<div class="list-group-item"><p class="text-muted mb-0"><i class="bi bi-hourglass-split"></i> Loading...</p></div>';
+
+    const params = buildEventsQueryParams();
+    fetch(`/inventory/issue-parts/api/events?${params.toString()}`)
+        .then(r => r.json())
+        .then(events => {
+            const allDemands = [];
+            events.forEach(ev => {
+                ev.demands.forEach(d => {
+                    d.event_name = ev.task_name;
+                    allDemands.push(d);
+                });
+            });
+            
+            if (allDemands.length === 0) {
+                demandsList.innerHTML = '<div class="list-group-item"><p class="text-muted mb-0">No unlinked demands for this part.</p></div>';
+                return;
+            }
+            
+            let html = '';
+            allDemands.forEach(d => {
+                html += `
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">Demand #${d.id} - ${d.event_name}</h6>
+                                <small class="text-muted">Action: ${d.action_name}</small><br>
+                                <small class="text-muted">Required: ${d.quantity_required}</small>
+                            </div>
+                            <span class="badge bg-${d.status === 'Approved' ? 'warning' : 'secondary'}">${d.status}</span>
+                        </div>
+                        <div class="mt-2">
+                            <button class="btn btn-sm btn-success tool-link-btn" data-demand-id="${d.id}" data-qty="${d.quantity_required}">
+                                <i class="bi bi-link-45deg"></i> Link to selected queue item
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            demandsList.innerHTML = html;
+            
+            // Add click handlers
+            document.querySelectorAll('.tool-link-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    if (!selectedQueueItem) {
+                        showToast('Please select a queue item first', false);
+                        return;
+                    }
+                    const demandQty = parseFloat(this.dataset.qty || '0');
+                    linkDemandToQueueItem(parseInt(this.dataset.demandId), demandQty);
+                });
+            });
+        })
+        .catch(err => {
+            console.error('Failed to load demands:', err);
+            demandsList.innerHTML = '<div class="list-group-item"><p class="text-danger mb-0">Error loading demands</p></div>';
+        });
+}
+
+function linkDemandToQueueItem(demandId, requiredQuantity) {
+    if (!selectedQueueItem) {
+        showToast('Please select a queue item first', false);
+        return;
+    }
+    
+    // Validate available stock
+    if (requiredQuantity > selectedQueueItem.available_qty) {
+        showToast(`Insufficient stock! Required: ${requiredQuantity.toFixed(2)}, Available: ${selectedQueueItem.available_qty.toFixed(2)}`, false);
+        return;
+    }
+    
+    // Update the queue item with the demand ID and set quantity to match demand
+    selectedQueueItem.part_demand_id = demandId;
+    selectedQueueItem.quantity = requiredQuantity;
+    renderQueue();
+    showToast(`Linked demand #${demandId} to queue item. Quantity set to ${requiredQuantity.toFixed(2)}`, true);
+}
+
+function showToast(message, isSuccess = true) {
+    // Simple alert for now - can be replaced with Bootstrap toast if available
+    const alertClass = isSuccess ? 'alert-success' : 'alert-danger';
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert ${alertClass} alert-dismissible fade show position-fixed top-0 end-0 m-3`;
+    alertDiv.style.zIndex = '9999';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(alertDiv);
+    setTimeout(() => {
+        alertDiv.remove();
+    }, 3000);
+}
+
+function initializeDemandLinkage() {
+    // Clear selection button
+    document.getElementById('clearSelectedQueueItemBtn')?.addEventListener('click', function() {
+        document.querySelectorAll('.clickable-queue-item').forEach(i => i.classList.remove('selected-item'));
+        selectedQueueItem = null;
+        selectedPartId = null;
+        selectedPartNumber = null;
+        
+        updateSelectedQueueItemSummary();
+        loadMaintenanceEvents();
+        loadPartDemands();
+        
+        document.getElementById('event-demands-list').innerHTML = '<div class="list-group-item"><p class="text-muted mb-0"><i class="bi bi-info-circle"></i> Select a maintenance event to view its part demands</p></div>';
+    });
+    
+    // Filter buttons
+    document.getElementById('applyEventFiltersBtn')?.addEventListener('click', function() {
+        loadMaintenanceEvents();
+        loadPartDemands();
+    });
+
+    document.getElementById('clearEventFiltersBtn')?.addEventListener('click', function() {
+        const ids = [
+            'filterAssetId',
+            'filterAssignedUserId',
+            'filterMajorLocationId',
+            'filterAssetTypeId',
+            'filterMake',
+            'filterModel',
+            'filterCreatedFrom',
+            'filterCreatedTo'
+        ];
+        ids.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = '';
+        });
+        loadMaintenanceEvents();
+        loadPartDemands();
+    });
+    
+    updateSelectedQueueItemSummary();
+}
+
+// Form validation
+document.getElementById('issue-form').addEventListener('submit', function(e) {
+    if (issueQueue.length === 0) {
+        e.preventDefault();
+        alert('Please add at least one item to the issue queue.');
+        return false;
+    }
+});
+</script>
+{% endblock %}
+

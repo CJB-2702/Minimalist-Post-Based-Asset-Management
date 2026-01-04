@@ -196,7 +196,8 @@ class ModelDetailContext:
             return []
         
         # Eagerly load the make_model relationship to avoid N+1 queries
-        query = model.query.options(joinedload('make_model'))
+        # Use class-bound attribute instead of string for SQLAlchemy 2.0+ compatibility
+        query = model.query.options(joinedload(model.make_model))
         if make_model_id:
             query = query.filter_by(make_model_id=make_model_id)
         

@@ -320,37 +320,7 @@ class AssetContext:
         - make_model_id
         
         Meter tracking:
-        - If any meter values (meter1-4) are updated,        # Check if meters are being updated
-        meter_fields = ['meter1', 'meter2', 'meter3', 'meter4']
-        meters_updated = any(field in kwargs for field in meter_fields)
-        
-        # Extract meter values from kwargs (use current values if not provided)
-        meter_values = {}
-        if meters_updated:
-            for field in meter_fields:
-                meter_values[field] = kwargs.get(field, getattr(self._asset, field, None))
-        
-        # Apply all changes (including non-key fields, but exclude meters - handled separately)
-        for key, value in kwargs.items():
-            if key not in meter_fields and value is not None:
-                setattr(self._asset, key, value)
-        
-        # Set audit fields
-        if updated_by_id:
-            self._asset.updated_by_id = updated_by_id
-        
-        # Update meters and create history if meters were updated
-        if meters_updated:
-            self.update_meters(
-                meter1=meter_values.get('meter1'),
-                meter2=meter_values.get('meter2'),
-                meter3=meter_values.get('meter3'),
-                meter4=meter_values.get('meter4'),
-                updated_by_id=updated_by_id,
-                validate=not ignore_meter_validation,  # Validate unless explicitly bypassed
-                commit=commit
-            )
-         a MeterHistory record is automatically created
+        - If any meter values (meter1-4) are updated, a MeterHistory record is automatically created
         - Meter history is created with commit=False if commit=False, allowing transaction rollback
         
         Args:

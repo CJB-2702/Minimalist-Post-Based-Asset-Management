@@ -1,0 +1,358 @@
+{% extends "base.html" %}
+
+{% block title %}Create PO from Part Demands{% endblock %}
+
+{% block extra_css %}
+<style>
+  .sticky-side {
+    position: sticky;
+    top: 1rem;
+  }
+  .table-xs td, .table-xs th {
+    padding-top: .4rem;
+    padding-bottom: .4rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <h1 class="h3 mb-1">
+            <i class="bi bi-cart-plus text-primary"></i> Create PO from Part Demand Lines
+          </h1>
+          <p class="text-muted mb-0">Search and select part demands, then confirm per-part pricing before submission.</p>
+        </div>
+        <div>
+          <a href="{{ url_for('inventory.purchase_orders_index') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Purchase Orders
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <h5 class="mb-0"><i class="bi bi-funnel"></i> Filters</h5>
+    </div>
+    <div class="card-body">
+      <form method="GET" action="{{ url_for('inventory.create_po_from_part_demands') }}" class="row g-3">
+        <div class="col-md-3">
+          <label class="form-label">Part ID</label>
+          <input type="number" class="form-control" name="part_id" value="{{ filters.part_id }}" placeholder="Part ID">
+        </div>
+        <div class="col-md-5">
+          <label class="form-label">Part Description</label>
+          <input type="text" class="form-control" name="part_description" value="{{ filters.part_description }}" placeholder="Part name or description">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Status</label>
+          <select class="form-select" name="status">
+            <option value="">(Default: orderable)</option>
+            {% for s in status_options %}
+              <option value="{{ s }}" {% if filters.status == s %}selected{% endif %}>{{ s }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-12"><hr class="my-2"></div>
+
+        <div class="col-md-3">
+          <label class="form-label">Maintenance Event ID</label>
+          <input type="number" class="form-control" name="maintenance_event_id" value="{{ filters.maintenance_event_id }}" placeholder="Event ID">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Asset ID</label>
+          <input type="number" class="form-control" name="asset_id" value="{{ filters.asset_id }}" placeholder="Asset ID">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Assigned To</label>
+          <select class="form-select" name="assigned_to_id">
+            <option value="">All Users</option>
+            {% for u in users %}
+              <option value="{{ u.id }}" {% if filters.assigned_to_id|int == u.id %}selected{% endif %}>{{ u.username }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Major Location</label>
+          <select class="form-select" name="major_location_id">
+            <option value="">All Locations</option>
+            {% for loc in major_locations %}
+              <option value="{{ loc.id }}" {% if filters.major_location_id|int == loc.id %}selected{% endif %}>{{ loc.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-12">
+          <div class="d-flex justify-content-end gap-2">
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-search"></i> Search
+            </button>
+            <a class="btn btn-outline-secondary" href="{{ url_for('inventory.create_po_from_part_demands') }}">
+              <i class="bi bi-x-circle"></i> Clear
+            </a>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- Search Results -->
+    <div class="col-lg-7">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0"><i class="bi bi-list-check"></i> Search Results</h5>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleAll(true)">Select all</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleAll(false)">Select none</button>
+          </div>
+        </div>
+        <div class="card-body">
+          {% if part_demands %}
+            <form method="POST" action="{{ url_for('inventory.create_po_from_part_demands_add', **filters) }}">
+              <div class="table-responsive">
+                <table class="table table-hover table-xs align-middle">
+                  <thead>
+                    <tr>
+                      <th style="width: 44px;"></th>
+                      <th>ID</th>
+                      <th>Part</th>
+                      <th>Qty</th>
+                      <th>Status</th>
+                      <th>Event</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for pd in part_demands %}
+                      {% set is_disabled = pd.status in ['Issued', 'Ordered', 'Installed'] %}
+                      <tr class="{% if is_disabled %}table-secondary{% endif %}">
+                        <td>
+                          <input class="form-check-input demand-check" type="checkbox" name="part_demand_ids" value="{{ pd.id }}" {% if is_disabled %}disabled{% endif %}>
+                        </td>
+                        <td>{{ pd.id }}</td>
+                        <td>
+                          {% if pd.part %}
+                            <div><strong>{{ pd.part.part_number }}</strong></div>
+                            <div class="text-muted small">{{ pd.part.part_name }}</div>
+                          {% else %}
+                            <div><strong>Part #{{ pd.part_id }}</strong></div>
+                          {% endif %}
+                        </td>
+                        <td>{{ pd.quantity_required }}</td>
+                        <td><span class="badge bg-secondary">{{ pd.status }}</span></td>
+                        <td>
+                          {% if pd.action and pd.action.maintenance_action_set %}
+                            Event #{{ pd.action.maintenance_action_set.event_id }}
+                          {% else %}
+                            <span class="text-muted">N/A</span>
+                          {% endif %}
+                        </td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+              <div class="d-flex justify-content-end mt-3">
+                <button type="submit" class="btn btn-primary">
+                  <i class="bi bi-plus-circle"></i> Add Selected to Queue
+                </button>
+              </div>
+            </form>
+          {% else %}
+            <div class="alert alert-info mb-0">
+              <i class="bi bi-info-circle"></i> No matching orderable part demands.
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Selected + Summary -->
+    <div class="col-lg-5">
+      <div class="sticky-side">
+        <div class="card mb-4">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-check2-square"></i> Selected Part Demands</h5>
+            <form method="POST" action="{{ url_for('inventory.create_po_from_part_demands_clear', **filters) }}">
+              <button type="submit" class="btn btn-sm btn-outline-secondary" {% if not selected_demands %}disabled{% endif %}>
+                <i class="bi bi-trash"></i> Clear
+              </button>
+            </form>
+          </div>
+          <div class="card-body">
+            {% if selected_demands %}
+              <div class="table-responsive">
+                <table class="table table-sm align-middle">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Part</th>
+                      <th>Qty</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for d in selected_demands %}
+                      <tr>
+                        <td>{{ d.id }}</td>
+                        <td>
+                          {% if d.part %}
+                            <strong>{{ d.part.part_number }}</strong>
+                            <div class="text-muted small">{{ d.part.part_name }}</div>
+                          {% else %}
+                            <strong>Part #{{ d.part_id }}</strong>
+                          {% endif %}
+                        </td>
+                        <td>{{ d.quantity_required }}</td>
+                        <td class="text-end">
+                          <form method="POST" action="{{ url_for('inventory.create_po_from_part_demands_remove', part_demand_id=d.id, **filters) }}">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                              <i class="bi bi-x"></i>
+                            </button>
+                          </form>
+                        </td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% else %}
+              <div class="alert alert-warning mb-0">
+                <i class="bi bi-exclamation-triangle"></i> No part demands selected yet.
+              </div>
+            {% endif %}
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- PO Header and Parts Summary - Full Width at Bottom -->
+  <form method="POST" action="{{ url_for('inventory.create_po_from_part_demands_submit', **filters) }}" id="po-submit-form" class="mt-4">
+    <div class="card mb-4">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-receipt"></i> PO Header</h5>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label">Vendor Name *</label>
+            <input class="form-control" name="vendor_name" required {% if not selected_demands %}disabled{% endif %}>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Vendor Contact</label>
+            <input class="form-control" name="vendor_contact" {% if not selected_demands %}disabled{% endif %}>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Location *</label>
+            <select class="form-select" name="location_id" {% if not selected_demands %}disabled{% endif %} required>
+              <option value="">-- Select Location --</option>
+              {% for loc in locations %}
+                <option value="{{ loc.id }}">{{ loc.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Storeroom</label>
+            <select class="form-select" name="storeroom_id" {% if not selected_demands %}disabled{% endif %}>
+              <option value="">-- Optional --</option>
+              {% for s in storerooms %}
+                <option value="{{ s.id }}">{{ s.room_name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Shipping</label>
+            <input class="form-control" name="shipping_cost" type="number" step="0.01" value="0.00" {% if not selected_demands %}disabled{% endif %}>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Tax</label>
+            <input class="form-control" name="tax_amount" type="number" step="0.01" value="0.00" {% if not selected_demands %}disabled{% endif %}>
+          </div>
+          <div class="col-12">
+            <label class="form-label">Notes</label>
+            <textarea class="form-control" name="notes" rows="2" {% if not selected_demands %}disabled{% endif %}></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-basket"></i> Parts Summary (Confirm Pricing)</h5>
+      </div>
+      <div class="card-body">
+        {% if parts_summary %}
+          <div class="table-responsive">
+            <table class="table table-sm align-middle">
+              <thead>
+                <tr>
+                  <th>Part</th>
+                  <th>Total Qty</th>
+                  <th style="width: 160px;">Unit Cost</th>
+                  <th style="width: 120px;">Confirm</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in parts_summary %}
+                  <tr>
+                    <td>
+                      <strong>{{ row.part_number }}</strong>
+                      <div class="text-muted small">{{ row.part_name }}</div>
+                    </td>
+                    <td>{{ row.total_qty }}</td>
+                    <td>
+                      <input class="form-control" type="number" min="0" step="0.01" name="unit_cost_part_{{ row.part_id }}" value="{{ '%.2f'|format(row.default_unit_cost) }}" required {% if not selected_demands %}disabled{% endif %}>
+                    </td>
+                    <td>
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="confirm_price_part_{{ row.part_id }}" required {% if not selected_demands %}disabled{% endif %}>
+                        <label class="form-check-label">Confirmed</label>
+                      </div>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <div class="d-flex justify-content-end mt-3">
+            <button type="submit" class="btn btn-success" {% if not selected_demands %}disabled{% endif %}>
+              <i class="bi bi-check-circle"></i> Create Purchase Order
+            </button>
+          </div>
+        {% else %}
+          <div class="alert alert-warning mb-0">
+            <i class="bi bi-exclamation-triangle"></i> Select part demands to see the parts summary.
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </form>
+</div>
+
+<script>
+  function toggleAll(checked) {
+    document.querySelectorAll('.demand-check').forEach(cb => {
+      if (!cb.disabled) cb.checked = checked;
+    });
+  }
+</script>
+{% endblock %}
+
+
+
+
+
+
+
+
+
+

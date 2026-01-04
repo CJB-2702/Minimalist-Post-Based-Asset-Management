@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Maintenance Blockers - Asset Management System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Maintenance Blockers</h1>
+            <a href="{{ url_for('blockers.create') }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Add Blocker
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Blockers ({{ blockers.total }} total)</h5>
+            </div>
+            <div class="card-body">
+                {% if blockers.items %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Type</th>
+                                <th>Reason</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for delay in blockers.items %}
+                            <tr>
+                                <td>{{ delay.id }}</td>
+                                <td>{{ delay.mission_capability_status or 'N/A' }}</td>
+                                <td>{{ delay.reason[:50] if delay.reason else 'N/A' }}</td>
+                                <td>{{ delay.start_date.strftime('%Y-%m-%d') if delay.start_date else 'N/A' }}</td>
+                                <td>{{ delay.end_date.strftime('%Y-%m-%d') if delay.end_date else 'Active' }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if delay.is_resolved else 'warning' }}">
+                                        {{ 'Resolved' if delay.is_resolved else 'Active' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('blockers.detail', delay_id=delay.id) }}" 
+                                       class="btn btn-sm btn-info">View</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">No blockers found.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -3,20 +3,51 @@ Inventory Services
 Presentation services for inventory-related data retrieval and formatting.
 """
 
-from .inventory_service import InventoryService
-from .active_inventory_service import ActiveInventoryService
-from .inventory_movement_service import InventoryMovementService
+# General services (parts, tools, etc.)
 from .part_service import PartService
 from .tool_service import ToolService
 from .part_demand_service import PartDemandInventoryService
 
+# Sub-modules
+from .purchasing import (
+    PurchaseOrderLineService,
+    InventoryPartDemandSelectionService,
+    POPartDemandSelectionService,  # Alias
+    PartPickerService,
+)
+from .arrivals import (
+    ArrivalLinkagePortal,
+    ArrivalPOLineSelectionService,
+)
+from .inventory import (
+    ActiveInventoryService,
+    InventoryMovementService,
+    InventoryService,
+    GlobalInventoryView,
+    MajorLocationInventoryView,
+    StoreroomInventoryView,
+)
+
 __all__ = [
-    'InventoryService',
-    'ActiveInventoryService',
-    'InventoryMovementService',
+    # General services
     'PartService',
     'ToolService',
     'PartDemandInventoryService',
+    # Purchasing services
+    'PurchaseOrderLineService',
+    'InventoryPartDemandSelectionService',
+    'POPartDemandSelectionService',  # Alias for backward compatibility
+    'PartPickerService',
+    # Arrival services
+    'ArrivalLinkagePortal',
+    'ArrivalPOLineSelectionService',
+    # Inventory management services
+    'ActiveInventoryService',
+    'InventoryMovementService',
+    'InventoryService',
+    'GlobalInventoryView',
+    'MajorLocationInventoryView',
+    'StoreroomInventoryView',
 ]
 
 

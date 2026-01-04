@@ -1,0 +1,49 @@
+<div class="card mb-3 info-card success">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="bi bi-currency-exchange"></i> Reimbursement Outcome
+        </h5>
+    </div>
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-4">Reimbursement ID</dt>
+            <dd class="col-sm-8">#{{ reimbursement.id }}</dd>
+            
+            <dt class="col-sm-4">Amount</dt>
+            <dd class="col-sm-8">
+                <span class="badge bg-success">
+                    {{ "{:,.2f}".format(reimbursement.amount) }}
+                </span>
+            </dd>
+            
+            <dt class="col-sm-4">From Account</dt>
+            <dd class="col-sm-8">{{ reimbursement.from_account }}</dd>
+            
+            <dt class="col-sm-4">To Account</dt>
+            <dd class="col-sm-8">{{ reimbursement.to_account }}</dd>
+            
+            <dt class="col-sm-4">Reason</dt>
+            <dd class="col-sm-8">{{ reimbursement.reason }}</dd>
+            
+            {% if reimbursement.policy_reference %}
+            <dt class="col-sm-4">Policy Reference</dt>
+            <dd class="col-sm-8">
+                <code>{{ reimbursement.policy_reference }}</code>
+            </dd>
+            {% endif %}
+            
+            <dt class="col-sm-4">Created</dt>
+            <dd class="col-sm-8">
+                <small class="text-muted">
+                    {{ reimbursement.created_at.strftime('%Y-%m-%d %H:%M') if reimbursement.created_at else 'N/A' }}
+                </small>
+            </dd>
+            
+            {% if reimbursement.created_by %}
+            <dt class="col-sm-4">Created By</dt>
+            <dd class="col-sm-8">{{ reimbursement.created_by.username if reimbursement.created_by else 'N/A' }}</dd>
+            {% endif %}
+        </dl>
+    </div>
+</div>
+

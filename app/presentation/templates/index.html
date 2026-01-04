@@ -78,11 +78,14 @@
         ">
             <div class="row align-items-center">
                 <div class="col-md-8">
-                    <h1 class="display-4 fw-bold mb-3">Event Based<br>Asset Managment System</h1>
+                    <h1 class="display-4 fw-bold mb-3">Event Based<br>Asset Maintenance System</h1>
                     <p class="lead mb-4">Comprehensive fleet and asset management solution for modern operations</p>
                     <div class="d-flex gap-3">
                         <a href="{{ url_for('main.asset_management') }}" class="btn btn-light btn-lg">
                             <i class="bi bi-gear"></i> Get Started
+                        </a>
+                        <a href="{{ url_for('inventory.index') }}" class="btn btn-light btn-lg">
+                            <i class="bi bi-box-seam"></i> Inventory Portal
                         </a>
                         <a href="{{ url_for('main.help') }}" class="btn btn-outline-light btn-lg">
                             <i class="bi bi-question-circle"></i> Learn More
@@ -125,19 +128,19 @@
                     </div>
                     <div class="d-grid gap-2">
                         <a href="{{ url_for('core_dashboard.dashboard') }}" class="btn btn-primary btn-sm">
-                            <i class="bi bi-speedometer2"></i> Core Dashboard
+                            <i class="bi bi-speedometer2"></i> Dashboard
+                        </a>
+                        <a href="{{ url_for('core_assets.list') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-truck"></i> Core Asset Data
                         </a>
                         <a href="{{ url_for('users.list') }}" class="btn btn-outline-primary btn-sm">
-                            <i class="bi bi-people"></i> Users
+                            <i class="bi bi-people"></i> User Management
                         </a>
                         <a href="{{ url_for('locations.list') }}" class="btn btn-outline-primary btn-sm">
-                            <i class="bi bi-geo-alt"></i> Locations
+                            <i class="bi bi-geo-alt"></i> Location Management
                         </a>
-                        <a href="{{ url_for('asset_types.list') }}" class="btn btn-outline-primary btn-sm">
-                            <i class="bi bi-tags"></i> Asset Types
-                        </a>
-                        <a href="{{ url_for('make_models.list') }}" class="btn btn-outline-primary btn-sm">
-                            <i class="bi bi-tag"></i> Make/Models
+                        <a href="{{ url_for('core_supply_parts.list') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-tags"></i> Part and Tool Definitions
                         </a>
                     </div>
                 </div>
@@ -216,27 +219,32 @@
                         Plan and track maintenance schedules, service records, and repair history.
                     </p>
                     <div class="mb-3">
-                        <span class="status-indicator status-development"></span>
-                        <small class="text-warning">In Development</small>
+                        <span class="status-indicator status-active"></span>
+                        <small class="text-success">Active</small>
                     </div>
                     <div class="d-grid gap-2">
-                        <a href="{{ url_for('maintenance.index') }}" class="btn btn-info btn-sm">
+                        <a href="{{ url_for('maintenance.view_events') }}" class="btn btn-info btn-sm">
+                            <i class="bi bi-calendar-event"></i> Event Viewer Management Portal
+                        </a>
+                        <a href="{{ url_for('maintenance.index') }}" class="btn btn-outline-info btn-sm">
                             <i class="bi bi-arrow-right"></i> Maintenance Dashboard
                         </a>
-                        <small class="text-muted">Data layer complete</small>
+                        <a href="{{ url_for('technician_portal.dashboard') }}" class="btn btn-outline-info btn-sm">
+                            <i class="bi bi-person-wrench"></i> Technician Portal
+                        </a>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Supply -->
+        <!-- Inventory Management -->
         <div class="col-md-6 col-lg-4">
             <div class="card section-card h-100">
                 <div class="card-body text-center p-4">
                     <div class="section-icon text-danger">
                         <i class="bi bi-box-seam"></i>
                     </div>
-                    <h4 class="card-title">Supply</h4>
+                    <h4 class="card-title">Inventory Management</h4>
                     <p class="card-text text-muted mb-4">
                         Manage inventory, parts, supplies, and procurement for maintenance operations.
                     </p>
@@ -245,14 +253,17 @@
                         <small class="text-success">Active</small>
                     </div>
                     <div class="d-grid gap-2">
-                        <a href="{{ url_for('core_supply_parts.list') }}" class="btn btn-danger btn-sm">
-                            <i class="bi bi-box"></i> Parts
+                        <a href="{{ url_for('inventory.index') }}" class="btn btn-danger btn-sm">
+                            <i class="bi bi-box-seam"></i> Inventory Management Portal
                         </a>
-                        <a href="{{ url_for('core_supply_tools.list') }}" class="btn btn-outline-danger btn-sm">
-                            <i class="bi bi-tools"></i> Tool Definitions
+                        <a href="{{ url_for('inventory.purchase_orders_list') }}" class="btn btn-outline-danger btn-sm">
+                            <i class="bi bi-receipt"></i> Purchase Order Portal
                         </a>
-                        <a href="{{ url_for('core_supply_issuable_tools.list') }}" class="btn btn-outline-danger btn-sm">
-                            <i class="bi bi-wrench"></i> Issuable Tools
+                        <a href="{{ url_for('inventory.create_po_from_single_maintenance') }}" class="btn btn-outline-danger btn-sm">
+                            <i class="bi bi-cart-plus"></i> Create PO (Single Maintenance)
+                        </a>
+                        <a href="{{ url_for('inventory.arrivals_index') }}" class="btn btn-outline-danger btn-sm">
+                            <i class="bi bi-box-arrow-in-down"></i> Arrivals
                         </a>
                     </div>
                 </div>

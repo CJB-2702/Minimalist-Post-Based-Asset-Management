@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+
+{% block title %}Initial Stocking Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="bi bi-box-arrow-in-down text-primary"></i> Initial Stocking Portal
+                    </h1>
+                    <p class="text-muted mb-0">Select a storeroom and choose unassigned inventory to stock</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('inventory.index') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Inventory
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Storeroom Selection -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-funnel"></i> Select Storeroom</h5>
+                </div>
+                <div class="card-body">
+                    <form method="GET" action="{{ url_for('inventory.initial_stocking') }}" class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Storeroom <span class="text-danger">*</span></label>
+                            <select class="form-select" name="storeroom_id" required onchange="this.form.submit()">
+                                <option value="">Select a storeroom</option>
+                                {% for s in storerooms %}
+                                <option value="{{ s.id }}" {% if selected_storeroom_id == s.id %}selected{% endif %}>
+                                    {{ s.room_name }} {% if s.major_location %}({{ s.major_location.name }}){% endif %}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Unassigned Inventory List -->
+    {% if selected_storeroom_id %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-box-seam"></i> Unassigned Inventory
+                        <span class="badge bg-secondary">{{ unassigned_inventory|length }} items</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if unassigned_inventory %}
+                    <form id="stockingForm" method="POST" action="#">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 40px;">
+                                            <input type="checkbox" id="selectAll" title="Select All">
+                                        </th>
+                                        <th>Part</th>
+                                        <th>Major Location</th>
+                                        <th>Storeroom</th>
+                                        <th class="text-end">Qty On Hand</th>
+                                        <th class="text-end">Qty Allocated</th>
+                                        <th class="text-end">Available</th>
+                                        <th class="text-end">Avg Unit Cost</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for inv in unassigned_inventory %}
+                                    <tr>
+                                        <td>
+                                            <input type="checkbox" 
+                                                   class="form-check-input inventory-checkbox" 
+                                                   name="inventory_ids" 
+                                                   value="{{ inv.id }}"
+                                                   data-quantity="{{ inv.quantity_on_hand - inv.quantity_allocated }}">
+                                        </td>
+                                        <td>
+                                            {% if inv.part %}
+                                            <div><strong>{{ inv.part.part_number }}</strong></div>
+                                            <div class="text-muted small">{{ inv.part.part_name }}</div>
+                                            {% else %}
+                                            <div><strong>Part #{{ inv.part_id }}</strong></div>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if inv.storeroom and inv.storeroom.major_location %}
+                                            {{ inv.storeroom.major_location.name }}
+                                            {% else %}
+                                            <span class="text-muted">N/A</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if inv.storeroom %}
+                                            {{ inv.storeroom.room_name }}
+                                            {% else %}
+                                            <span class="text-muted">N/A</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-end">
+                                            <strong>{{ '%.2f'|format(inv.quantity_on_hand) }}</strong>
+                                        </td>
+                                        <td class="text-end">{{ '%.2f'|format(inv.quantity_allocated) }}</td>
+                                        <td class="text-end">
+                                            <strong>{{ '%.2f'|format(inv.quantity_on_hand - inv.quantity_allocated) }}</strong>
+                                        </td>
+                                        <td class="text-end">
+                                            {% if inv.unit_cost_avg %}
+                                            ${{ '%.2f'|format(inv.unit_cost_avg) }}
+                                            {% else %}
+                                            <span class="text-muted">—</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="mt-4 d-flex justify-content-between align-items-center">
+                            <div>
+                                <span id="selectedCount" class="text-muted">0 items selected</span>
+                            </div>
+                            <div>
+                                <button type="button" class="btn btn-primary" id="useStockingGuiBtn" disabled>
+                                    <i class="bi bi-box-arrow-in-right"></i> Use Inventory Stocking GUI
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                    {% else %}
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-info-circle"></i> No unassigned inventory found for this storeroom.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="row">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> Please select a storeroom to view unassigned inventory.
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const selectAllCheckbox = document.getElementById('selectAll');
+    const inventoryCheckboxes = document.querySelectorAll('.inventory-checkbox');
+    const useStockingGuiBtn = document.getElementById('useStockingGuiBtn');
+    const selectedCountSpan = document.getElementById('selectedCount');
+    
+    // Select all functionality
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            inventoryCheckboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+            updateSelectedCount();
+        });
+    }
+    
+    // Update selected count and button state
+    function updateSelectedCount() {
+        const checked = document.querySelectorAll('.inventory-checkbox:checked');
+        const count = checked.length;
+        
+        selectedCountSpan.textContent = count + ' item' + (count !== 1 ? 's' : '') + ' selected';
+        
+        if (selectAllCheckbox) {
+            selectAllCheckbox.checked = count === inventoryCheckboxes.length && inventoryCheckboxes.length > 0;
+            selectAllCheckbox.indeterminate = count > 0 && count < inventoryCheckboxes.length;
+        }
+        
+        useStockingGuiBtn.disabled = count === 0;
+    }
+    
+    // Update on individual checkbox change
+    inventoryCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateSelectedCount);
+    });
+    
+    // Handle "Use Inventory Stocking GUI" button click
+    if (useStockingGuiBtn) {
+        useStockingGuiBtn.addEventListener('click', function() {
+            const checkedBoxes = document.querySelectorAll('.inventory-checkbox:checked');
+            const inventoryIds = Array.from(checkedBoxes).map(cb => cb.value);
+            
+            if (inventoryIds.length === 0) {
+                alert('Please select at least one item to stock.');
+                return;
+            }
+            
+            // Redirect to stocking GUI with selected inventory IDs
+            const storeroomId = new URLSearchParams(window.location.search).get('storeroom_id');
+            if (!storeroomId) {
+                alert('Storeroom ID is required.');
+                return;
+            }
+            window.location.href = '/inventory/stocking-gui?storeroom_id=' + storeroomId + '&inventory_ids=' + inventoryIds.join(',');
+        });
+    }
+    
+    // Initial count update
+    updateSelectedCount();
+});
+</script>
+{% endblock %}
+

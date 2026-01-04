@@ -117,3 +117,7 @@ dmypy.json
 
 # Large attachments (stored on filesystem)
 large_attachments/ 
+
+
+
+cookies.txt

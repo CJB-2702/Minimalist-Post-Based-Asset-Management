@@ -2,34 +2,51 @@
 Phase 6: Inventory and Purchasing System
 
 This module implements a comprehensive inventory and purchasing system with:
-- Purchase order management
-- Part receiving and inspection
-- Inventory tracking with full traceability
+- Purchase order management (ordering/)
+- Part receiving and inspection (arrivals/)
+- Inventory tracking with full traceability (inventory/)
 - Integration with maintenance part demands
 
 Architecture:
-- base/ - Database models (CRUD only)
-- managers/ - Business logic and workflows
-- utils/ - Helper functions
+- ordering/ - Purchase order data models
+- arrivals/ - Part arrival data models
+- inventory/ - Inventory tracking data models
 """
 
-from app.data.inventory.base import (
+from app.data.inventory.ordering import (
     PurchaseOrderHeader,
     PurchaseOrderLine,
-    PartDemandPurchaseOrderLine,
+    PartDemandPurchaseOrderLink
+)
+from app.data.inventory.arrivals import (
     PackageHeader,
-    PartArrival,
+    PartArrival
+)
+from app.data.inventory.inventory import (
+    Storeroom,
+    BinPrototype,
     ActiveInventory,
-    InventoryMovement
+    InventoryMovement,
+    InventorySummary,
+    PartIssue,
+)
+from app.data.inventory.locations import (
+    Location,
+    Bin
 )
 
 __all__ = [
     'PurchaseOrderHeader',
     'PurchaseOrderLine',
-    'PartDemandPurchaseOrderLine',
+    'PartDemandPurchaseOrderLink',
     'PackageHeader',
     'PartArrival',
+    'Storeroom',
+    'BinPrototype',
     'ActiveInventory',
-    'InventoryMovement'
+    'InventoryMovement',
+    'InventorySummary',
+    'PartIssue',
+    'Location',
+    'Bin',
 ]
-

@@ -10,18 +10,18 @@ from flask_login import login_required, current_user
 from app import db
 from app.logger import get_logger
 from app.buisness.core.event_context import EventContext
-from app.buisness.maintenance.base.action_struct import ActionStruct
-from app.buisness.maintenance.base.maintenance_action_set_struct import MaintenanceActionSetStruct
+from app.buisness.maintenance.base.structs.action_struct import ActionStruct
+from app.buisness.maintenance.base.structs.maintenance_action_set_struct import MaintenanceActionSetStruct
 from app.buisness.maintenance.base.maintenance_context import MaintenanceContext
 from app.buisness.maintenance.factories.action_factory import ActionFactory
 from app.data.core.asset_info.asset import Asset
 from app.data.core.event_info.event import Event
-from app.data.core.supply.part import Part
-from app.data.core.supply.tool import Tool
+from app.data.core.supply.part_definition import PartDefinition
+from app.data.core.supply.tool_definition import ToolDefinition
 from app.data.core.user_info.user import User
 from app.data.maintenance.base.actions import Action
 from app.data.maintenance.base.action_tools import ActionTool
-from app.data.maintenance.base.maintenance_delays import MaintenanceDelay
+from app.data.maintenance.base.maintenance_blockers import MaintenanceBlocker
 from app.data.maintenance.planning.maintenance_plans import MaintenancePlan
 from app.data.maintenance.base.part_demands import PartDemand
 from app.data.maintenance.proto_templates.proto_actions import ProtoActionItem
@@ -65,9 +65,9 @@ def view_maintenance_event(event_id):
         completed_count = sum(1 for a in action_structs if a.action.status == 'Complete')
         in_progress_count = sum(1 for a in action_structs if a.action.status == 'In Progress')
         
-        # Get delays for display
-        delays = maintenance_struct.delays if hasattr(maintenance_struct, 'delays') else []
-        active_delays = [d for d in delays if d.delay_end_date is None]
+        # Get blockers for display
+        blockers = maintenance_struct.blockers if hasattr(maintenance_struct, 'blockers') else []
+        active_blockers = [d for d in blockers if d.end_date is None]
         
         # Get meter reading if available
         meter_reading = None
@@ -83,8 +83,8 @@ def view_maintenance_event(event_id):
             actions=action_structs,
             completed_count=completed_count,
             in_progress_count=in_progress_count,
-            delays=delays,
-            active_delays=active_delays,
+            blockers=blockers,
+            active_blockers=active_blockers,
             meter_reading=meter_reading,
         )
         
@@ -110,9 +110,9 @@ def work_maintenance_event(event_id):
             logger.warning(f"No maintenance action set found for event_id={event_id}")
             abort(404)
         
-        # Check if maintenance is in Delayed status - redirect to view page
-        if maintenance_struct.status == 'Delayed':
-            flash('Work is paused due to delay. Please end the delay to continue work.', 'warning')
+        # Check if maintenance is in Delayed or Blocked status - redirect to view page
+        if maintenance_struct.status in ['Delayed', 'Blocked']:
+            flash('Work is paused due to blocked status. Please end the blocked status to continue work.', 'warning')
             return redirect(url_for('maintenance_event.view_maintenance_event', event_id=event_id))
         
         # Get the event
@@ -134,13 +134,24 @@ def work_maintenance_event(event_id):
         # Get asset if available
         asset = maintenance_struct.asset if hasattr(maintenance_struct, 'asset') else None
         
-        # Get delays for display
-        delays = maintenance_struct.delays if hasattr(maintenance_struct, 'delays') else []
-        active_delays = [d for d in delays if d.delay_end_date is None]
+        # Get blockers for display
+        blockers = maintenance_struct.blockers if hasattr(maintenance_struct, 'blockers') else []
+        active_blockers = [d for d in blockers if d.end_date is None]
+        
+        # Check if there are active blockers - redirect to view page
+        if active_blockers:
+            flash('Work is paused due to active blockers. Please end the blocked status to continue work.', 'warning')
+            return redirect(url_for('maintenance_event.view_maintenance_event', event_id=event_id))
         
         # Get parts for part demand dropdown
-        parts = Part.query.filter_by(status='Active').order_by(Part.part_name).all()
+        parts = PartDefinition.query.filter_by(status='Active').order_by(PartDefinition.part_name).all()
         users = User.query.order_by(User.username).all()
+        
+        # Get blocker allowable values for dropdowns
+        from app.data.maintenance.base.maintenance_blockers import MaintenanceBlocker
+        blocker_instance = MaintenanceBlocker()  # Temporary instance to access properties
+        allowable_capability_statuses = blocker_instance.allowable_capability_statuses
+        allowable_reasons = blocker_instance.allowable_reasons
         
         # Check if all actions are in terminal states
         all_actions_terminal = maintenance_context.all_actions_in_terminal_states()
@@ -152,11 +163,13 @@ def work_maintenance_event(event_id):
             event=event,
             actions=action_structs,
             asset=asset,
-            delays=delays,
-            active_delays=active_delays,
+            blockers=blockers,
+            active_blockers=active_blockers,
             parts=parts,
             users=users,
             all_actions_terminal=all_actions_terminal,
+            allowable_capability_statuses=allowable_capability_statuses,
+            allowable_reasons=allowable_reasons,
         )
         
     except ImportError as e:
@@ -836,13 +849,13 @@ def render_edit_page(event_id):
         assets = Asset.query.order_by(Asset.name).all()
         maintenance_plans = MaintenancePlan.query.order_by(MaintenancePlan.name).all()
         
-        # Get delays
-        delays = maintenance_struct.delays
-        active_delays = [d for d in delays if d.delay_end_date is None]
+        # Get blockers
+        blockers = maintenance_struct.blockers
+        active_blockers = [d for d in blockers if d.end_date is None]
         
         # Get parts and tools for dropdowns
-        parts = Part.query.filter_by(status='Active').order_by(Part.part_name).all()
-        tools = Tool.query.order_by(Tool.tool_name).all()
+        parts = PartDefinition.query.filter_by(status='Active').order_by(PartDefinition.part_name).all()
+        tools = ToolDefinition.query.order_by(ToolDefinition.tool_name).all()
         users = User.query.order_by(User.username).all()
         
         # Get maintenance context for summaries
@@ -857,8 +870,8 @@ def render_edit_page(event_id):
             selected_action=selected_action_struct,
             assets=assets,
             maintenance_plans=maintenance_plans,
-            delays=delays,
-            active_delays=active_delays,
+            blockers=blockers,
+            active_blockers=active_blockers,
             parts=parts,
             tools=tools,
             users=users,
@@ -910,7 +923,7 @@ def edit_template_action_set(event_id):
         assigned_by_id_str = request.form.get('assigned_by_id', '').strip()
         completed_by_id_str = request.form.get('completed_by_id', '').strip()
         completion_notes = request.form.get('completion_notes', '').strip()
-        delay_notes = request.form.get('delay_notes', '').strip()
+        blocker_notes = request.form.get('delay_notes', '').strip()  # Keep form field name for backward compatibility
         
         # ===== DATA TYPE CONVERSION SECTION =====
         # Convert description (string or None)
@@ -1026,8 +1039,8 @@ def edit_template_action_set(event_id):
         # Convert completion_notes (string or None)
         completion_notes = completion_notes if completion_notes else None
         
-        # Convert delay_notes (string or None)
-        delay_notes = delay_notes if delay_notes else None
+        # Convert blocker_notes (string or None)
+        blocker_notes = blocker_notes if blocker_notes else None
         
         # ===== BUSINESS LOGIC SECTION =====
         maintenance_context = MaintenanceContext.from_event(event_id)
@@ -1049,7 +1062,7 @@ def edit_template_action_set(event_id):
             assigned_by_id=assigned_by_id,
             completed_by_id=completed_by_id,
             completion_notes=completion_notes,
-            delay_notes=delay_notes
+            blocker_notes=blocker_notes
         )
         
         flash('Maintenance event updated successfully', 'success')
@@ -1144,7 +1157,8 @@ def update_maintenance_billable_hours(event_id):
         
         maintenance_context = MaintenanceContext.from_event(event_id)
         try:
-            maintenance_context.set_actual_billable_hours(billable_hours)
+            billable_hours_manager = maintenance_context.get_billable_hours_manager()
+            billable_hours_manager.set_actual_hours(billable_hours, user_id=current_user.id)
         except ValueError as e:
             flash(str(e), 'error')
             return redirect(url_for('maintenance_event.work_maintenance_event', event_id=event_id))
@@ -1257,7 +1271,8 @@ def complete_maintenance(event_id):
         maintenance_context = MaintenanceContext.from_event(event_id)
         # Set start_date and billable hours before completing
         maintenance_struct.maintenance_action_set.start_date = start_date
-        maintenance_context.set_actual_billable_hours(billable_hours)
+        billable_hours_manager = maintenance_context.get_billable_hours_manager()
+        billable_hours_manager.set_actual_hours(billable_hours, user_id=current_user.id)
         # Use complete() method which will sync Event.status and handle meter verification
         maintenance_context.complete(
             user_id=current_user.id,
@@ -1301,43 +1316,48 @@ def complete_maintenance(event_id):
         return redirect(url_for('maintenance_event.work_maintenance_event', event_id=event_id))
 
 
-@maintenance_event_bp.route('/<int:event_id>/delay/create', methods=['POST'])
+@maintenance_event_bp.route('/<int:event_id>/blocker/create', methods=['POST'])
 @login_required
-def create_delay(event_id):
-    """Create a delay for maintenance event"""
+def create_blocker(event_id):
+    """Create a blocked status for maintenance event"""
     try:
         # ===== FORM PARSING SECTION =====
-        delay_type = request.form.get('delay_type', '').strip()
-        delay_reason = request.form.get('delay_reason', '').strip()
-        priority = request.form.get('priority', 'Medium').strip()
-        delay_notes = request.form.get('delay_notes', '').strip()
-        delay_billable_hours_str = request.form.get('delay_billable_hours', '').strip()
-        delay_start_date_str = request.form.get('delay_start_date', '').strip()
+        mission_capability_status = request.form.get('mission_capability_status', '').strip()
+        reason = request.form.get('reason', '').strip()
+        notes = request.form.get('notes', '').strip()
+        start_time_str = request.form.get('start_time', '').strip()
+        billable_hours_lost_str = request.form.get('billable_hours_lost', '').strip()
+        event_priority = request.form.get('event_priority', '').strip()
+        comment_to_add_to_event = request.form.get('comment_to_add_to_event', '').strip()
         
         # ===== LIGHT VALIDATION SECTION =====
-        if not delay_type or delay_type not in ['Work in Delay', 'Cancellation Requested']:
-            flash('Valid delay type is required', 'error')
+        blocker_instance = MaintenanceBlocker()  # Temporary instance to access properties
+        allowable_statuses = blocker_instance.allowable_capability_statuses
+        allowable_reasons = blocker_instance.allowable_reasons
+        
+        if not mission_capability_status or mission_capability_status not in allowable_statuses:
+            flash('Valid mission capability status is required', 'error')
             return redirect(url_for('maintenance_event.work_maintenance_event', event_id=event_id))
         
-        if not delay_reason:
-            flash('Delay reason is required', 'error')
+        if not reason or reason not in allowable_reasons:
+            flash('Valid reason is required', 'error')
             return redirect(url_for('maintenance_event.work_maintenance_event', event_id=event_id))
         
         # ===== DATA TYPE CONVERSION SECTION =====
-        delay_start_date = None
-        if delay_start_date_str:
+        start_time = None
+        if start_time_str:
             try:
-                delay_start_date = datetime.strptime(delay_start_date_str, '%Y-%m-%dT%H:%M')
+                start_time = datetime.strptime(start_time_str, '%Y-%m-%dT%H:%M')
             except ValueError:
-                flash('Invalid delay start date format', 'error')
+                flash('Invalid start time format', 'error')
                 return redirect(url_for('maintenance_event.work_maintenance_event', event_id=event_id))
         
-        delay_billable_hours = None
-        if delay_billable_hours_str:
+        billable_hours_lost = None
+        if billable_hours_lost_str:
             try:
-                delay_billable_hours = float(delay_billable_hours_str)
-                if delay_billable_hours < 0:
-                    flash('Billable hours must be non-negative', 'error')
+                billable_hours_lost = float(billable_hours_lost_str)
+                if billable_hours_lost < 0:
+                    flash('Billable hours lost must be non-negative', 'error')
                     return redirect(url_for('maintenance_event.work_maintenance_event', event_id=event_id))
             except ValueError:
                 pass  # Ignore invalid values
@@ -1347,41 +1367,58 @@ def create_delay(event_id):
         if not maintenance_struct:
             abort(404)
         
-        # Check if there's already an active delay
-        active_delays = [d for d in maintenance_struct.delays if d.delay_end_date is None]
-        if active_delays:
-            flash('An active delay already exists. Please end the current delay before creating a new one.', 'error')
+        # Check if there's already an active blocker
+        active_blockers = [d for d in maintenance_struct.blockers if d.end_date is None]
+        if active_blockers:
+            flash('An active blocked status already exists. Please end the current blocker before creating a new one.', 'error')
             return redirect(url_for('maintenance_event.work_maintenance_event', event_id=event_id))
         
-        # Create delay using MaintenanceContext
+        # Create blocker using blocker manager
         maintenance_context = MaintenanceContext(maintenance_struct)
-        delay = maintenance_context.add_delay(
-            delay_type=delay_type,
-            delay_reason=delay_reason,
-            delay_start_date=delay_start_date,
-            delay_notes=delay_notes,
-            delay_billable_hours=delay_billable_hours,
-            priority=priority,
+        blocker_manager = maintenance_context.get_blocker_manager()
+        blocker = blocker_manager.add_blocker(
+            mission_capability_status=mission_capability_status,
+            reason=reason,
+            notes=notes,
+            start_time=start_time,
+            billable_hours_lost=billable_hours_lost,
             user_id=current_user.id
         )
         
-        # Generate automated comment
+        # Sync event status
+        maintenance_context._sync_event_status()
+        
+        # Update event priority if provided
+        if event_priority and event_priority in ['Low', 'Medium', 'High', 'Critical']:
+            maintenance_context.update_action_set_details(priority=event_priority)
+        
+        # Update asset blocked status based on all active blockers
+        blocker_manager.update_asset_blocked_status()
+        
+        # Generate comment - use user's comment if provided, otherwise use automated one
         if maintenance_struct.event_id:
             event_context = EventContext(maintenance_struct.event_id)
-            comment_text = f"Delay created: {delay_type} by {current_user.username}. Reason: {delay_reason}"
+            if comment_to_add_to_event:
+                comment_text = comment_to_add_to_event
+                is_human_made = True
+            else:
+                comment_text = f"Blocked status created: {mission_capability_status} by {current_user.username}. Reason: {reason}"
+                is_human_made = False
             event_context.add_comment(
                 user_id=current_user.id,
                 content=comment_text,
-                is_human_made=False  # Automated comment
+                is_human_made=is_human_made
             )
             db.session.commit()
         
-        flash('Delay created successfully', 'success')
+        flash('Blocked status created successfully', 'success')
         return redirect(url_for('maintenance_event.view_maintenance_event', event_id=event_id))
         
     except Exception as e:
-        logger.error(f"Error creating delay: {e}")
-        flash('Error creating delay', 'error')
+        logger.error(f"Error creating blocked status: {e}")
+        import traceback
+        traceback.print_exc()
+        flash('Error creating blocked status', 'error')
         return redirect(url_for('maintenance_event.work_maintenance_event', event_id=event_id))
 
 

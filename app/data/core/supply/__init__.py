@@ -1,7 +1,7 @@
-from .part import Part
-from .tool import Tool
+from .part_definition import PartDefinition
+from .tool_definition import ToolDefinition
 
 __all__ = [
-    'Part',
-    'Tool'
+    'PartDefinition',
+    'ToolDefinition'
 ]

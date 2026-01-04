@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}Arrivals{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="bi bi-box-arrow-in-down text-success"></i> Arrivals
+                    </h1>
+                    <p class="text-muted mb-0">Golden path: receive a package from a purchase order, accept/reject, then direct issue</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('inventory.index') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Inventory Portal
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-check-circle"></i> Receive from Purchase Order</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">Create a package arrival from a single purchase order (all lines).</p>
+                    <a class="btn btn-success" href="{{ url_for('inventory.arrivals_create_from_po') }}">
+                        <i class="bi bi-arrow-right-circle"></i> From Single PO
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-list-check"></i> Receive from PO Lines</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">Select specific PO lines across multiple purchase orders. All lines fully accepted.</p>
+                    <a class="btn btn-outline-success" href="{{ url_for('inventory.create_arrival_from_po_lines') }}">
+                        <i class="bi bi-arrow-right-circle"></i> From PO Lines
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-list-ul"></i> View Arrivals</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">Browse recent package arrivals.</p>
+                    <a class="btn btn-outline-success" href="{{ url_for('inventory.po_arrivals') }}">
+                        <i class="bi bi-search"></i> View All Arrivals
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-clock-history"></i> Recent Packages</h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_packages %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Package</th>
+                                    <th>Received</th>
+                                    <th>Status</th>
+                                    <th>Location</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for p in recent_packages %}
+                                <tr>
+                                    <td><strong>{{ p.package_number }}</strong></td>
+                                    <td>{{ p.received_date.strftime('%Y-%m-%d') if p.received_date else '' }}</td>
+                                    <td>{{ p.status }}</td>
+                                    <td>{{ p.major_location.name if p.major_location else 'N/A' }}</td>
+                                    <td>
+                                        <a class="btn btn-sm btn-outline-success" href="{{ url_for('inventory.po_arrival_detail', id=p.id) }}">
+                                            <i class="bi bi-eye"></i> View
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-info-circle"></i> No package arrivals found yet.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+
+
+
+
+
+
+
+
+
+

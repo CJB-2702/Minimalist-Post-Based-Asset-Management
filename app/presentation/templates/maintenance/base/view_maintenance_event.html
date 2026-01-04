@@ -72,11 +72,11 @@
     <!-- Quick Stats Cards -->
     <div class="row mb-4">
         <div class="col-md-3 mb-3">
-            <div class="card info-card {% if maintenance.status == 'Complete' %}success{% elif maintenance.status == 'In Progress' %}primary{% elif maintenance.status == 'Delayed' %}danger{% else %}info{% endif %}">
+            <div class="card info-card {% if maintenance.status == 'Complete' %}success{% elif maintenance.status == 'In Progress' %}primary{% elif maintenance.status == 'Delayed' or maintenance.status == 'Blocked' %}danger{% else %}info{% endif %}">
                 <div class="card-body">
                     <h6 class="text-muted mb-1">Status</h6>
                     <h4 class="mb-0">
-                        <span class="badge status-badge bg-{% if maintenance.status == 'Complete' %}success{% elif maintenance.status == 'In Progress' %}primary{% elif maintenance.status == 'Delayed' %}danger{% else %}secondary{% endif %}">
+                        <span class="badge status-badge bg-{% if maintenance.status == 'Complete' %}success{% elif maintenance.status == 'In Progress' %}primary{% elif maintenance.status == 'Delayed' or maintenance.status == 'Blocked' %}danger{% else %}secondary{% endif %}">
                             {{ maintenance.status }}
                         </span>
                     </h4>
@@ -104,14 +104,138 @@
             </div>
         </div>
         <div class="col-md-3 mb-3">
-            <div class="card info-card {% if maintenance.delays %}danger{% else %}success{% endif %}">
+            <div class="card info-card {% if maintenance.blockers %}danger{% else %}success{% endif %}">
                 <div class="card-body">
-                    <h6 class="text-muted mb-1">Delays</h6>
-                    <h4 class="mb-0">{{ maintenance.delays|length }}</h4>
+                    <h6 class="text-muted mb-1">Blockers</h6>
+                    <h4 class="mb-0">{{ maintenance.blockers|length }}</h4>
                 </div>
             </div>
         </div>
     </div>
+
+    {% if active_blockers %}
+    <!-- Active Blockers Card -->
+    <div class="card mb-4 border-danger" style="background-color: #ffebee;">
+        <div class="card-header bg-danger bg-opacity-10">
+            <h5 class="mb-0">
+                <i class="bi bi-exclamation-triangle text-danger"></i> Active Blockers
+            </h5>
+        </div>
+        <div class="card-body">
+            {% for blocker in active_blockers %}
+            <div class="mb-3 pb-3 {% if not loop.last %}border-bottom{% endif %}">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <span class="badge bg-danger me-2">{{ blocker.mission_capability_status or 'N/A' }}</span>
+                        {% if blocker.priority %}
+                        <span class="badge bg-{% if blocker.priority == 'Critical' %}danger{% elif blocker.priority == 'High' %}warning{% elif blocker.priority == 'Medium' %}info{% else %}secondary{% endif %}">
+                            {{ blocker.priority }}
+                        </span>
+                        {% endif %}
+                    </div>
+                    <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#endBlockedStatusModal{{ blocker.id }}">
+                        <i class="bi bi-check-circle"></i> End Blocked Status
+                    </button>
+                </div>
+                {% if blocker.reason %}
+                <p class="mb-2"><strong>Reason:</strong> {{ blocker.reason }}</p>
+                {% endif %}
+                {% if blocker.start_date %}
+                <small class="text-muted">
+                    <i class="bi bi-calendar"></i> Started: {{ blocker.start_date.strftime('%Y-%m-%d %H:%M') }}
+                </small>
+                {% endif %}
+                {% if blocker.notes %}
+                <p class="mb-0 mt-2 text-muted small"><em>{{ blocker.notes }}</em></p>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- End Blocked Status Modals -->
+    {% for blocker in active_blockers %}
+    <div class="modal fade" id="endBlockedStatusModal{{ blocker.id }}" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="POST" action="{{ url_for('maintenance.end_blocked_status', blocked_status_id=blocker.id) }}">
+                    <div class="modal-header">
+                        <h5 class="modal-title">End Blocked Status</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label"><strong>Status:</strong> {{ blocker.mission_capability_status or 'N/A' }}</label>
+                        </div>
+                        {% if blocker.reason %}
+                        <div class="mb-3">
+                            <label class="form-label"><strong>Reason:</strong> {{ blocker.reason }}</label>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <label for="blocked_status_start_date{{ blocker.id }}" class="form-label">Start Time <span class="text-danger">*</span></label>
+                            <input type="datetime-local" 
+                                   class="form-control" 
+                                   id="blocked_status_start_date{{ blocker.id }}" 
+                                   name="blocked_status_start_date"
+                                   value="{% if blocker.start_date %}{{ blocker.start_date.strftime('%Y-%m-%dT%H:%M') }}{% endif %}"
+                                   required>
+                            <small class="form-text text-muted">When did the blocker start?</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="blocked_status_end_date{{ blocker.id }}" class="form-label">End Time <span class="text-danger">*</span></label>
+                            <input type="datetime-local" 
+                                   class="form-control" 
+                                   id="blocked_status_end_date{{ blocker.id }}" 
+                                   name="blocked_status_end_date"
+                                   required>
+                            <small class="form-text text-muted">When did/will the blocker end?</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="blocked_status_billable_hours{{ blocker.id }}" class="form-label">Billable Hours Lost <span class="text-danger">*</span></label>
+                            <input type="number" 
+                                   step="0.25" 
+                                   min="0" 
+                                   class="form-control" 
+                                   id="blocked_status_billable_hours{{ blocker.id }}" 
+                                   name="blocked_status_billable_hours"
+                                   value="{% if blocker.billable_hours is not none %}{{ blocker.billable_hours }}{% else %}0{% endif %}"
+                                   required>
+                            <small class="form-text text-muted">Total billable hours lost due to this blocker (0 if none)</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="blocked_status_notes{{ blocker.id }}" class="form-label">Update Notes</label>
+                            <textarea class="form-control" 
+                                      id="blocked_status_notes{{ blocker.id }}" 
+                                      name="blocked_status_notes" 
+                                      rows="3"
+                                      placeholder="Optional: Add or update notes about this blocker...">{{ blocker.notes or '' }}</textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="blocked_comment{{ blocker.id }}" class="form-label">Event Comment</label>
+                            <textarea class="form-control" 
+                                      id="blocked_comment{{ blocker.id }}" 
+                                      name="comment" 
+                                      rows="3"
+                                      placeholder="Optional: Add details to the event comment when ending this blocker..."></textarea>
+                            <small class="form-text text-muted">This will be added to the event's comment log</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success">End Blocked Status</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    {% endif %}
 
     <div class="row">
         <!-- Left Column - Main Details -->
@@ -178,10 +302,10 @@
                     </div>
                     {% endif %}
                     
-                    {% if maintenance.maintenance_action_set.delay_notes %}
+                    {% if maintenance.maintenance_action_set.blocker_notes %}
                     <div class="mt-3">
-                        <strong>Delay Notes:</strong>
-                        <p class="mb-0 text-warning">{{ maintenance.maintenance_action_set.delay_notes }}</p>
+                        <strong>Blocker Notes:</strong>
+                        <p class="mb-0 text-warning">{{ maintenance.maintenance_action_set.blocker_notes }}</p>
                     </div>
                     {% endif %}
                 </div>
@@ -361,19 +485,10 @@
                         <a href="{{ url_for('maintenance_event.render_edit_page', event_id=event.id) }}" class="btn btn-outline-warning">
                             <i class="bi bi-pencil"></i> Edit Event
                         </a>
-                        {% if maintenance.status == 'Delayed' %}
-                        <button type="button" class="btn btn-outline-success" disabled title="Work is paused due to delay">
+                        {% if maintenance.status == 'Delayed' or maintenance.status == 'Blocked' or active_blockers %}
+                        <button type="button" class="btn btn-outline-success" disabled title="{% if active_blockers %}Work is paused due to active blockers{% else %}Work is paused due to blocked status{% endif %}">
                             <i class="bi bi-tools"></i> Do Work
                         </button>
-                        {% if active_delays %}
-                        <button type="button" 
-                                class="btn btn-success w-100" 
-                                data-bs-toggle="modal" 
-                                data-bs-target="#endDelayModal" 
-                                onclick="setupEndDelayModal({{ active_delays[0].id }}, {% if active_delays[0].delay_start_date %}'{{ active_delays[0].delay_start_date.strftime('%Y-%m-%dT%H:%M') }}'{% else %}null{% endif %})">
-                            <i class="bi bi-play-circle"></i> End Delay
-                        </button>
-                        {% endif %}
                         {% else %}
                         <a href="{{ url_for('maintenance_event.work_maintenance_event', event_id=event.id) }}" class="btn btn-outline-success">
                             <i class="bi bi-tools"></i> Do Work
@@ -623,22 +738,22 @@
                 </div>
             </div>
 
-            <!-- Delays Card -->
-            <div class="card mb-4 {% if active_delays %}border-warning{% else %}border-secondary{% endif %}">
-                <div class="card-header {% if active_delays %}bg-warning bg-opacity-10{% endif %}">
+            <!-- blockersCard -->
+            <div class="card mb-4 {% if active_blockers %}border-warning{% else %}border-secondary{% endif %}">
+                <div class="card-header {% if active_blockers %}bg-warning bg-opacity-10{% endif %}">
                     <h5 class="mb-0">
-                        <i class="bi bi-{% if active_delays %}exclamation-triangle text-warning{% else %}clock-history text-secondary{% endif %}"></i> 
-                        Delays ({{ delays|length }})
+                        <i class="bi bi-{% if active_blockers %}exclamation-triangle text-warning{% else %}clock-history text-secondary{% endif %}"></i> 
+                        blockers({{ blockers|length }})
                     </h5>
                 </div>
                 <div class="card-body">
-                    {% if delays %}
-                        {% for delay in delays %}
+                    {% if blockers %}
+                        {% for delay in blockers %}
                         <div class="mb-3 pb-3 {% if not loop.last %}border-bottom{% endif %}">
                             <div class="d-flex justify-content-between align-items-start mb-1">
                                 <div>
-                                    <span class="badge bg-{% if delay.delay_type == 'Work in Delay' %}warning{% else %}danger{% endif %} me-2">
-                                        {{ delay.delay_type }}
+                                    <span class="badge bg-{% if delay.mission_capability_status == 'Mission Capable - Temporary Procedural or Hardware Work Arounds' %}warning{% else %}danger{% endif %} me-2">
+                                        {{ delay.mission_capability_status or 'N/A' }}
                                     </span>
                                     {% if delay.priority %}
                                     <span class="badge bg-{% if delay.priority == 'Critical' %}danger{% elif delay.priority == 'High' %}warning{% else %}secondary{% endif %}">
@@ -646,28 +761,28 @@
                                     </span>
                                     {% endif %}
                                 </div>
-                                {% if not delay.delay_end_date %}
+                                {% if not delay.end_date %}
                                 <span class="badge bg-danger">Active</span>
                                 {% endif %}
                             </div>
-                            {% if delay.delay_reason %}
-                            <p class="small mb-1"><strong>Reason:</strong> {{ delay.delay_reason }}</p>
+                            {% if delay.reason %}
+                            <p class="small mb-1"><strong>Reason:</strong> {{ delay.reason }}</p>
                             {% endif %}
-                            {% if delay.delay_start_date %}
+                            {% if delay.start_date %}
                             <small class="text-muted">
-                                <i class="bi bi-calendar"></i> Started: {{ delay.delay_start_date.strftime('%Y-%m-%d %H:%M') }}
-                                {% if delay.delay_end_date %}
-                                <br><i class="bi bi-calendar-check"></i> Ended: {{ delay.delay_end_date.strftime('%Y-%m-%d %H:%M') }}
+                                <i class="bi bi-calendar"></i> Started: {{ delay.start_date.strftime('%Y-%m-%d %H:%M') }}
+                                {% if delay.end_date %}
+                                <br><i class="bi bi-calendar-check"></i> Ended: {{ delay.end_date.strftime('%Y-%m-%d %H:%M') }}
                                 {% endif %}
                             </small>
                             {% endif %}
-                            {% if delay.delay_notes %}
-                            <p class="small text-muted mb-0 mt-1">{{ delay.delay_notes }}</p>
+                            {% if delay.notes %}
+                            <p class="small text-muted mb-0 mt-1">{{ delay.notes }}</p>
                             {% endif %}
                         </div>
                         {% endfor %}
                     {% else %}
-                    <p class="text-muted mb-0 small"><em>No delays recorded</em></p>
+                    <p class="text-muted mb-0 small"><em>No blockers recorded</em></p>
                     {% endif %}
                 </div>
             </div>
@@ -675,91 +790,38 @@
     </div>
 </div>
 
-<!-- End Delay Modal -->
-<div class="modal fade" id="endDelayModal" tabindex="-1" aria-labelledby="endDelayModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="endDelayModalLabel">
-                    <i class="bi bi-play-circle"></i> End Delay
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form id="endDelayForm" method="POST" action="">
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="delay_start_date" class="form-label">Delay Start Time</label>
-                        <input type="datetime-local" 
-                               class="form-control" 
-                               id="delay_start_date" 
-                               name="delay_start_date"
-                               required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="delay_end_date" class="form-label">Delay End Time</label>
-                        <input type="datetime-local" 
-                               class="form-control" 
-                               id="delay_end_date" 
-                               name="delay_end_date"
-                               required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="delay_comment" class="form-label">Comment (Optional)</label>
-                        <textarea class="form-control" 
-                                  id="delay_comment" 
-                                  name="comment" 
-                                  rows="3" 
-                                  placeholder="Add a comment about ending this delay..."></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-success">
-                        <i class="bi bi-check-circle"></i> End Delay
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
+<!-- End Blocked Status Modal -->
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    function setupEndDelayModal(delayId, delayStartDate) {
-        // Set form action URL
-        const form = document.getElementById('endDelayForm');
-        form.action = "{{ url_for('maintenance.end_delay', delay_id=0) }}".replace('/0/', '/' + delayId + '/');
-        
-        // Set delay start date if available
-        const startDateInput = document.getElementById('delay_start_date');
-        if (delayStartDate) {
-            startDateInput.value = delayStartDate;
-        } else {
-            // If no start date, use current time as default
-            const now = new Date();
-            const year = now.getFullYear();
-            const month = String(now.getMonth() + 1).padStart(2, '0');
-            const day = String(now.getDate()).padStart(2, '0');
-            const hours = String(now.getHours()).padStart(2, '0');
-            const minutes = String(now.getMinutes()).padStart(2, '0');
-            startDateInput.value = `${year}-${month}-${day}T${hours}:${minutes}`;
+    // Initialize end blocked status modals
+    document.addEventListener('DOMContentLoaded', function() {
+        {% for blocker in active_blockers %}
+        const endBlockedModal{{ blocker.id }} = document.getElementById('endBlockedStatusModal{{ blocker.id }}');
+        if (endBlockedModal{{ blocker.id }}) {
+            endBlockedModal{{ blocker.id }}.addEventListener('show.bs.modal', function () {
+                // Set end date to current time (required field)
+                const endDateInput = document.getElementById('blocked_status_end_date{{ blocker.id }}');
+                if (endDateInput) {
+                    const now = new Date();
+                    const year = now.getFullYear();
+                    const month = String(now.getMonth() + 1).padStart(2, '0');
+                    const day = String(now.getDate()).padStart(2, '0');
+                    const hours = String(now.getHours()).padStart(2, '0');
+                    const minutes = String(now.getMinutes()).padStart(2, '0');
+                    endDateInput.value = `${year}-${month}-${day}T${hours}:${minutes}`;
+                }
+                
+                // Ensure billable hours has a value (required field, defaults to 0)
+                const billableHoursInput = document.getElementById('blocked_status_billable_hours{{ blocker.id }}');
+                if (billableHoursInput && !billableHoursInput.value) {
+                    billableHoursInput.value = '0';
+                }
+            });
         }
-        
-        // Set delay end date to now
-        const endDateInput = document.getElementById('delay_end_date');
-        const now = new Date();
-        // Format as YYYY-MM-DDTHH:mm for datetime-local input
-        const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-        const day = String(now.getDate()).padStart(2, '0');
-        const hours = String(now.getHours()).padStart(2, '0');
-        const minutes = String(now.getMinutes()).padStart(2, '0');
-        endDateInput.value = `${year}-${month}-${day}T${hours}:${minutes}`;
-        
-        // Clear comment field
-        document.getElementById('delay_comment').value = '';
-    }
+        {% endfor %}
+    });
 </script>
 {% endblock %}
 

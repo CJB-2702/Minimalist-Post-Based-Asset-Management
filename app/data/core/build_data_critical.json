@@ -17,7 +17,7 @@
         "is_active": true,
         "is_system": false,
         "is_admin": true,
-        "password": "admin-password-change-me"
+        "password": "admin"
       }
     },
     "Events": {

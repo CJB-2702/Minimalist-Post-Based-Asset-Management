@@ -1,0 +1,587 @@
+{% extends "base.html" %}
+
+{% block title %}Part Demands - Manager Portal{% endblock %}
+
+{% block extra_css %}
+<style>
+    .filter-card {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .part-demand-row {
+        transition: all 0.2s;
+        border-left: 3px solid transparent;
+    }
+    .part-demand-row:hover {
+        border-left-color: #0d6efd;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .part-demand-row.selected {
+        background-color: #e7f3ff;
+        border-left-color: #0d6efd;
+    }
+    .status-badge {
+        font-size: 0.75rem;
+        padding: 0.35rem 0.65rem;
+    }
+    .bulk-actions {
+        position: sticky;
+        top: 0;
+        background: white;
+        z-index: 100;
+        padding: 1rem;
+        border-bottom: 2px solid #dee2e6;
+        margin-bottom: 1rem;
+    }
+    .quick-action-btn {
+        margin: 0.25rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="bi bi-box-seam text-warning"></i> Part Demands
+                    </h1>
+                    <p class="text-muted mb-0">View and approve part demands for maintenance events</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('manager_portal.dashboard') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card filter-card">
+        <div class="card-body">
+            <h5 class="card-title mb-3">
+                <i class="bi bi-funnel"></i> Filters
+            </h5>
+            <form method="GET" action="{{ url_for('manager_portal.part_demands') }}" class="row g-3">
+                <!-- Part Filters -->
+                <div class="col-md-4">
+                    <label for="part_id" class="form-label">Part ID</label>
+                    <input type="number" class="form-control" id="part_id" name="part_id" 
+                           value="{{ filters.part_id or '' }}" placeholder="Part ID">
+                </div>
+                <div class="col-md-4">
+                    <label for="part_description" class="form-label">Part Description</label>
+                    <input type="text" class="form-control" id="part_description" name="part_description" 
+                           value="{{ filters.part_description or '' }}" placeholder="Part name or description">
+                </div>
+                <div class="col-md-4">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="">All Statuses</option>
+                        {% for status_option in status_options %}
+                        <option value="{{ status_option }}" {% if filters.status == status_option %}selected{% endif %}>
+                            {{ status_option }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Maintenance Event Filters -->
+                <div class="col-12">
+                    <hr class="my-2">
+                    <h6 class="text-muted mb-3">
+                        <i class="bi bi-tools"></i> Maintenance Event Filters
+                    </h6>
+                </div>
+                <div class="col-md-3">
+                    <label for="maintenance_event_id" class="form-label">Maintenance Event ID</label>
+                    <input type="number" class="form-control" id="maintenance_event_id" name="maintenance_event_id" 
+                           value="{{ filters.maintenance_event_id or '' }}" placeholder="Event ID">
+                </div>
+                <div class="col-md-3">
+                    <label for="asset_id" class="form-label">Asset ID</label>
+                    <input type="number" class="form-control" id="asset_id" name="asset_id" 
+                           value="{{ filters.asset_id or '' }}" placeholder="Asset ID">
+                </div>
+                <div class="col-md-3">
+                    <label for="assigned_to_id" class="form-label">Assigned To</label>
+                    <select class="form-select" id="assigned_to_id" name="assigned_to_id">
+                        <option value="">All Users</option>
+                        {% for user in users %}
+                        <option value="{{ user.id }}" {% if filters.assigned_to_id == user.id %}selected{% endif %}>
+                            {{ user.username }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="major_location_id" class="form-label">Major Location</label>
+                    <select class="form-select" id="major_location_id" name="major_location_id">
+                        <option value="">All Locations</option>
+                        {% for location in locations %}
+                        <option value="{{ location.id }}" {% if filters.major_location_id == location.id %}selected{% endif %}>
+                            {{ location.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="col-12">
+                    <hr class="my-2">
+                    <div class="d-flex align-items-end justify-content-between">
+                        <div>
+                            <label for="sort_by" class="form-label">Sort By</label>
+                            <select class="form-select" id="sort_by" name="sort_by">
+                                <option value="">Default</option>
+                                <option value="price_asc" {% if filters.sort_by == 'price_asc' %}selected{% endif %}>
+                                    Price (Low to High)
+                                </option>
+                                <option value="price_desc" {% if filters.sort_by == 'price_desc' %}selected{% endif %}>
+                                    Price (High to Low)
+                                </option>
+                                <option value="date_asc" {% if filters.sort_by == 'date_asc' %}selected{% endif %}>
+                                    Creation Date (Oldest First)
+                                </option>
+                                <option value="date_desc" {% if filters.sort_by == 'date_desc' %}selected{% endif %}>
+                                    Creation Date (Newest First)
+                                </option>
+                            </select>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-search"></i> Apply Filters
+                            </button>
+                            <a href="{{ url_for('manager_portal.part_demands') }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle"></i> Clear
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Bulk Actions Bar (shown when items are selected) -->
+    <div class="bulk-actions" id="bulkActionsBar" style="display: none;">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <strong id="selectedCount">0</strong> part demand(s) selected
+            </div>
+            <div>
+                <button type="button" class="btn btn-success btn-sm me-2" data-bs-toggle="modal" data-bs-target="#bulkApproveModal">
+                    <i class="bi bi-check-circle"></i> Bulk Approve
+                </button>
+                <button type="button" class="btn btn-danger btn-sm me-2" data-bs-toggle="modal" data-bs-target="#bulkRejectModal">
+                    <i class="bi bi-x-circle"></i> Bulk Reject
+                </button>
+                <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#bulkChangePartModal">
+                    <i class="bi bi-arrow-repeat"></i> Bulk Change Part ID
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Part Demands Table -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th width="40">
+                                <input type="checkbox" id="selectAll" title="Select All">
+                            </th>
+                            <th>ID</th>
+                            <th>Part</th>
+                            <th>Quantity</th>
+                            <th>Status</th>
+                            <th>Priority</th>
+                            <th>Maintenance Event</th>
+                            <th>Asset</th>
+                            <th>Location</th>
+                            <th>Assigned To</th>
+                            <th>Requested By</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if part_demands %}
+                            {% for pd in part_demands %}
+                            {% set is_disabled = pd.status in ['Issued', 'Ordered', 'Installed'] %}
+                            <tr class="part-demand-row {% if is_disabled %}table-secondary{% endif %}" data-part-demand-id="{{ pd.id }}">
+                                <td>
+                                    <input type="checkbox" class="part-demand-checkbox" value="{{ pd.id }}" 
+                                           {% if is_disabled %}disabled title="Cannot select: {{ pd.status }}"{% endif %}>
+                                </td>
+                                <td>{{ pd.id }}</td>
+                                <td>
+                                    {% if pd.part %}
+                                        <strong>{{ pd.part.part_number }}</strong><br>
+                                        <small class="text-muted">{{ pd.part.part_name }}</small>
+                                    {% else %}
+                                        <span class="text-muted">Part #{{ pd.part_id }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ pd.quantity_required }}</td>
+                                <td>
+                                    <span class="badge status-badge 
+                                        {% if pd.status == 'Pending Manager Approval' or pd.status == 'Requested' %}bg-warning
+                                        {% elif pd.status == 'Pending Inventory Approval' %}bg-info
+                                        {% elif pd.status == 'Approved' or pd.status == 'Issued' %}bg-success
+                                        {% elif pd.status == 'Rejected' %}bg-danger
+                                        {% else %}bg-secondary{% endif %}">
+                                        {{ pd.status }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge 
+                                        {% if pd.priority == 'Critical' %}bg-danger
+                                        {% elif pd.priority == 'High' %}bg-warning
+                                        {% elif pd.priority == 'Medium' %}bg-info
+                                        {% else %}bg-secondary{% endif %}">
+                                        {{ pd.priority }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if pd.action and pd.action.maintenance_action_set %}
+                                        Event #{{ pd.action.maintenance_action_set.event_id }}
+                                        {% if pd.action.maintenance_action_set.task_name %}
+                                            <br><small class="text-muted">{{ pd.action.maintenance_action_set.task_name }}</small>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if pd.action and pd.action.maintenance_action_set and pd.action.maintenance_action_set.asset_id %}
+                                        Asset #{{ pd.action.maintenance_action_set.asset_id }}
+                                    {% else %}
+                                        <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if pd.action and pd.action.maintenance_action_set and pd.action.maintenance_action_set.asset %}
+                                        {% if pd.action.maintenance_action_set.asset.major_location %}
+                                            {{ pd.action.maintenance_action_set.asset.major_location.name }}
+                                        {% else %}
+                                            <span class="text-muted">N/A</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if pd.action and pd.action.maintenance_action_set and pd.action.maintenance_action_set.assigned_user %}
+                                        {{ pd.action.maintenance_action_set.assigned_user.username }}
+                                    {% else %}
+                                        <span class="text-muted">Unassigned</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if pd.requested_by %}
+                                        {{ pd.requested_by.username }}
+                                    {% else %}
+                                        <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        {% if pd.status in ['Planned', 'Requested', 'Pending Manager Approval'] and not is_disabled %}
+                                        <button type="button" class="btn btn-success quick-action-btn" 
+                                                data-bs-toggle="modal" data-bs-target="#approveModal{{ pd.id }}">
+                                            <i class="bi bi-check"></i>
+                                        </button>
+                                        {% endif %}
+                                        {% if pd.status in ['Planned', 'Requested', 'Pending Manager Approval', 'Pending Inventory Approval'] and not is_disabled %}
+                                        <button type="button" class="btn btn-danger quick-action-btn" 
+                                                data-bs-toggle="modal" data-bs-target="#rejectModal{{ pd.id }}">
+                                            <i class="bi bi-x"></i>
+                                        </button>
+                                        {% endif %}
+                                        {% if is_disabled %}
+                                        <span class="text-muted small">N/A</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+
+                            <!-- Approve Modal for this part demand -->
+                            <div class="modal fade" id="approveModal{{ pd.id }}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <form method="POST" action="{{ url_for('manager_portal.approve_part_demand') }}">
+                                            <input type="hidden" name="part_demand_id" value="{{ pd.id }}">
+                                            {% for key, value in filters.items() %}
+                                                {% if value %}
+                                                    <input type="hidden" name="{{ key }}" value="{{ value }}">
+                                                {% endif %}
+                                            {% endfor %}
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Approve Part Demand</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p>Approve part demand #{{ pd.id }}?</p>
+                                                {% if pd.part %}
+                                                    <p><strong>Part:</strong> {{ pd.part.part_number }} - {{ pd.part.part_name }}</p>
+                                                {% endif %}
+                                                <p><strong>Quantity:</strong> {{ pd.quantity_required }}</p>
+                                                <div class="mb-3">
+                                                    <label for="approveNotes{{ pd.id }}" class="form-label">Notes (optional)</label>
+                                                    <textarea class="form-control" id="approveNotes{{ pd.id }}" name="notes" rows="3"></textarea>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <button type="submit" class="btn btn-success">Approve</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Reject Modal for this part demand -->
+                            <div class="modal fade" id="rejectModal{{ pd.id }}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <form method="POST" action="{{ url_for('manager_portal.reject_part_demand') }}">
+                                            <input type="hidden" name="part_demand_id" value="{{ pd.id }}">
+                                            {% for key, value in filters.items() %}
+                                                {% if value %}
+                                                    <input type="hidden" name="{{ key }}" value="{{ value }}">
+                                                {% endif %}
+                                            {% endfor %}
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Reject Part Demand</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p>Reject part demand #{{ pd.id }}?</p>
+                                                {% if pd.part %}
+                                                    <p><strong>Part:</strong> {{ pd.part.part_number }} - {{ pd.part.part_name }}</p>
+                                                {% endif %}
+                                                <p><strong>Quantity:</strong> {{ pd.quantity_required }}</p>
+                                                <div class="mb-3">
+                                                    <label for="rejectReason{{ pd.id }}" class="form-label">Rejection Reason <span class="text-danger">*</span></label>
+                                                    <textarea class="form-control" id="rejectReason{{ pd.id }}" name="reason" rows="3" required></textarea>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <button type="submit" class="btn btn-danger">Reject</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="12" class="text-center text-muted py-4">
+                                    <i class="bi bi-inbox"></i> No part demands found
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Approve Modal -->
+<div class="modal fade" id="bulkApproveModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('manager_portal.bulk_approve_part_demands') }}">
+                {% for key, value in filters.items() %}
+                    {% if value %}
+                        <input type="hidden" name="{{ key }}" value="{{ value }}">
+                    {% endif %}
+                {% endfor %}
+                <div id="bulkApproveFormInputs"></div>
+                <div class="modal-header">
+                    <h5 class="modal-title">Bulk Approve Part Demands</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="bulkApproveCount">Approve <strong>0</strong> selected part demand(s)?</p>
+                    <div class="mb-3">
+                        <label for="bulkApproveNotes" class="form-label">Notes (optional)</label>
+                        <textarea class="form-control" id="bulkApproveNotes" name="notes" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Approve All</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Reject Modal -->
+<div class="modal fade" id="bulkRejectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('manager_portal.bulk_reject_part_demands') }}">
+                {% for key, value in filters.items() %}
+                    {% if value %}
+                        <input type="hidden" name="{{ key }}" value="{{ value }}">
+                    {% endif %}
+                {% endfor %}
+                <div id="bulkRejectFormInputs"></div>
+                <div class="modal-header">
+                    <h5 class="modal-title">Bulk Reject Part Demands</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="bulkRejectCount">Reject <strong>0</strong> selected part demand(s)?</p>
+                    <div class="mb-3">
+                        <label for="bulkRejectReason" class="form-label">Rejection Reason <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="bulkRejectReason" name="reason" rows="3" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Reject All</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Change Part ID Modal -->
+<div class="modal fade" id="bulkChangePartModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('manager_portal.bulk_change_part_id') }}">
+                {% for key, value in filters.items() %}
+                    {% if value %}
+                        <input type="hidden" name="{{ key }}" value="{{ value }}">
+                    {% endif %}
+                {% endfor %}
+                <div id="bulkChangePartFormInputs"></div>
+                <div class="modal-header">
+                    <h5 class="modal-title">Bulk Change Part ID</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="bulkChangePartCount">Change part ID for <strong>0</strong> selected part demand(s)?</p>
+                    <div class="mb-3">
+                        <label for="bulkChangePartId" class="form-label">New Part ID <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" id="bulkChangePartId" name="new_part_id" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">Change Part ID</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const selectAllCheckbox = document.getElementById('selectAll');
+    const partDemandCheckboxes = document.querySelectorAll('.part-demand-checkbox');
+    const bulkActionsBar = document.getElementById('bulkActionsBar');
+    const selectedCountSpan = document.getElementById('selectedCount');
+    
+    // Select all functionality (only enabled checkboxes)
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            partDemandCheckboxes.forEach(cb => {
+                if (!cb.disabled) {
+                    cb.checked = this.checked;
+                    updateRowSelection(cb);
+                }
+            });
+            updateBulkActionsBar();
+        });
+    }
+    
+    // Individual checkbox change
+    partDemandCheckboxes.forEach(cb => {
+        cb.addEventListener('change', function() {
+            updateRowSelection(this);
+            updateBulkActionsBar();
+            updateSelectAllState();
+        });
+    });
+    
+    function updateRowSelection(checkbox) {
+        const row = checkbox.closest('tr');
+        if (checkbox.checked) {
+            row.classList.add('selected');
+        } else {
+            row.classList.remove('selected');
+        }
+    }
+    
+    function updateBulkActionsBar() {
+        const selected = document.querySelectorAll('.part-demand-checkbox:checked');
+        const count = selected.length;
+        
+        if (count > 0) {
+            bulkActionsBar.style.display = 'block';
+            selectedCountSpan.textContent = count;
+            
+            // Update bulk action modals
+            updateBulkModal('bulkApproveModal', 'bulkApproveCount', 'bulkApproveFormInputs', selected);
+            updateBulkModal('bulkRejectModal', 'bulkRejectCount', 'bulkRejectFormInputs', selected);
+            updateBulkModal('bulkChangePartModal', 'bulkChangePartCount', 'bulkChangePartFormInputs', selected);
+        } else {
+            bulkActionsBar.style.display = 'none';
+        }
+    }
+    
+    function updateBulkModal(modalId, countId, inputsId, selected) {
+        const countEl = document.getElementById(countId);
+        const inputsEl = document.getElementById(inputsId);
+        
+        if (countEl) {
+            countEl.innerHTML = countEl.innerHTML.replace(/\d+/, selected.length);
+        }
+        
+        if (inputsEl) {
+            inputsEl.innerHTML = '';
+            selected.forEach(cb => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'part_demand_ids';
+                input.value = cb.value;
+                inputsEl.appendChild(input);
+            });
+        }
+    }
+    
+    function updateSelectAllState() {
+        if (selectAllCheckbox) {
+            // Only consider enabled checkboxes
+            const enabledCheckboxes = Array.from(partDemandCheckboxes).filter(cb => !cb.disabled);
+            const allChecked = enabledCheckboxes.length > 0 && 
+                              enabledCheckboxes.every(cb => cb.checked);
+            const someChecked = enabledCheckboxes.some(cb => cb.checked);
+            selectAllCheckbox.checked = allChecked;
+            selectAllCheckbox.indeterminate = someChecked && !allChecked;
+        }
+    }
+});
+</script>
+{% endblock %}
+
+
+
+

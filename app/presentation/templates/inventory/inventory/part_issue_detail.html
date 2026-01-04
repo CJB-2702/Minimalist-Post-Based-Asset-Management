@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+
+{% block title %}Part Issue #{{ issue.id }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="bi bi-box-arrow-right text-success"></i> Part Issue #{{ issue.id }}
+                    </h1>
+                    <p class="text-muted mb-0">View part issue details</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('inventory.part_issue_edit', id=issue.id) }}" class="btn btn-primary me-2">
+                        <i class="bi bi-pencil"></i> Edit
+                    </a>
+                    <a href="{{ url_for('inventory.part_issues_list') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to List
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Left Column: Issue Details -->
+        <div class="col-md-8">
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> Issue Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Issue ID:</strong><br>
+                            <span class="badge bg-primary">#{{ issue.id }}</span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Issue Type:</strong><br>
+                            {% if issue.issue_type == 'DirectToUser' %}
+                            <span class="badge bg-primary">Direct to User</span>
+                            {% elif issue.issue_type == 'ForPartDemand' %}
+                            <span class="badge bg-warning">Part Demand</span>
+                            {% else %}
+                            <span class="badge bg-secondary">{{ issue.issue_type }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Issue Date:</strong><br>
+                            {{ issue.issue_date.strftime('%Y-%m-%d %H:%M:%S') if issue.issue_date else 'N/A' }}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Quantity Issued:</strong><br>
+                            <span class="badge bg-success">{{ '%.2f'|format(issue.quantity_issued) }}</span>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Unit Cost at Issue:</strong><br>
+                            {% if issue.unit_cost_at_issue %}
+                            ${{ '%.2f'|format(issue.unit_cost_at_issue) }}
+                            {% else %}
+                            <span class="text-muted">Not recorded</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Total Cost:</strong><br>
+                            {% if issue.total_cost %}
+                            <strong>${{ '%.2f'|format(issue.total_cost) }}</strong>
+                            {% else %}
+                            <span class="text-muted">Not calculated</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {% if issue.issue_reason %}
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <strong>Issue Reason:</strong><br>
+                            {{ issue.issue_reason }}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if issue.issue_notes %}
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <strong>Notes:</strong><br>
+                            <div class="border rounded p-2 bg-light">
+                                {{ issue.issue_notes }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Part Information -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-box-seam"></i> Part Information</h5>
+                </div>
+                <div class="card-body">
+                    {% if part %}
+                    <div class="row mb-2">
+                        <div class="col-md-6">
+                            <strong>Part Number:</strong><br>
+                            {{ part.part_number }}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Part Name:</strong><br>
+                            {{ part.part_name }}
+                        </div>
+                    </div>
+                    {% if part.description %}
+                    <div class="row">
+                        <div class="col-12">
+                            <strong>Description:</strong><br>
+                            <div class="text-muted">{{ part.description }}</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% else %}
+                    <div class="text-muted">Part #{{ issue.part_id }} (details not available)</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Location Information -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-geo-alt"></i> Issue Location</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <strong>Storeroom:</strong><br>
+                            {% if issue.issued_from_storeroom_id %}
+                            Storeroom #{{ issue.issued_from_storeroom_id }}
+                            {% else %}
+                            <span class="text-muted">Not specified</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Location:</strong><br>
+                            {% if issue.issued_from_location_id %}
+                            Location #{{ issue.issued_from_location_id }}
+                            {% else %}
+                            <span class="text-muted">Not specified</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Bin:</strong><br>
+                            {% if issue.issued_from_bin_id %}
+                            Bin #{{ issue.issued_from_bin_id }}
+                            {% else %}
+                            <span class="text-muted">Not specified</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Inventory Movement Link -->
+            {% if issue.inventory_movement %}
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-arrow-left-right"></i> Related Inventory Movement</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <strong>Movement ID:</strong><br>
+                            #{{ issue.inventory_movement.id }}
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Movement Type:</strong><br>
+                            <span class="badge bg-info">{{ issue.inventory_movement.movement_type }}</span>
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Movement Date:</strong><br>
+                            {{ issue.inventory_movement.movement_date.strftime('%Y-%m-%d %H:%M') if issue.inventory_movement.movement_date else 'N/A' }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Right Column: Recipients and Audit -->
+        <div class="col-md-4">
+            <!-- Recipients -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-people"></i> Recipients</h5>
+                </div>
+                <div class="card-body">
+                    {% if issued_to_user %}
+                    <div class="mb-3">
+                        <strong>Issued To User:</strong><br>
+                        <i class="bi bi-person"></i> {{ issued_to_user.username }}<br>
+                        <small class="text-muted">{{ issued_to_user.first_name }} {{ issued_to_user.last_name }}</small>
+                    </div>
+                    {% endif %}
+
+                    {% if issue.part_demand_id %}
+                    <div class="mb-3">
+                        <strong>Part Demand:</strong><br>
+                        <a href="#" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-box"></i> Demand #{{ issue.part_demand_id }}
+                        </a>
+                    </div>
+                    {% endif %}
+
+                    {% if asset %}
+                    <div class="mb-3">
+                        <strong>Asset:</strong><br>
+                        <i class="bi bi-tools"></i> {{ asset.serial_number }}<br>
+                        <small class="text-muted">{{ asset.name }}</small>
+                    </div>
+                    {% elif issue.asset_id %}
+                    <div class="mb-3">
+                        <strong>Asset:</strong><br>
+                        Asset #{{ issue.asset_id }}
+                    </div>
+                    {% endif %}
+
+                    {% if not issued_to_user and not issue.part_demand_id and not asset %}
+                    <div class="text-muted">No recipient information available</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Audit Information -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-clock-history"></i> Audit Trail</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong>Issued By:</strong><br>
+                        {% if issued_by %}
+                        <i class="bi bi-person"></i> {{ issued_by.username }}
+                        {% elif issue.issued_by_id %}
+                        User #{{ issue.issued_by_id }}
+                        {% else %}
+                        <span class="text-muted">Not recorded</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <strong>Created:</strong><br>
+                        {% if issue.created_at %}
+                        {{ issue.created_at.strftime('%Y-%m-%d %H:%M:%S') }}
+                        {% else %}
+                        <span class="text-muted">Not recorded</span>
+                        {% endif %}
+                    </div>
+
+                    {% if issue.updated_at and issue.updated_at != issue.created_at %}
+                    <div class="mb-3">
+                        <strong>Last Updated:</strong><br>
+                        {{ issue.updated_at.strftime('%Y-%m-%d %H:%M:%S') }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

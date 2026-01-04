@@ -1,0 +1,390 @@
+{% extends "base.html" %}
+
+{% block title %}Create Arrival from PO Lines{% endblock %}
+
+{% block extra_css %}
+<style>
+  .table-xs td, .table-xs th {
+    padding-top: .4rem;
+    padding-bottom: .4rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <h1 class="h3 mb-1">
+            <i class="bi bi-box-arrow-in-down text-success"></i> Create Arrival from Purchase Order Lines
+          </h1>
+          <p class="text-muted mb-0">Search and select unfulfilled PO lines. All selected lines will be fully accepted (no rejections).</p>
+        </div>
+        <div>
+          <a href="{{ url_for('inventory.arrivals_index') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Arrivals
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <h5 class="mb-0"><i class="bi bi-funnel"></i> Filters</h5>
+    </div>
+    <div class="card-body">
+      <form method="GET" action="{{ url_for('inventory.create_arrival_from_po_lines') }}" class="row g-3">
+        <div class="col-md-3">
+          <label class="form-label">Status</label>
+          <select class="form-select" name="status">
+            <option value="">(Default: Ordered/Shipped)</option>
+            {% for s in status_options %}
+              <option value="{{ s }}" {% if filters.status == s %}selected{% endif %}>{{ s }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Part Number</label>
+          <input type="text" class="form-control" name="part_number" value="{{ filters.part_number }}" placeholder="Part number">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Part Name</label>
+          <input type="text" class="form-control" name="part_name" value="{{ filters.part_name }}" placeholder="Part name">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Vendor</label>
+          <input type="text" class="form-control" name="vendor" value="{{ filters.vendor }}" placeholder="Vendor name">
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Order Date From</label>
+          <input type="date" class="form-control" name="date_from" value="{{ filters.date_from }}">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Order Date To</label>
+          <input type="date" class="form-control" name="date_to" value="{{ filters.date_to }}">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Created By</label>
+          <select class="form-select" name="created_by_id">
+            <option value="">All Users</option>
+            {% for u in users %}
+              <option value="{{ u.id }}" {% if filters.created_by_id|int == u.id %}selected{% endif %}>{{ u.username }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Search</label>
+          <input type="text" class="form-control" name="search" value="{{ filters.search_term }}" placeholder="Part, vendor, or PO number">
+        </div>
+
+        <div class="col-12"><hr class="my-2"></div>
+
+        <div class="col-md-4">
+          <label class="form-label">Part Demand Assigned To</label>
+          <select class="form-select" name="part_demand_assigned_to_id">
+            <option value="">All Users</option>
+            {% for u in users %}
+              <option value="{{ u.id }}" {% if filters.part_demand_assigned_to_id|int == u.id %}selected{% endif %}>{{ u.username }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Event Assigned To</label>
+          <select class="form-select" name="event_assigned_to_id">
+            <option value="">All Users</option>
+            {% for u in users %}
+              <option value="{{ u.id }}" {% if filters.event_assigned_to_id|int == u.id %}selected{% endif %}>{{ u.username }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Asset</label>
+          <select class="form-select" name="asset_id">
+            <option value="">All Assets</option>
+            {% for asset in assets %}
+              <option value="{{ asset.id }}" {% if filters.asset_id|int == asset.id %}selected{% endif %}>{{ asset.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-12">
+          <div class="d-flex justify-content-end gap-2">
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-search"></i> Search
+            </button>
+            <a class="btn btn-outline-secondary" href="{{ url_for('inventory.create_arrival_from_po_lines') }}">
+              <i class="bi bi-x-circle"></i> Clear
+            </a>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- Search Results -->
+    <div class="col-lg-7">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0"><i class="bi bi-list-check"></i> Search Results (Unfulfilled PO Lines)</h5>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleAll(true)">Select all</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleAll(false)">Select none</button>
+          </div>
+        </div>
+        <div class="card-body">
+          {% if po_lines %}
+            <form method="POST" action="{{ url_for('inventory.create_arrival_from_po_lines_add', **filters) }}">
+              <div class="table-responsive">
+                <table class="table table-hover table-xs align-middle">
+                  <thead>
+                    <tr>
+                      <th style="width: 44px;"></th>
+                      <th>PO Line ID</th>
+                      <th>PO Number</th>
+                      <th>Part</th>
+                      <th>Qty Ordered</th>
+                      <th>Qty Received</th>
+                      <th>Remaining</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for line in po_lines %}
+                      {% set remaining = (line.quantity_ordered or 0.0) - (line.quantity_received_total or 0.0) %}
+                      {% set is_disabled = remaining <= 0 or line.status in ['Complete', 'Cancelled'] %}
+                      <tr class="{% if is_disabled %}table-secondary{% endif %}">
+                        <td>
+                          <input class="form-check-input po-line-check" type="checkbox" name="po_line_ids" value="{{ line.id }}" {% if is_disabled %}disabled{% endif %}>
+                        </td>
+                        <td>{{ line.id }}</td>
+                        <td>
+                          {% if line.purchase_order %}
+                            <strong>{{ line.purchase_order.po_number }}</strong>
+                          {% else %}
+                            PO-{{ line.purchase_order_id }}
+                          {% endif %}
+                        </td>
+                        <td>
+                          {% if line.part %}
+                            <div><strong>{{ line.part.part_number }}</strong></div>
+                            <div class="text-muted small">{{ line.part.part_name }}</div>
+                          {% else %}
+                            <div><strong>Part #{{ line.part_id }}</strong></div>
+                          {% endif %}
+                        </td>
+                        <td>{{ line.quantity_ordered }}</td>
+                        <td>{{ '%.1f'|format(line.quantity_received_total or 0.0) }}</td>
+                        <td><strong>{{ '%.1f'|format(remaining) }}</strong></td>
+                        <td><span class="badge bg-secondary">{{ line.status }}</span></td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+              <div class="d-flex justify-content-end mt-3">
+                <button type="submit" class="btn btn-primary">
+                  <i class="bi bi-plus-circle"></i> Add Selected to Queue
+                </button>
+              </div>
+            </form>
+          {% else %}
+            <div class="alert alert-info mb-0">
+              <i class="bi bi-info-circle"></i> No matching unfulfilled PO lines found.
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Selected Lines Queue -->
+    <div class="col-lg-5">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0"><i class="bi bi-check2-square"></i> Selected PO Lines</h5>
+          <form method="POST" action="{{ url_for('inventory.create_arrival_from_po_lines_clear', **filters) }}">
+            <button type="submit" class="btn btn-sm btn-outline-secondary" {% if not selected_lines %}disabled{% endif %}>
+              <i class="bi bi-trash"></i> Clear
+            </button>
+          </form>
+        </div>
+        <div class="card-body">
+          {% if selected_lines %}
+            <div class="table-responsive">
+              <table class="table table-sm align-middle">
+                <thead>
+                  <tr>
+                    <th>Line ID</th>
+                    <th>PO</th>
+                    <th>Part</th>
+                    <th>Remaining</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for line in selected_lines %}
+                    {% set remaining = (line.quantity_ordered or 0.0) - (line.quantity_received_total or 0.0) %}
+                    {% if remaining > 0 %}
+                      <tr>
+                        <td>{{ line.id }}</td>
+                        <td>
+                          {% if line.purchase_order %}
+                            <strong>{{ line.purchase_order.po_number }}</strong>
+                          {% else %}
+                            PO-{{ line.purchase_order_id }}
+                          {% endif %}
+                        </td>
+                        <td>
+                          {% if line.part %}
+                            <strong>{{ line.part.part_number }}</strong>
+                            <div class="text-muted small">{{ line.part.part_name }}</div>
+                          {% else %}
+                            <strong>Part #{{ line.part_id }}</strong>
+                          {% endif %}
+                        </td>
+                        <td><strong>{{ '%.1f'|format(remaining) }}</strong></td>
+                        <td class="text-end">
+                          <form method="POST" action="{{ url_for('inventory.create_arrival_from_po_lines_remove', po_line_id=line.id, **filters) }}">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                              <i class="bi bi-x"></i>
+                            </button>
+                          </form>
+                        </td>
+                      </tr>
+                    {% endif %}
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div class="alert alert-warning mb-0">
+              <i class="bi bi-exclamation-triangle"></i> No PO lines selected yet.
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Package Header and Lines Summary - Full Width at Bottom -->
+  <form method="POST" action="{{ url_for('inventory.create_arrival_from_po_lines_submit', **filters) }}" id="arrival-submit-form" class="mt-4">
+    <div class="card mb-4">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-box"></i> Package Header</h5>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label">Package Number *</label>
+            <input class="form-control" name="package_number" required {% if not selected_lines %}disabled{% endif %}>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Location *</label>
+            <select class="form-select" name="major_location_id" required {% if not selected_lines %}disabled{% endif %}>
+              <option value="">-- Select Location --</option>
+              {% for loc in locations %}
+                <option value="{{ loc.id }}">{{ loc.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Storeroom *</label>
+            <select class="form-select" name="storeroom_id" required {% if not selected_lines %}disabled{% endif %}>
+              <option value="">-- Select Storeroom --</option>
+              {% for s in storerooms %}
+                <option value="{{ s.id }}">{{ s.room_name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Tracking Number</label>
+            <input class="form-control" name="tracking_number" {% if not selected_lines %}disabled{% endif %}>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Carrier</label>
+            <input class="form-control" name="carrier" {% if not selected_lines %}disabled{% endif %}>
+          </div>
+          <div class="col-12">
+            <label class="form-label">Notes</label>
+            <textarea class="form-control" name="notes" rows="2" {% if not selected_lines %}disabled{% endif %}></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-basket"></i> Lines Summary (Will Be Fully Accepted)</h5>
+      </div>
+      <div class="card-body">
+        {% if lines_summary %}
+          <div class="alert alert-info mb-3">
+            <i class="bi bi-info-circle"></i> <strong>Note:</strong> All selected lines will be fully accepted. No rejections are allowed in this workflow.
+          </div>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle">
+              <thead>
+                <tr>
+                  <th>PO Line</th>
+                  <th>PO Number</th>
+                  <th>Part</th>
+                  <th>Qty Ordered</th>
+                  <th>Qty Received</th>
+                  <th>Remaining (Will Accept)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in lines_summary %}
+                  <tr>
+                    <td><strong>#{{ row.po_line_id }}</strong></td>
+                    <td>{{ row.po_number }}</td>
+                    <td>
+                      <strong>{{ row.part_number }}</strong>
+                      <div class="text-muted small">{{ row.part_name }}</div>
+                    </td>
+                    <td>{{ row.quantity_ordered }}</td>
+                    <td>{{ '%.1f'|format(row.quantity_received_total) }}</td>
+                    <td><strong class="text-success">{{ '%.1f'|format(row.remaining_qty) }}</strong></td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <div class="d-flex justify-content-end mt-3">
+            <button type="submit" class="btn btn-success" {% if not selected_lines %}disabled{% endif %}>
+              <i class="bi bi-check-circle"></i> Create Package Arrival
+            </button>
+          </div>
+        {% else %}
+          <div class="alert alert-warning mb-0">
+            <i class="bi bi-exclamation-triangle"></i> Select PO lines to see the summary.
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </form>
+</div>
+
+<script>
+  function toggleAll(checked) {
+    document.querySelectorAll('.po-line-check').forEach(cb => {
+      if (!cb.disabled) cb.checked = checked;
+    });
+  }
+</script>
+{% endblock %}
+
+
+
+
+
+
+
+
+
+

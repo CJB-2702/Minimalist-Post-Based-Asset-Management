@@ -153,7 +153,7 @@
                                     <div class="col-md-4 mb-3">
                                         <label for="status" class="form-label">Status</label>
                                         <select id="status" name="status" class="form-select">
-                                            {% set statuses = ['Planned', 'In Progress', 'Complete', 'Cancelled', 'Delayed'] %}
+                                            {% set statuses = ['Planned', 'In Progress', 'Complete', 'Cancelled', 'Blocked'] %}
                                             {% for s in statuses %}
                                                 <option value="{{ s }}" {% if maintenance.status == s %}selected{% endif %}>{{ s }}</option>
                                             {% endfor %}
@@ -302,12 +302,12 @@
                                     </div>
 
                                     <div class="mb-3">
-                                        <label for="delay_notes" class="form-label">Delay Notes</label>
-                                        <textarea class="form-control"
+                                        <label for="delay_notes" class="form-label">Blocker Notes</label>
+                                        <textarea class="form-control" 
                                                   id="delay_notes"
                                                   name="delay_notes"
                                                   rows="3"
-                                                  placeholder="Add delay notes...">{{ maintenance.maintenance_action_set.delay_notes or '' }}</textarea>
+                                                  placeholder="Add blocker notes...">{{ maintenance.maintenance_action_set.blocker_notes or '' }}</textarea>
                                     </div>
                                 </details>
 
@@ -343,7 +343,7 @@
             </div>
         </div>
 
-        <!-- Right Panel: Quick Actions and Delays -->
+        <!-- Right Panel: Quick Actions and Blockers -->
         <div class="col-lg-4 col-md-4">
             <div class="card mb-4">
                 <div class="card-header">
@@ -357,10 +357,10 @@
                         <a href="{{ url_for('maintenance_event.work_maintenance_event', event_id=event.id) }}" class="btn btn-outline-success">
                             <i class="bi bi-tools"></i> Do Work
                         </a>
-                        {% if active_delays %}
-                        <form method="POST" action="{{ url_for('maintenance.end_delay', delay_id=active_delays[0].id) }}" class="d-inline">
-                            <button type="submit" class="btn btn-outline-warning w-100" onclick="return confirm('End the delay and resume work?')">
-                                <i class="bi bi-pause-circle"></i> End Delay
+                        {% if active_blockers %}
+                        <form method="POST" action="{{ url_for('maintenance.end_blocked_status', blocked_status_id=active_blockers[0].id) }}" class="d-inline">
+                            <button type="submit" class="btn btn-outline-warning w-100" onclick="return confirm('End the blocked status and resume work?')">
+                                <i class="bi bi-pause-circle"></i> End Blocked Status
                             </button>
                         </form>
                         {% endif %}
@@ -473,64 +473,66 @@
                 </div>
             </div>
 
-            <!-- Delays Card -->
-            <div class="card mb-4 {% if active_delays %}border-warning{% else %}border-secondary{% endif %}">
-                <div class="card-header {% if active_delays %}bg-warning bg-opacity-10{% else %}bg-secondary bg-opacity-10{% endif %}">
+            <!-- Blockers Card -->
+            <div class="card mb-4 {% if active_blockers %}border-warning{% else %}border-secondary{% endif %}">
+                <div class="card-header {% if active_blockers %}bg-warning bg-opacity-10{% else %}bg-secondary bg-opacity-10{% endif %}">
                     <h5 class="mb-0">
-                        <i class="bi bi-exclamation-triangle {% if active_delays %}text-warning{% else %}text-secondary{% endif %}"></i> 
-                        Delays
-                        {% if delays %}
-                        <span class="badge {% if active_delays %}bg-warning{% else %}bg-secondary{% endif %} ms-2">{{ delays|length }}</span>
+                        <i class="bi bi-exclamation-triangle {% if active_blockers %}text-warning{% else %}text-secondary{% endif %}"></i> 
+                        Blockers
+                        {% if blockers %}
+                        <span class="badge {% if active_blockers %}bg-warning{% else %}bg-secondary{% endif %} ms-2">{{ blockers|length }}</span>
                         {% endif %}
                     </h5>
                 </div>
                 <div class="card-body">
-                    {% if delays %}
-                    {% for delay in delays %}
+                    {% if blockers %}
+                    {% for delay in blockers %}
                     <div class="{% if not loop.last %}mb-3 pb-3 border-bottom{% else %}mb-3{% endif %}">
                         <div class="d-flex justify-content-between align-items-start mb-2">
                             <div>
-                                <span class="badge {% if delay.delay_type == 'Work in Delay' %}bg-warning{% else %}bg-danger{% endif %} me-2">{{ delay.delay_type }}</span>
+                                <span class="badge {% if delay.mission_capability_status == 'Mission Capable - Temporary Procedural or Hardware Work Arounds' %}bg-warning{% else %}bg-danger{% endif %} me-2">{{ delay.mission_capability_status or 'N/A' }}</span>
                                 <span class="badge bg-{% if delay.priority == 'Critical' %}danger{% elif delay.priority == 'High' %}warning{% elif delay.priority == 'Medium' %}info{% else %}secondary{% endif %}">{{ delay.priority }}</span>
-                                <span class="badge {% if delay.delay_end_date %}bg-success{% else %}bg-danger{% endif %} ms-2">
-                                    {% if delay.delay_end_date %}Ended{% else %}Active{% endif %}
+                                <span class="badge {% if delay.end_date %}bg-success{% else %}bg-danger{% endif %} ms-2">
+                                    {% if delay.end_date %}Ended{% else %}Active{% endif %}
                                 </span>
                             </div>
                             <div class="d-flex gap-1">
-                                <button type="button" class="btn btn-sm btn-link p-0" onclick="toggleDelayEdit({{ delay.id }})" style="color: #ffc107;">
+                                <button type="button" class="btn btn-sm btn-link p-0" onclick="toggleBlockerEdit({{ delay.id }})" style="color: #ffc107;">
                                     <i class="bi bi-pencil-fill"></i>
                                 </button>
                             </div>
                         </div>
                         <div class="small">
-                            <p class="mb-1"><strong>Reason:</strong> {{ delay.delay_reason or 'N/A' }}</p>
-                            {% if delay.delay_start_date %}
+                            <p class="mb-1"><strong>Reason:</strong> {{ delay.reason or 'N/A' }}</p>
+                            {% if delay.start_date %}
                             <p class="mb-1 text-muted">
-                                <i class="bi bi-calendar"></i> Started: {{ delay.delay_start_date.strftime('%Y-%m-%d %H:%M') }}
+                                <i class="bi bi-calendar"></i> Started: {{ delay.start_date.strftime('%Y-%m-%d %H:%M') }}
                             </p>
                             {% endif %}
-                            {% if delay.delay_end_date %}
+                            {% if delay.end_date %}
                             <p class="mb-1 text-muted">
-                                <i class="bi bi-calendar-check"></i> Ended: {{ delay.delay_end_date.strftime('%Y-%m-%d %H:%M') }}
+                                <i class="bi bi-calendar-check"></i> Ended: {{ delay.end_date.strftime('%Y-%m-%d %H:%M') }}
                             </p>
                             {% endif %}
-                            {% if delay.delay_billable_hours %}
+                            {% if delay.billable_hours %}
                             <p class="mb-0 text-muted">
-                                <i class="bi bi-clock"></i> Billable Hours: {{ delay.delay_billable_hours }}
+                                <i class="bi bi-clock"></i> Billable Hours: {{ delay.billable_hours }}
                             </p>
                             {% endif %}
-                            {% if delay.delay_notes %}
-                            <p class="mb-0 mt-1 text-muted small">{{ delay.delay_notes }}</p>
+                            {% if delay.notes %}
+                            <p class="mb-0 mt-1 text-muted small">{{ delay.notes }}</p>
                             {% endif %}
                         </div>
                         <!-- Dropdown Edit Panel -->
-                        <div id="delayEditPanel{{ delay.id }}" class="mt-2 p-2 border rounded" style="display: none; background-color: #fff3cd;">
-                            <form method="POST" action="{{ url_for('maintenance.update_delay', delay_id=delay.id) }}">
+                        <div id="blockerEditPanel{{ delay.id }}" class="mt-2 p-2 border rounded" style="display: none; background-color: #fff3cd;">
+                            <form method="POST" action="{{ url_for('maintenance.update_blocked_status', blocked_status_id=delay.id) }}">
                                 <div class="mb-2">
-                                    <label class="form-label small">Delay Type</label>
-                                    <select class="form-select form-select-sm" name="delay_type" required>
-                                        <option value="Work in Delay" {% if delay.delay_type == 'Work in Delay' %}selected{% endif %}>Work in Delay</option>
-                                        <option value="Cancellation Requested" {% if delay.delay_type == 'Cancellation Requested' %}selected{% endif %}>Cancellation Requested</option>
+                                    <label class="form-label small">Status Type</label>
+                                    <select class="form-select form-select-sm" name="blocked_status_type" required>
+                                        {% set blocker_instance = namespace(obj=None) %}
+                                        {% if delay %}
+                                        <option value="{{ delay.mission_capability_status }}" selected>{{ delay.mission_capability_status }}</option>
+                                        {% endif %}
                                     </select>
                                 </div>
                                 <div class="mb-2">
@@ -544,32 +546,32 @@
                                 </div>
                                 <div class="mb-2">
                                     <label class="form-label small">Reason <span class="text-danger">*</span></label>
-                                    <textarea class="form-control form-control-sm" name="delay_reason" rows="2" required>{{ delay.delay_reason or '' }}</textarea>
+                                    <textarea class="form-control form-control-sm" name="blocked_status_reason" rows="2" required>{{ delay.reason or '' }}</textarea>
                                 </div>
                                 <div class="mb-2">
                                     <label class="form-label small">Start Date/Time</label>
-                                    <input type="datetime-local" class="form-control form-control-sm" name="delay_start_date" 
-                                           value="{% if delay.delay_start_date %}{{ delay.delay_start_date.strftime('%Y-%m-%dT%H:%M') }}{% endif %}">
+                                    <input type="datetime-local" class="form-control form-control-sm" name="blocked_status_start_date" 
+                                           value="{% if delay.start_date %}{{ delay.start_date.strftime('%Y-%m-%dT%H:%M') }}{% endif %}">
                                 </div>
                                 <div class="mb-2">
                                     <label class="form-label small">End Date/Time</label>
-                                    <input type="datetime-local" class="form-control form-control-sm" name="delay_end_date" 
-                                           value="{% if delay.delay_end_date %}{{ delay.delay_end_date.strftime('%Y-%m-%dT%H:%M') }}{% endif %}">
+                                    <input type="datetime-local" class="form-control form-control-sm" name="blocked_status_end_date" 
+                                           value="{% if delay.end_date %}{{ delay.end_date.strftime('%Y-%m-%dT%H:%M') }}{% endif %}">
                                 </div>
                                 <div class="mb-2">
                                     <label class="form-label small">Billable Hours</label>
-                                    <input type="number" step="any" class="form-control form-control-sm" name="delay_billable_hours" 
-                                           value="{{ delay.delay_billable_hours or '' }}">
+                                    <input type="number" step="any" class="form-control form-control-sm" name="blocked_status_billable_hours" 
+                                           value="{{ delay.billable_hours or '' }}">
                                 </div>
                                 <div class="mb-2">
-                                    <label class="form-label small">Delay Notes</label>
-                                    <textarea class="form-control form-control-sm" name="delay_notes" rows="2">{{ delay.delay_notes or '' }}</textarea>
+                                    <label class="form-label small">Blocker Notes</label>
+                                    <textarea class="form-control form-control-sm" name="blocked_status_notes" rows="2">{{ delay.notes or '' }}</textarea>
                                 </div>
                                 <div class="d-flex gap-2">
                                     <button type="submit" class="btn btn-sm btn-primary">
                                         <i class="bi bi-check-circle"></i> Submit
                                     </button>
-                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleDelayEdit({{ delay.id }})">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleBlockerEdit({{ delay.id }})">
                                         Cancel
                                     </button>
                                 </div>
@@ -578,7 +580,7 @@
                     </div>
                     {% endfor %}
                     {% else %}
-                    <p class="text-muted mb-0 small">No delays recorded.</p>
+                    <p class="text-muted mb-0 small">No blockers recorded.</p>
                     {% endif %}
                 </div>
             </div>
@@ -1342,9 +1344,9 @@
         }
     }
 
-    // Toggle delay edit panel
-    function toggleDelayEdit(delayId) {
-        const panel = document.getElementById('delayEditPanel' + delayId);
+    // Toggle blocker edit panel
+    function toggleBlockerEdit(delayId) {
+        const panel = document.getElementById('blockerEditPanel' + delayId);
         if (panel) {
             panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
         }

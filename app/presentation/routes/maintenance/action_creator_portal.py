@@ -7,8 +7,8 @@ from flask import Blueprint, render_template, request, abort
 from flask_login import login_required, current_user
 
 from app.logger import get_logger
-from app.buisness.maintenance.base.action_struct import ActionStruct
-from app.buisness.maintenance.base.maintenance_action_set_struct import MaintenanceActionSetStruct
+from app.buisness.maintenance.base.structs.action_struct import ActionStruct
+from app.buisness.maintenance.base.structs.maintenance_action_set_struct import MaintenanceActionSetStruct
 from app.buisness.maintenance.base.maintenance_context import MaintenanceContext
 from app.data.maintenance.base.actions import Action
 from app.data.maintenance.proto_templates.proto_actions import ProtoActionItem

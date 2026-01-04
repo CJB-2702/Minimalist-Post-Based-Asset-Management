@@ -18,7 +18,7 @@ class TemplatePartDemand(VirtualPartDemand):
     
     # Relationships
     template_action_item = relationship('TemplateActionItem', back_populates='template_part_demands')
-    part = relationship('Part', foreign_keys='TemplatePartDemand.part_id', lazy='select')
+    part = relationship('PartDefinition', foreign_keys='TemplatePartDemand.part_id', lazy='select')
     
     @property
     def is_required(self):

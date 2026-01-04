@@ -70,9 +70,8 @@ def create_app():
     
     # Import supply models to ensure they're registered (supply is now part of core)
     try:
-        from app.data.core.supply.part import Part
-        from app.data.core.supply.tool import Tool
-        from app.data.core.supply.issuable_tool import IssuableTool
+        from app.data.core.supply.part_definition import PartDefinition
+        from app.data.core.supply.tool_definition import ToolDefinition
     except ImportError as e:
         logger.warning(f"Could not import supply models: {e}")
         pass
@@ -108,14 +107,15 @@ def create_app():
     # Add template global to check if endpoint exists
     @app.template_global()
     def endpoint_exists(endpoint):
-        """Check if a route endpoint exists"""
-        try:
-            from flask import url_for
-            with app.app_context():
-                url_for(endpoint)
-            return True
-        except:
-            return False
+        """Check if a route endpoint exists - raises exceptions instead of hiding them"""
+        # Check if endpoint exists in the URL map
+        from flask import has_request_context, current_app
+        if has_request_context():
+            app_to_check = current_app
+        else:
+            app_to_check = app
+        
+        return endpoint in [rule.endpoint for rule in app_to_check.url_map.iter_rules()]
     
     logger.info("Flask application initialization complete")
     

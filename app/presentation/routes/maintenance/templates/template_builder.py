@@ -212,10 +212,10 @@ def view_builder(builder_id):
             selected_action_index = 0
         
         # Get parts and tools for dropdowns
-        from app.data.core.supply.part import Part
-        from app.data.core.supply.tool import Tool
-        parts = Part.query.filter_by(status='Active').order_by(Part.part_name).all()
-        tools = Tool.query.order_by(Tool.tool_name).all()
+        from app.data.core.supply.part_definition import PartDefinition
+        from app.data.core.supply.tool_definition import ToolDefinition
+        parts = PartDefinition.query.filter_by(status='Active').order_by(PartDefinition.part_name).all()
+        tools = ToolDefinition.query.order_by(ToolDefinition.tool_name).all()
         
         return render_template(
             'maintenance/builder/edit_build_template.html',
@@ -427,10 +427,10 @@ def update_template_action(builder_id, action_index):
             selected_action = builder_data['actions'][selected_action_index]
         
         # Get parts and tools for dropdowns
-        from app.data.core.supply.part import Part
-        from app.data.core.supply.tool import Tool
-        parts = Part.query.filter_by(status='Active').order_by(Part.part_name).all()
-        tools = Tool.query.order_by(Tool.tool_name).all()
+        from app.data.core.supply.part_definition import PartDefinition
+        from app.data.core.supply.tool_definition import ToolDefinition
+        parts = PartDefinition.query.filter_by(status='Active').order_by(PartDefinition.part_name).all()
+        tools = ToolDefinition.query.order_by(ToolDefinition.tool_name).all()
         
         return render_template(
             'maintenance/builder/edit_build_template.html',
@@ -508,10 +508,10 @@ def move_action(builder_id, action_index):
             selected_action = builder_data['actions'][selected_action_index]
         
         # Get parts and tools for dropdowns
-        from app.data.core.supply.part import Part
-        from app.data.core.supply.tool import Tool
-        parts = Part.query.filter_by(status='Active').order_by(Part.part_name).all()
-        tools = Tool.query.order_by(Tool.tool_name).all()
+        from app.data.core.supply.part_definition import PartDefinition
+        from app.data.core.supply.tool_definition import ToolDefinition
+        parts = PartDefinition.query.filter_by(status='Active').order_by(PartDefinition.part_name).all()
+        tools = ToolDefinition.query.order_by(ToolDefinition.tool_name).all()
         
         return render_template(
             'maintenance/builder/edit_build_template.html',

@@ -304,7 +304,7 @@
                         <span class="badge 
                             {% if action_set.status == 'Completed' %}bg-success
                             {% elif action_set.status == 'In Progress' %}bg-primary
-                            {% elif action_set.status == 'Delayed' %}bg-warning
+                            {% elif action_set.status == 'Delayed' or action_set.status == 'Blocked' %}bg-danger
                             {% elif action_set.status == 'Cancelled' %}bg-danger
                             {% elif action_set.status == 'Planned' %}bg-info
                             {% else %}bg-secondary{% endif %} ms-2">

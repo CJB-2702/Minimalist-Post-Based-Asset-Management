@@ -7,6 +7,9 @@ class StandardDispatch(VirtualDispatchOutcome):
 
     # Links
     assigned_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    assigned_to_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    assett_dispatched_id = db.Column(db.Integer, db.ForeignKey('assets.id'), nullable=True)
+
 
     # Schedule
     scheduled_start = db.Column(db.DateTime, nullable=False)
@@ -28,6 +31,10 @@ class StandardDispatch(VirtualDispatchOutcome):
 
     # Relationships
     assigned_by = db.relationship('User', foreign_keys=[assigned_by_id])
+    assigned_to = db.relationship('User', foreign_keys=[assigned_to_id])
+    assett_dispatched = db.relationship('Asset', foreign_keys=[assett_dispatched_id])
+
+    
 
 
 

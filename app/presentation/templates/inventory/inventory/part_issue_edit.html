@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Part Issue #{{ issue.id }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="bi bi-pencil text-primary"></i> Edit Part Issue #{{ issue.id }}
+                    </h1>
+                    <p class="text-muted mb-0">Update part issue details</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('inventory.part_issue_view', id=issue.id) }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to View
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-pencil-square"></i> Edit Issue Details</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('inventory.part_issue_edit', id=issue.id) }}">
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> <strong>Note:</strong> Only certain fields can be edited. Core issue data (part, quantity, cost) cannot be changed.
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Issued To User</label>
+                            <select class="form-select" name="issued_to_user_id">
+                                <option value="">None</option>
+                                {% for user in users %}
+                                <option value="{{ user.id }}" {% if issue.issued_to_user_id == user.id %}selected{% endif %}>
+                                    {{ user.username }} ({{ user.first_name }} {{ user.last_name }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <small class="form-text text-muted">User who received the parts</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Asset</label>
+                            <select class="form-select" name="asset_id">
+                                <option value="">None</option>
+                                {% for asset in assets %}
+                                <option value="{{ asset.id }}" {% if issue.asset_id == asset.id %}selected{% endif %}>
+                                    {{ asset.serial_number }} - {{ asset.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <small class="form-text text-muted">Optional: Asset associated with this issue</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Issue Reason</label>
+                            <input type="text" class="form-control" name="issue_reason" value="{{ issue.issue_reason or '' }}" placeholder="e.g., Maintenance, Repair, etc.">
+                            <small class="form-text text-muted">Optional: Reason for issuing these parts</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Notes</label>
+                            <textarea class="form-control" name="issue_notes" rows="4" placeholder="Additional notes about this issue...">{{ issue.issue_notes or '' }}</textarea>
+                            <small class="form-text text-muted">Optional: Additional information or context</small>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('inventory.part_issue_view', id=issue.id) }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i> Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Read-Only Information -->
+        <div class="col-md-4">
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-lock"></i> Read-Only Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong>Issue ID:</strong><br>
+                        <span class="badge bg-primary">#{{ issue.id }}</span>
+                    </div>
+
+                    <div class="mb-3">
+                        <strong>Issue Type:</strong><br>
+                        {% if issue.issue_type == 'DirectToUser' %}
+                        <span class="badge bg-primary">Direct to User</span>
+                        {% elif issue.issue_type == 'ForPartDemand' %}
+                        <span class="badge bg-warning">Part Demand</span>
+                        {% else %}
+                        <span class="badge bg-secondary">{{ issue.issue_type }}</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <strong>Issue Date:</strong><br>
+                        {{ issue.issue_date.strftime('%Y-%m-%d %H:%M') if issue.issue_date else 'N/A' }}
+                    </div>
+
+                    <div class="mb-3">
+                        <strong>Quantity Issued:</strong><br>
+                        <span class="badge bg-success">{{ '%.2f'|format(issue.quantity_issued) }}</span>
+                    </div>
+
+                    <div class="mb-3">
+                        <strong>Total Cost:</strong><br>
+                        {% if issue.total_cost %}
+                        ${{ '%.2f'|format(issue.total_cost) }}
+                        {% else %}
+                        <span class="text-muted">Not calculated</span>
+                        {% endif %}
+                    </div>
+
+                    {% if issue.part_demand_id %}
+                    <div class="mb-3">
+                        <strong>Part Demand:</strong><br>
+                        <span class="badge bg-warning">Demand #{{ issue.part_demand_id }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> Help</h5>
+                </div>
+                <div class="card-body">
+                    <p class="small mb-2"><strong>What can be edited?</strong></p>
+                    <ul class="small">
+                        <li>Issued to user</li>
+                        <li>Asset association</li>
+                        <li>Issue reason</li>
+                        <li>Notes</li>
+                    </ul>
+                    <p class="small mb-0"><strong>What cannot be edited?</strong></p>
+                    <ul class="small mb-0">
+                        <li>Part information</li>
+                        <li>Quantity issued</li>
+                        <li>Cost information</li>
+                        <li>Issue date</li>
+                        <li>Inventory movement</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

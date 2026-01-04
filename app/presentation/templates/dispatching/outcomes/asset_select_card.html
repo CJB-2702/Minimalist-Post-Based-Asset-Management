@@ -1,0 +1,306 @@
+<div id="asset-select-card-container">
+<div class="card mb-4">
+  <div class="card-header bg-success text-white">
+    <h5 class="mb-0">
+      <i class="bi bi-truck"></i> Asset Selection
+    </h5>
+  </div>
+  <div class="card-body">
+    <!-- Filters -->
+    <form method="GET" 
+          action="{{ url_for('dispatching.asset_select_card', request_id=request_id) }}"
+          hx-get="{{ url_for('dispatching.asset_select_card', request_id=request_id) }}"
+          hx-target="#asset-select-card-container"
+          hx-swap="outerHTML"
+          hx-trigger="change from:select, input from:input delay:300ms">
+      <div class="row g-2 mb-3">
+        <div class="col-md-3">
+          <label class="form-label small">Asset Type</label>
+          <select class="form-select form-select-sm" name="asset_type_id" id="asset_type_filter">
+            <option value="">All Types</option>
+            {% for asset_type in asset_types %}
+            <option value="{{ asset_type.id }}" 
+                    {% if current_filters.asset_type_id == asset_type.id %}selected{% endif %}>
+              {{ asset_type.name }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small">Location</label>
+          <select class="form-select form-select-sm" name="location_id" id="location_filter">
+            <option value="">All Locations</option>
+            {% for location in locations %}
+            <option value="{{ location.id }}" 
+                    {% if current_filters.location_id == location.id %}selected{% endif %}>
+              {{ location.name }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label small">Status</label>
+          <select class="form-select form-select-sm" name="status" id="status_filter">
+            <option value="">All Status</option>
+            <option value="Active" {% if current_filters.status == 'Active' %}selected{% endif %}>Active</option>
+            <option value="Inactive" {% if current_filters.status == 'Inactive' %}selected{% endif %}>Inactive</option>
+            <option value="Maintenance" {% if current_filters.status == 'Maintenance' %}selected{% endif %}>Maintenance</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label small">Name</label>
+          <input type="text" class="form-control form-control-sm" name="name" 
+                 value="{{ current_filters.name or '' }}" placeholder="Search name...">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label small">Serial Number</label>
+          <input type="text" class="form-control form-control-sm" name="serial_number" 
+                 value="{{ current_filters.serial_number or '' }}" placeholder="Search serial...">
+        </div>
+      </div>
+    </form>
+    
+    <!-- Asset List -->
+    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+      <table class="table table-sm table-hover">
+        <thead class="table-light sticky-top">
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Serial Number</th>
+            <th>Asset Type</th>
+            <th>Make/Model</th>
+            <th>Location</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if assets %}
+            {% for asset in assets %}
+            <tr class="asset-select-row" 
+                data-asset-id="{{ asset.id }}"
+                data-asset-name="{{ asset.name }}{% if asset.serial_number %} ({{ asset.serial_number }}){% endif %}"
+                style="cursor: pointer;">
+              <td>
+                <small class="text-muted">
+                  <code>{{ asset.id }}</code>
+                </small>
+              </td>
+              <td>
+                <strong>{{ asset.name }}</strong>
+              </td>
+              <td>
+                <code>{{ asset.serial_number or 'N/A' }}</code>
+              </td>
+              <td>
+                {% if asset.make_model and asset.make_model.asset_type %}
+                  <span class="badge bg-info">{{ asset.make_model.asset_type.name }}</span>
+                {% else %}
+                  <span class="badge bg-light text-dark">No Type</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if asset.make_model %}
+                  <small>{{ asset.make_model.make }} {{ asset.make_model.model }}</small>
+                {% else %}
+                  <span class="text-muted">N/A</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if asset.major_location %}
+                  <span class="badge bg-secondary">{{ asset.major_location.name }}</span>
+                {% else %}
+                  <span class="text-muted">N/A</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if asset.status == 'Active' %}
+                  <span class="badge bg-success">Active</span>
+                {% elif asset.status == 'Inactive' %}
+                  <span class="badge bg-warning">Inactive</span>
+                {% elif asset.status == 'Maintenance' %}
+                  <span class="badge bg-info">Maintenance</span>
+                {% else %}
+                  <span class="badge bg-secondary">{{ asset.status }}</span>
+                {% endif %}
+              </td>
+              <td>
+                {% set asset_display_name = asset.name + (' (' + asset.serial_number + ')' if asset.serial_number else '') %}
+                <button type="button" class="btn btn-sm btn-primary select-asset-btn" 
+                        data-asset-id="{{ asset.id }}"
+                        data-asset-name="{{ asset_display_name }}"
+                        onclick='handleAssetSelect({{ asset.id }}, {{ asset_display_name|tojson }})'>
+                  <i class="bi bi-check-circle"></i> Select
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="8" class="text-center text-muted py-4">
+                <i class="bi bi-inbox"></i> No assets found matching the filters.
+              </td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+    
+    {% if assets|length >= 50 %}
+    <div class="alert alert-info mt-2 mb-0">
+      <small><i class="bi bi-info-circle"></i> Showing first 50 results. Use filters to narrow down your search.</small>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+// Global function to handle asset selection from button onclick
+window.handleAssetSelect = function(assetId, assetName) {
+  console.log('[Asset Selection] handleAssetSelect called from button onclick', { assetId, assetName });
+  showSelectedAsset(assetId, assetName);
+};
+
+// Function to show selected asset card
+function showSelectedAsset(assetId, assetName) {
+  console.log('[Asset Selection] showSelectedAsset called', { assetId, assetName });
+  const container = document.getElementById('selected-asset-container');
+  console.log('[Asset Selection] Container found:', container);
+  if (!container) {
+    console.error('[Asset Selection] selected-asset-container not found!');
+    return;
+  }
+  
+  // Create the selected asset card HTML
+  const cardHTML = `
+    <div class="card mb-4" id="selected-asset" data-asset-id="${assetId}" data-asset-name="${assetName}">
+      <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">
+          <i class="bi bi-check-circle"></i> Selected Asset
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <h6 class="mb-1">${assetName}</h6>
+            <small class="text-muted">Asset ID: ${assetId}</small>
+          </div>
+          <button type="button" class="btn btn-sm btn-outline-danger" onclick="clearSelectedAsset()">
+            <i class="bi bi-x-circle"></i> Clear Selection
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  container.innerHTML = cardHTML;
+  container.style.display = 'block';
+  console.log('[Asset Selection] Selected asset card displayed');
+  
+  // Scroll to the selected asset card
+  container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// Function to clear selected asset (make it globally available)
+window.clearSelectedAsset = function() {
+  console.log('[Asset Selection] clearSelectedAsset called');
+  const container = document.getElementById('selected-asset-container');
+  if (container) {
+    container.innerHTML = '';
+    container.style.display = 'none';
+    console.log('[Asset Selection] Selected asset cleared');
+  } else {
+    console.warn('[Asset Selection] Container not found when clearing');
+  }
+};
+
+// Function to initialize asset selection handlers
+function initAssetSelection() {
+  console.log('[Asset Selection] initAssetSelection called');
+  
+  // Find the table body - look within the asset-select-card-container
+  const cardContainer = document.getElementById('asset-select-card-container');
+  const assetTable = cardContainer?.querySelector('table tbody');
+  console.log('[Asset Selection] Card container found:', cardContainer);
+  console.log('[Asset Selection] Table body found:', assetTable);
+  
+  if (!assetTable) {
+    console.warn('[Asset Selection] No table body found for event delegation');
+    return;
+  }
+  
+  // Remove any existing listeners by cloning (to avoid duplicates on HTMX swaps)
+  const newTable = assetTable.cloneNode(true);
+  assetTable.parentNode.replaceChild(newTable, assetTable);
+  console.log('[Asset Selection] Replaced table body to remove old listeners');
+  
+  // Function to select an asset
+  function selectAsset(assetId, assetName) {
+    console.log('[Asset Selection] selectAsset called', { assetId, assetName });
+    showSelectedAsset(assetId, assetName);
+  }
+  
+  // Use event delegation for row clicks only (buttons use onclick)
+  newTable.addEventListener('click', function(e) {
+    console.log('[Asset Selection] Click event on table body', { target: e.target, currentTarget: e.currentTarget });
+    
+    // Don't handle button clicks here - they use onclick handlers
+    if (e.target.closest('.select-asset-btn')) {
+      console.log('[Asset Selection] Click was on button - handled by onclick');
+      return;
+    }
+    
+    // Check if click was on a row (but not on a button)
+    const row = e.target.closest('.asset-select-row');
+    if (row) {
+      console.log('[Asset Selection] Row clicked', { row: row });
+      const assetId = row.getAttribute('data-asset-id');
+      const assetName = row.getAttribute('data-asset-name');
+      console.log('[Asset Selection] Row click - asset data', { assetId, assetName });
+      
+      if (assetId && assetName) {
+        selectAsset(assetId, assetName);
+        
+        // Visual feedback
+        row.classList.add('table-success');
+        setTimeout(() => {
+          row.classList.remove('table-success');
+        }, 1000);
+      } else {
+        console.error('[Asset Selection] Row missing data attributes', { assetId, assetName });
+      }
+    }
+  });
+  
+  console.log('[Asset Selection] Event delegation set up on table body');
+  console.log('[Asset Selection] Initialization complete');
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('[Asset Selection] DOMContentLoaded event fired');
+  initAssetSelection();
+});
+
+// Re-initialize when HTMX swaps content
+document.body.addEventListener('htmx:afterSwap', function(event) {
+  console.log('[Asset Selection] HTMX afterSwap event', { targetId: event.detail.target.id });
+  if (event.detail.target.id === 'asset-select-card-container') {
+    console.log('[Asset Selection] Re-initializing after HTMX swap');
+    initAssetSelection();
+  }
+});
+</script>
+
+<style>
+.asset-select-row:hover {
+  background-color: rgba(25, 135, 84, 0.1) !important;
+}
+
+.asset-select-row.table-success {
+  background-color: rgba(25, 135, 84, 0.2) !important;
+}
+</style>
+</div>
+

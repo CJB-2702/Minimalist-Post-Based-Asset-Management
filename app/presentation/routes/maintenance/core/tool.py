@@ -7,7 +7,7 @@ from app.logger import get_logger
 from app import db
 from app.data.maintenance.base.action_tools import ActionTool
 from app.data.maintenance.base.actions import Action
-from app.buisness.maintenance.base.maintenance_action_set_struct import MaintenanceActionSetStruct
+from app.buisness.maintenance.base.structs.maintenance_action_set_struct import MaintenanceActionSetStruct
 from app.buisness.maintenance.base.maintenance_context import MaintenanceContext
 from app.buisness.core.event_context import EventContext
 
@@ -70,8 +70,8 @@ def update_action_tool(action_id, tool_id):
             try:
                 tool_id_new = int(tool_id_new_str)
                 # Verify tool exists
-                from app.data.core.supply.tool import Tool
-                tool = Tool.query.get(tool_id_new)
+                from app.data.core.supply.tool_definition import ToolDefinition
+                tool = ToolDefinition.query.get(tool_id_new)
                 if not tool:
                     flash('Tool not found', 'error')
                     return redirect(url_for('maintenance_event.render_edit_page', event_id=event_id))
@@ -114,8 +114,8 @@ def update_action_tool(action_id, tool_id):
         # Generate automated comment
         if struct.event_id:
             event_context = EventContext(struct.event_id)
-            from app.data.core.supply.tool import Tool
-            tool = Tool.query.get(action_tool.tool_id)
+            from app.data.core.supply.tool_definition import ToolDefinition
+            tool = ToolDefinition.query.get(action_tool.tool_id)
             tool_name = tool.tool_name if tool else f"Tool #{action_tool.tool_id}"
             comment_text = f"Tool requirement updated: {tool_name} for action '{action.action_name}' by {current_user.username}"
             if status:
@@ -179,8 +179,8 @@ def delete_action_tool(action_id, tool_id):
             abort(404)
         
         # Get tool info before deletion
-        from app.data.core.supply.tool import Tool
-        tool = Tool.query.get(action_tool.tool_id)
+        from app.data.core.supply.tool_definition import ToolDefinition
+        tool = ToolDefinition.query.get(action_tool.tool_id)
         tool_name = tool.tool_name if tool else f"Tool #{action_tool.tool_id}"
         
         # Delete action tool

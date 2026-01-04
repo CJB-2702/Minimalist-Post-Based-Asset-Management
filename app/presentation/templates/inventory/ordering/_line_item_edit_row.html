@@ -1,0 +1,90 @@
+<tr id="line-row-{{ line.id }}" class="table-warning">
+    <td>{{ line.line_number }}</td>
+    <td>{{ line.part.part_number if line.part else 'N/A' }}</td>
+    <td>{{ line.part.part_name if line.part else 'N/A' }}</td>
+    <td>
+        <input type="number" 
+               class="form-control form-control-sm" 
+               id="quantity-{{ line.id }}"
+               value="{{ line.quantity_ordered }}" 
+               step="0.01" 
+               min="0.01" 
+               required
+               style="width: 100px;">
+    </td>
+    <td>
+        <div class="input-group input-group-sm">
+            <span class="input-group-text">$</span>
+            <input type="number" 
+                   class="form-control" 
+                   id="unit_cost-{{ line.id }}"
+                   value="{{ "%.2f"|format(line.unit_cost) }}" 
+                   step="0.01" 
+                   min="0" 
+                   required
+                   style="width: 100px;">
+        </div>
+    </td>
+    <td><strong id="line-total-{{ line.id }}">${{ "%.2f"|format(line.line_total) }}</strong></td>
+    <td>
+        <button type="button" 
+                class="btn btn-sm btn-success me-1"
+                onclick="saveLineItem({{ line.id }}, {{ po_context.purchase_order_id }})">
+            <i class="bi bi-check"></i> Save
+        </button>
+        <button type="button" 
+                class="btn btn-sm btn-outline-secondary"
+                onclick="location.reload()">
+            <i class="bi bi-x"></i> Cancel
+        </button>
+    </td>
+</tr>
+<script>
+if (typeof window.saveLineItem === 'undefined') {
+    window.saveLineItem = function(lineId, poId) {
+        const quantity = document.getElementById('quantity-' + lineId).value;
+        const unitCost = document.getElementById('unit_cost-' + lineId).value;
+        
+        if (!quantity || !unitCost || quantity <= 0 || unitCost < 0) {
+            alert('Please enter valid quantity (greater than 0) and unit cost (non-negative)');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('quantity', quantity);
+        formData.append('unit_cost', unitCost);
+        
+        const url = '/inventory/purchase-orders/' + poId + '/lines/' + lineId + '/update';
+        
+        fetch(url, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'HX-Request': 'true'
+            }
+        }).then(response => {
+            if (response.ok) {
+                return response.text();
+            } else {
+                throw new Error('Failed to update line item');
+            }
+        }).then(html => {
+            // The response includes a script to reload the page
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = html;
+            document.body.appendChild(tempDiv);
+            
+            // Execute any scripts in the response
+            const scripts = tempDiv.querySelectorAll('script');
+            scripts.forEach(script => {
+                const newScript = document.createElement('script');
+                newScript.textContent = script.textContent;
+                document.body.appendChild(newScript);
+            });
+        }).catch(error => {
+            alert('Error updating line item: ' + error.message);
+        });
+    };
+}
+</script>
+

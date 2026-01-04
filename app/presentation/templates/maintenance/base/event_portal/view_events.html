@@ -389,7 +389,7 @@
                             
                             <!-- Badges -->
                             <div class="mb-2">
-                                <span class="badge status-badge bg-{% if event.status == 'Complete' %}success{% elif event.status == 'In Progress' %}primary{% elif event.status == 'Delayed' %}danger{% else %}secondary{% endif %}">
+                                <span class="badge status-badge bg-{% if event.status == 'Complete' %}success{% elif event.status == 'In Progress' %}primary{% elif event.status == 'Delayed' or event.status == 'Blocked' %}danger{% else %}secondary{% endif %}">
                                     {{ event.status }}
                                 </span>
                                 {% if event.priority %}

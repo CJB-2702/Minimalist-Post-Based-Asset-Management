@@ -116,14 +116,14 @@
                         Manage parts, tools, and inventory
                     </p>
                     <div class="d-grid gap-2">
-                        <a href="{{ url_for('core_supply_parts.list') }}" class="btn btn-danger btn-sm">
-                            <i class="bi bi-box"></i> Parts
+                        <a href="{{ url_for('core_supply.index') }}" class="btn btn-danger btn-sm">
+                            <i class="bi bi-speedometer2"></i> Supply Dashboard
+                        </a>
+                        <a href="{{ url_for('core_supply_parts.list') }}" class="btn btn-outline-danger btn-sm">
+                            <i class="bi bi-box"></i> Part Definitions
                         </a>
                         <a href="{{ url_for('core_supply_tools.list') }}" class="btn btn-outline-danger btn-sm">
                             <i class="bi bi-tools"></i> Tool Definitions
-                        </a>
-                        <a href="{{ url_for('core_supply_issuable_tools.list') }}" class="btn btn-outline-danger btn-sm">
-                            <i class="bi bi-wrench"></i> Issuable Tools
                         </a>
                     </div>
                 </div>

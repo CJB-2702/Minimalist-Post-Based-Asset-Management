@@ -18,7 +18,7 @@ class ProtoPartDemand(VirtualPartDemand):
     
     # Relationships
     proto_action_item = relationship('ProtoActionItem', back_populates='proto_part_demands')
-    part = relationship('Part', foreign_keys='ProtoPartDemand.part_id', lazy='select')
+    part = relationship('PartDefinition', foreign_keys='ProtoPartDemand.part_id', lazy='select')
     
     @property
     def is_required(self):

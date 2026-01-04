@@ -1,0 +1,341 @@
+{% extends "base.html" %}
+
+{% block title %}Purchase Order Lines - Inventory Management{% endblock %}
+
+{% block content %}
+<style>
+    details.card summary {
+        list-style: none;
+    }
+    details.card summary::-webkit-details-marker {
+        display: none;
+    }
+    details.card summary::marker {
+        display: none;
+    }
+</style>
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="bi bi-list-ul text-primary"></i> Purchase Order Lines
+                    </h1>
+                    <p class="text-muted mb-0">View and filter purchase order line items</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('inventory.index') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Inventory Portal
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Filters -->
+    {% if active_filters %}
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card border-info">
+                <div class="card-body py-2">
+                    <small class="text-muted me-2"><strong>Active Filters:</strong></small>
+                    {% for filter in active_filters %}
+                    <span class="badge bg-info me-1">
+                        {{ filter.label }}: {{ filter.value }}
+                    </span>
+                    {% endfor %}
+                    <a href="{{ url_for('inventory.purchase_order_lines_view') }}" class="btn btn-sm btn-outline-danger ms-2">
+                        <i class="bi bi-x-circle"></i> Clear All
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-funnel"></i> Filters
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="GET" action="{{ url_for('inventory.purchase_order_lines_view') }}">
+                        <div class="row g-3">
+                            <!-- From PO Lines - Ungrouped -->
+                            <div class="col-md-4">
+                                <label for="status" class="form-label">PO Line Status</label>
+                                <select class="form-select" id="status" name="status">
+                                    <option value="">All Statuses</option>
+                                    {% for status in filter_options.statuses %}
+                                    <option value="{{ status }}" {% if filters.status == status %}selected{% endif %}>
+                                        {{ status }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="part_number" class="form-label">Part Number</label>
+                                <input type="text" class="form-control" id="part_number" name="part_number" 
+                                       placeholder="Part number..." value="{{ filters.part_number or '' }}">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="part_name" class="form-label">Part Name</label>
+                                <input type="text" class="form-control" id="part_name" name="part_name" 
+                                       placeholder="Part name..." value="{{ filters.part_name or '' }}">
+                            </div>
+
+                            <!-- From PO Header - Ungrouped -->
+                            <div class="col-md-3">
+                                <label for="vendor" class="form-label">Vendor</label>
+                                <input type="text" class="form-control" id="vendor" name="vendor" 
+                                       placeholder="Vendor name..." value="{{ filters.vendor or '' }}">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="date_from" class="form-label">Order Date From</label>
+                                <input type="date" class="form-control" id="date_from" name="date_from" 
+                                       value="{{ filters.date_from.strftime('%Y-%m-%d') if filters.date_from else '' }}">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="date_to" class="form-label">Order Date To</label>
+                                <input type="date" class="form-control" id="date_to" name="date_to" 
+                                       value="{{ filters.date_to.strftime('%Y-%m-%d') if filters.date_to else '' }}">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="created_by_id" class="form-label">Created By</label>
+                                <select class="form-select" id="created_by_id" name="created_by_id">
+                                    <option value="">All Users</option>
+                                    {% for user in filter_options.users %}
+                                    <option value="{{ user.id }}" {% if filters.created_by_id == user.id %}selected{% endif %}>
+                                        {{ user.username }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <!-- From Linked Maintenance Event - Grouped -->
+                            <div class="col-12 mt-2">
+                                <details class="card border-success">
+                                    <summary class="card-header bg-success text-white" style="cursor: pointer;">
+                                        <h6 class="mb-0">
+                                            <i class="bi bi-wrench-adjustable"></i> From Linked Maintenance Event
+                                        </h6>
+                                    </summary>
+                                    <div class="card-body">
+                                        <div class="row g-3">
+                                            <div class="col-md-4">
+                                                <label for="part_demand_assigned_to_id" class="form-label">Part Demand Assigned To</label>
+                                                <select class="form-select" id="part_demand_assigned_to_id" name="part_demand_assigned_to_id">
+                                                    <option value="">All Users</option>
+                                                    {% for user in filter_options.users %}
+                                                    <option value="{{ user.id }}" {% if filters.part_demand_assigned_to_id == user.id %}selected{% endif %}>
+                                                        {{ user.username }}
+                                                    </option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label for="event_assigned_to_id" class="form-label">Event Assigned To</label>
+                                                <select class="form-select" id="event_assigned_to_id" name="event_assigned_to_id">
+                                                    <option value="">All Users</option>
+                                                    {% for user in filter_options.users %}
+                                                    <option value="{{ user.id }}" {% if filters.event_assigned_to_id == user.id %}selected{% endif %}>
+                                                        {{ user.username }}
+                                                    </option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label for="asset_id" class="form-label">Asset</label>
+                                                <select class="form-select" id="asset_id" name="asset_id">
+                                                    <option value="">All Assets</option>
+                                                    {% for asset in assets %}
+                                                    <option value="{{ asset.id }}" {% if filters.asset_id == asset.id %}selected{% endif %}>
+                                                        {{ asset.name }}
+                                                    </option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </details>
+                            </div>
+
+                            <!-- Search and Ordering - Ungrouped -->
+                            <div class="col-md-6">
+                                <label for="search" class="form-label">Search</label>
+                                <input type="text" class="form-control" id="search" name="search" 
+                                       placeholder="Part number, part name, vendor, or PO number..." 
+                                       value="{{ filters.search_term or '' }}">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="order_by" class="form-label">Order By</label>
+                                <select class="form-select" id="order_by" name="order_by">
+                                    <option value="created_at" {% if filters.order_by == 'created_at' %}selected{% endif %}>Created Date</option>
+                                    <option value="part_number" {% if filters.order_by == 'part_number' %}selected{% endif %}>Part Number</option>
+                                    <option value="part_name" {% if filters.order_by == 'part_name' %}selected{% endif %}>Part Name</option>
+                                    <option value="vendor" {% if filters.order_by == 'vendor' %}selected{% endif %}>Vendor</option>
+                                    <option value="order_date" {% if filters.order_by == 'order_date' %}selected{% endif %}>Order Date</option>
+                                    <option value="status" {% if filters.order_by == 'status' %}selected{% endif %}>Status</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="order_direction" class="form-label">Direction</label>
+                                <select class="form-select" id="order_direction" name="order_direction">
+                                    <option value="desc" {% if filters.order_direction == 'desc' %}selected{% endif %}>Descending</option>
+                                    <option value="asc" {% if filters.order_direction == 'asc' %}selected{% endif %}>Ascending</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-search"></i> Apply Filters
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Purchase Order Lines Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-list-ul"></i> Purchase Order Lines ({{ po_lines.total }} total)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if po_lines.items %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>PO Line ID</th>
+                                    <th>PO Number</th>
+                                    <th>Part Number</th>
+                                    <th>Part Name</th>
+                                    <th>Vendor</th>
+                                    <th>Order Date</th>
+                                    <th>Qty Ordered</th>
+                                    <th>Qty Accepted</th>
+                                    <th>Unit Cost</th>
+                                    <th>Line Total</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for po_line in po_lines.items %}
+                                <tr>
+                                    <td><code>{{ po_line.id }}</code></td>
+                                    <td>
+                                        <a href="{{ url_for('inventory.purchase_order_view', po_id=po_line.purchase_order.id) }}">
+                                            <strong>{{ po_line.purchase_order.po_number }}</strong>
+                                        </a>
+                                    </td>
+                                    <td><code>{{ po_line.part.part_number }}</code></td>
+                                    <td>{{ po_line.part.part_name }}</td>
+                                    <td>{{ po_line.purchase_order.vendor_name }}</td>
+                                    <td>{{ po_line.purchase_order.order_date.strftime('%Y-%m-%d') if po_line.purchase_order.order_date else 'N/A' }}</td>
+                                    <td>{{ po_line.quantity_ordered }}</td>
+                                    <td>{{ po_line.quantity_accepted or 0 }}</td>
+                                    <td>${{ "%.2f"|format(po_line.unit_cost or 0) }}</td>
+                                    <td><strong>${{ "%.2f"|format(po_line.line_total) }}</strong></td>
+                                    <td>
+                                        <span class="badge {% if po_line.status == 'Complete' %}bg-success{% elif po_line.status == 'Shipped' %}bg-info{% elif po_line.status == 'Ordered' %}bg-primary{% elif po_line.status == 'Cancelled' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                            {{ po_line.status }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('inventory.purchase_order_line_view', po_line_id=po_line.id) }}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i> View
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Pagination -->
+                    {% if po_lines.pages > 1 %}
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination justify-content-center">
+                            {% if po_lines.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('inventory.purchase_order_lines_view', page=po_lines.prev_num, **request.args) }}">
+                                    Previous
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">Previous</span>
+                            </li>
+                            {% endif %}
+                            
+                            {% for page_num in po_lines.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                                {% if page_num %}
+                                    {% if page_num == po_lines.page %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ page_num }}</span>
+                                    </li>
+                                    {% else %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('inventory.purchase_order_lines_view', page=page_num, **request.args) }}">
+                                            {{ page_num }}
+                                        </a>
+                                    </li>
+                                    {% endif %}
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">…</span>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if po_lines.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('inventory.purchase_order_lines_view', page=po_lines.next_num, **request.args) }}">
+                                    Next
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">Next</span>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> No purchase order lines found.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+
+
+
+
+
+
+
+
+

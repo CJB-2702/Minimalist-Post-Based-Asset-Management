@@ -3,6 +3,117 @@
 
 {% block content %}
 <div class="container mt-3">
+  <!-- Request Information Card -->
+  <div class="card mb-4">
+    <div class="card-header bg-info text-white">
+      <h5 class="mb-0">
+        <i class="bi bi-info-circle"></i> Request Information
+      </h5>
+    </div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-3">
+          <strong>Request ID:</strong><br>
+          <span class="text-muted">#{{ request.id }}</span>
+        </div>
+        <div class="col-md-3">
+          <strong>Status:</strong><br>
+          <span class="badge bg-secondary">{{ request.status }}</span>
+        </div>
+        <div class="col-md-3">
+          <strong>Requester:</strong><br>
+          <span class="text-muted">{{ request.requester.username if request.requester else 'N/A' }}</span>
+        </div>
+        <div class="col-md-3">
+          <strong>Submitted:</strong><br>
+          <span class="text-muted">
+            {% if request.submitted_at %}
+              {{ request.submitted_at.strftime('%Y-%m-%d %H:%M') }}
+            {% else %}
+              Not submitted
+            {% endif %}
+          </span>
+        </div>
+        <div class="col-md-6">
+          <strong>Desired Dates:</strong><br>
+          <span class="text-muted">
+            {% if request.desired_start %}
+              {{ request.desired_start.strftime('%Y-%m-%d %H:%M') }}
+            {% else %}
+              N/A
+            {% endif %}
+            {% if request.desired_end %}
+              → {{ request.desired_end.strftime('%Y-%m-%d %H:%M') }}
+            {% endif %}
+          </span>
+        </div>
+        <div class="col-md-3">
+          <strong>Number of People:</strong><br>
+          <span class="text-muted">{{ request.num_people or 'N/A' }}</span>
+        </div>
+        <div class="col-md-3">
+          <strong>Dispatch Scope:</strong><br>
+          <span class="text-muted">{{ request.dispatch_scope }}</span>
+        </div>
+        <div class="col-md-6">
+          <strong>Asset Type:</strong><br>
+          <span class="text-muted">
+            {{ request.asset_type.name if request.asset_type else 'N/A' }}
+            {% if request.asset_subclass_text %}
+              - {{ request.asset_subclass_text }}
+            {% endif %}
+          </span>
+        </div>
+        <div class="col-md-6">
+          <strong>Location:</strong><br>
+          <span class="text-muted">
+            {{ request.major_location.name if request.major_location else 'N/A' }}
+            {% if request.activity_location %}
+              ({{ request.activity_location }})
+            {% endif %}
+          </span>
+        </div>
+        {% if request.estimated_meter_usage %}
+        <div class="col-md-6">
+          <strong>Estimated Meter Usage:</strong><br>
+          <span class="text-muted">{{ request.estimated_meter_usage }}</span>
+        </div>
+        {% endif %}
+        {% if request.names_freeform %}
+        <div class="col-md-6">
+          <strong>Names:</strong><br>
+          <span class="text-muted">{{ request.names_freeform }}</span>
+        </div>
+        {% endif %}
+        {% if request.notes %}
+        <div class="col-12">
+          <strong>Notes:</strong><br>
+          <span class="text-muted">{{ request.notes }}</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  
+  <!-- Asset Selection Card (HTMX loaded) -->
+  <div id="asset-select-card-container"
+       hx-get="{{ url_for('dispatching.asset_select_card', request_id=request_id) }}"
+       hx-trigger="load"
+       hx-swap="outerHTML">
+    <div class="card mb-4">
+      <div class="card-body text-center py-4">
+        <div class="spinner-border text-success" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="text-muted mt-2">Loading asset selection...</p>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Selected Asset Card (shown when asset is selected) -->
+  <div id="selected-asset-container" style="display: none;"></div>
+  
+  <!-- Dispatch Outcome Form Card -->
   <div class="card">
     <div class="card-header bg-primary text-white">
       <h4 class="mb-0">
@@ -11,16 +122,16 @@
       <small>Request #{{ request_id }}</small>
     </div>
     <div class="card-body">
-      <form method="post" action="{{ url_for('dispatching.outcome_create', request_id=request_id, outcome_type='dispatch') }}">
+      <form method="post" action="{{ url_for('dispatching.outcome_create', request_id=request_id, outcome_type='dispatch') }}" id="dispatch-form">
         <div class="row g-3">
           <!-- Schedule -->
           <div class="col-md-6">
             <label class="form-label">Scheduled Start <span class="text-danger">*</span></label>
-            <input class="form-control" type="datetime-local" name="scheduled_start" required>
+            <input class="form-control" type="datetime-local" name="scheduled_start" value="{{ default_scheduled_start or '' }}" required>
           </div>
           <div class="col-md-6">
             <label class="form-label">Scheduled End <span class="text-danger">*</span></label>
-            <input class="form-control" type="datetime-local" name="scheduled_end" required>
+            <input class="form-control" type="datetime-local" name="scheduled_end" value="{{ default_scheduled_end or '' }}" required>
           </div>
           
           <!-- Actual Times (Optional) -->
@@ -39,7 +150,18 @@
             <select class="form-select" name="assigned_by_id">
               <option value="">Select User</option>
               {% for user in users %}
-              <option value="{{ user.id }}">{{ user.username }}</option>
+              <option value="{{ user.id }}" {% if default_assigned_by_id and user.id == default_assigned_by_id %}selected{% endif %}>{{ user.username }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          
+          <!-- Assigned To -->
+          <div class="col-md-6">
+            <label class="form-label">Assigned To</label>
+            <select class="form-select" name="assigned_to_id">
+              <option value="">Select User</option>
+              {% for user in users %}
+              <option value="{{ user.id }}" {% if default_assigned_to_id and user.id == default_assigned_to_id %}selected{% endif %}>{{ user.username }}</option>
               {% endfor %}
             </select>
           </div>
@@ -100,5 +222,41 @@
     </div>
   </div>
 </div>
+
+<script>
+// Handle form submission - append selected asset ID
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('[Dispatch Form] DOMContentLoaded - setting up form submission handler');
+  const dispatchForm = document.getElementById('dispatch-form');
+  console.log('[Dispatch Form] Form found:', dispatchForm);
+  if (dispatchForm) {
+    dispatchForm.addEventListener('submit', function(e) {
+      console.log('[Dispatch Form] Form submit event fired');
+      const selectedAssetCard = document.getElementById('selected-asset');
+      console.log('[Dispatch Form] Selected asset card:', selectedAssetCard);
+      if (selectedAssetCard) {
+        const assetId = selectedAssetCard.getAttribute('data-asset-id');
+        const assetName = selectedAssetCard.getAttribute('data-asset-name');
+        console.log('[Dispatch Form] Selected asset data:', { assetId, assetName });
+        if (assetId) {
+          // Create hidden input for asset ID
+          const hiddenInput = document.createElement('input');
+          hiddenInput.type = 'hidden';
+          hiddenInput.name = 'assett_dispatched_id';
+          hiddenInput.value = assetId;
+          dispatchForm.appendChild(hiddenInput);
+          console.log('[Dispatch Form] Added hidden input with asset ID:', assetId);
+        } else {
+          console.warn('[Dispatch Form] Asset ID is empty or null');
+        }
+      } else {
+        console.warn('[Dispatch Form] No selected asset card found - form will submit without asset ID');
+      }
+    });
+  } else {
+    console.error('[Dispatch Form] Dispatch form not found!');
+  }
+});
+</script>
 
 {% endblock %}

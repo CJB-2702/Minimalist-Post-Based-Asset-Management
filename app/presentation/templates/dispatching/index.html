@@ -1,326 +1,127 @@
 {% extends 'base.html' %}
-{% block title %}Dispatch Management Console{% endblock %}
+{% block title %}Dispatching{% endblock %}
 
 {% block head %}
 <style>
-    .stat-card {
-        background: white;
-        border-radius: 8px;
-        padding: 1.5rem;
-        text-align: center;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    .portal-card {
+        min-height: 400px;
         transition: transform 0.2s ease, box-shadow 0.2s ease;
-        border: 1px solid #dee2e6;
+        border: 2px solid #dee2e6;
+        border-radius: 12px;
     }
     
-    .stat-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    .portal-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
     }
     
-    .stat-number {
-        font-size: 2.5rem;
-        font-weight: bold;
-        margin: 0.5rem 0;
+    .portal-card.request {
+        border-color: #0d6efd;
     }
     
-    .stat-label {
-        font-size: 0.85rem;
-        color: #6c757d;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+    .portal-card.request:hover {
+        border-color: #0d6efd;
+        box-shadow: 0 8px 25px rgba(13, 110, 253, 0.3);
     }
     
-    .queue-item {
-        padding: 1rem;
-        border-bottom: 1px solid #dee2e6;
-        transition: background-color 0.2s ease;
-        cursor: pointer;
+    .portal-card.user {
+        border-color: #28a745;
     }
     
-    .queue-item:hover {
-        background-color: #f8f9fa;
+    .portal-card.user:hover {
+        border-color: #28a745;
+        box-shadow: 0 8px 25px rgba(40, 167, 69, 0.3);
     }
     
-    .queue-item:last-child {
-        border-bottom: none;
+    .portal-card.dispatcher {
+        border-color: #ffc107;
     }
     
-    .timeline-item {
-        padding: 0.75rem;
-        margin-bottom: 0.5rem;
-        border-left: 3px solid;
-        border-radius: 4px;
-        background: #f8f9fa;
+    .portal-card.dispatcher:hover {
+        border-color: #ffc107;
+        box-shadow: 0 8px 25px rgba(255, 193, 7, 0.3);
     }
     
-    .timeline-item.planned {
-        border-left-color: #ffc107;
-    }
-    
-    .timeline-item.active {
-        border-left-color: #28a745;
-    }
-    
-    .timeline-item.dispatched {
-        border-left-color: #0d6efd;
-    }
-    
-    .section-header {
-        border-bottom: 2px solid #ffc107;
-        padding-bottom: 0.75rem;
+    .portal-icon {
+        font-size: 4rem;
         margin-bottom: 1.5rem;
+    }
+    
+    .portal-title {
+        font-size: 2rem;
+        font-weight: bold;
+        margin-bottom: 1rem;
+    }
+    
+    .portal-description {
+        color: #6c757d;
+        margin-bottom: 2rem;
+        font-size: 1.1rem;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container mt-4">
+<div class="container mt-5">
     <div class="row mb-4">
-        <div class="col-12">
-            <div class="section-header">
-                <h2 class="mb-0">
-                    <i class="bi bi-calendar-check text-warning"></i> Dispatch Management Console
-                </h2>
-                <p class="text-muted mt-2 mb-0">Overview of dispatch requests, assignments, and outcomes</p>
-            </div>
+        <div class="col-12 text-center">
+            <h1 class="display-4 mb-3">
+                <i class="bi bi-truck"></i> Dispatching
+            </h1>
+            <p class="lead text-muted">Assign vehicles to employees for work assignments</p>
         </div>
     </div>
     
-    <!-- Statistics Cards -->
-    <div class="row g-3 mb-4">
-        <div class="col-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-number text-warning">{{ stats.total_requests or 0 }}</div>
-                <div class="stat-label">Total Requests</div>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-number text-info">{{ stats.pending_requests or 0 }}</div>
-                <div class="stat-label">Pending</div>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-number text-success">{{ stats.active_dispatches or 0 }}</div>
-                <div class="stat-label">Active Dispatches</div>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-number text-primary">{{ stats.upcoming_dispatches or 0 }}</div>
-                <div class="stat-label">Upcoming (7d)</div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Quick Actions -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Quick Actions</h5>
-                    <div class="d-flex flex-wrap gap-2">
-                        <a href="{{ url_for('dispatching.requests_new') }}" class="btn btn-warning">
-                            <i class="bi bi-plus-circle"></i> New Request
-                        </a>
-                        <a href="{{ url_for('dispatching.requests_list') }}" class="btn btn-outline-warning">
-                            <i class="bi bi-list-ul"></i> All Requests
-                        </a>
-                        <a href="{{ url_for('dispatching.dispatches_list') }}" class="btn btn-outline-primary">
-                            <i class="bi bi-calendar-event"></i> Dispatches
-                        </a>
-                        <a href="{{ url_for('dispatching.contracts_list') }}" class="btn btn-outline-info">
-                            <i class="bi bi-file-earmark-text"></i> Contracts
-                        </a>
-                        <a href="{{ url_for('dispatching.reimbursements_list') }}" class="btn btn-outline-secondary">
-                            <i class="bi bi-currency-exchange"></i> Reimbursements
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Main Content: Queue and Timeline -->
     <div class="row g-4">
-        <!-- Request Queue -->
+        <!-- Request Dispatch Card -->
         <div class="col-md-4">
-            <div class="card">
-                <div class="card-header bg-warning text-white">
-                    <h5 class="mb-0">
-                        <i class="bi bi-inbox"></i> Request Queue
-                        <span class="badge bg-light text-dark ms-2">{{ queue_items|length }}</span>
-                    </h5>
-                </div>
-                <div class="card-body p-0">
-                    {% if queue_items %}
-                    <div class="list-group list-group-flush">
-                        {% for item in queue_items %}
-                        <a href="{{ url_for('dispatching.requests_detail', item_id=item.id) }}" class="queue-item list-group-item-action">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <strong>Request #{{ item.id }}</strong>
-                                    <span class="badge bg-secondary ms-2">{{ item.status }}</span>
-                                    <br>
-                                    <small class="text-muted">
-                                        {{ item.asset_type.name if item.asset_type else 'N/A' }}
-                                        {% if item.desired_start %}
-                                        • {{ item.desired_start.strftime('%m/%d') }}
-                                        {% endif %}
-                                    </small>
-                                </div>
-                                <i class="bi bi-chevron-right text-muted"></i>
-                            </div>
-                        </a>
-                        {% endfor %}
+            <div class="card portal-card request h-100">
+                <div class="card-body d-flex flex-column justify-content-center align-items-center text-center">
+                    <div class="portal-icon text-primary">
+                        <i class="bi bi-plus-circle"></i>
                     </div>
-                    {% else %}
-                    <div class="text-center p-4 text-muted">
-                        <i class="bi bi-inbox" style="font-size: 3rem;"></i>
-                        <p class="mt-2">No pending requests</p>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-        
-        <!-- Upcoming Dispatches Timeline -->
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">
-                        <i class="bi bi-calendar-event"></i> Upcoming Dispatches
-                        <span class="badge bg-light text-dark ms-2">{{ upcoming|length }}</span>
-                    </h5>
-                </div>
-                <div class="card-body">
-                    {% if upcoming %}
-                    <div id="upcoming-timeline">
-                        {% for dispatch in upcoming %}
-                        <div class="timeline-item {{ dispatch.status.lower() if dispatch.status else 'planned' }}">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <strong>
-                                        <a href="{{ url_for('dispatching.dispatches_detail', item_id=dispatch.id) }}">
-                                            Dispatch #{{ dispatch.id }}
-                                        </a>
-                                    </strong>
-                                    <span class="badge bg-secondary ms-2">{{ dispatch.status }}</span>
-                                    <br>
-                                    <small class="text-muted">
-                                        {% if dispatch.scheduled_start %}
-                                        <i class="bi bi-calendar"></i> {{ dispatch.scheduled_start.strftime('%Y-%m-%d %H:%M') if dispatch.scheduled_start else 'N/A' }}
-                                        {% if dispatch.scheduled_end %}
-                                        → {{ dispatch.scheduled_end.strftime('%H:%M') if dispatch.scheduled_end else '' }}
-                                        {% endif %}
-                                        {% endif %}
-                                        {% if dispatch.request_id %}
-                                        • <a href="{{ url_for('dispatching.requests_detail', item_id=dispatch.request_id) }}">
-                                            Request #{{ dispatch.request_id }}
-                                        </a>
-                                        {% endif %}
-                                    </small>
-                                </div>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% else %}
-                    <div class="text-center p-4 text-muted">
-                        <i class="bi bi-calendar-x" style="font-size: 3rem;"></i>
-                        <p class="mt-2">No upcoming dispatches</p>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Recent Requests -->
-    {% if recent_requests %}
-    <div class="row mt-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="bi bi-clock-history"></i> Recent Requests
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-sm table-hover">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Status</th>
-                                    <th>Asset Type</th>
-                                    <th>Desired Dates</th>
-                                    <th>Location</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for request in recent_requests %}
-                                <tr>
-                                    <td>
-                                        <a href="{{ url_for('dispatching.requests_detail', item_id=request.id) }}">
-                                            #{{ request.id }}
-                                        </a>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-secondary">{{ request.status }}</span>
-                                    </td>
-                                    <td>{{ request.asset_type.name if request.asset_type else 'N/A' }}</td>
-                                    <td>
-                                        {% if request.desired_start %}
-                                        {{ request.desired_start.strftime('%Y-%m-%d') }}
-                                        {% if request.desired_end %}
-                                        → {{ request.desired_end.strftime('%Y-%m-%d') }}
-                                        {% endif %}
-                                        {% else %}
-                                        N/A
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ request.major_location.name if request.major_location else 'N/A' }}</td>
-                                    <td>
-                                        <a href="{{ url_for('dispatching.requests_detail', item_id=request.id) }}" 
-                                           class="btn btn-sm btn-outline-primary">
-                                            <i class="bi bi-eye"></i> View
-                                        </a>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-    
-    <!-- Additional Statistics -->
-    <div class="row mt-4">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-body text-center">
-                    <h6 class="text-muted">Contracts</h6>
-                    <h3 class="text-info">{{ stats.total_contracts or 0 }}</h3>
-                    <a href="{{ url_for('dispatching.contracts_list') }}" class="btn btn-sm btn-outline-info mt-2">
-                        View All
+                    <h3 class="portal-title text-primary">Request Dispatch</h3>
+                    <p class="portal-description">
+                        Submit a new request for vehicle assignment
+                    </p>
+                    <a href="{{ url_for('dispatching.requests_new') }}" class="btn btn-primary btn-lg">
+                        <i class="bi bi-arrow-right-circle"></i> Create Request
                     </a>
                 </div>
             </div>
         </div>
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-body text-center">
-                    <h6 class="text-muted">Reimbursements</h6>
-                    <h3 class="text-secondary">{{ stats.total_reimbursements or 0 }}</h3>
-                    <a href="{{ url_for('dispatching.reimbursements_list') }}" class="btn btn-sm btn-outline-secondary mt-2">
-                        View All
+        
+        <!-- User Portal Card -->
+        <div class="col-md-4">
+            <div class="card portal-card user h-100">
+                <div class="card-body d-flex flex-column justify-content-center align-items-center text-center">
+                    <div class="portal-icon text-success">
+                        <i class="bi bi-person-circle"></i>
+                    </div>
+                    <h3 class="portal-title text-success">User Portal</h3>
+                    <p class="portal-description">
+                        View your assigned vehicles and work assignments
+                    </p>
+                    <a href="{{ url_for('dispatching.user_portal') }}" class="btn btn-success btn-lg">
+                        <i class="bi bi-arrow-right-circle"></i> Enter Portal
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Dispatcher Portal Card -->
+        <div class="col-md-4">
+            <div class="card portal-card dispatcher h-100">
+                <div class="card-body d-flex flex-column justify-content-center align-items-center text-center">
+                    <div class="portal-icon text-warning">
+                        <i class="bi bi-calendar-check"></i>
+                    </div>
+                    <h3 class="portal-title text-warning">Dispatcher Portal</h3>
+                    <p class="portal-description">
+                        Manage dispatch requests, assign vehicles to employees, and track assignments
+                    </p>
+                    <a href="{{ url_for('dispatching.dispatcher_portal') }}" class="btn btn-warning btn-lg">
+                        <i class="bi bi-arrow-right-circle"></i> Enter Portal
                     </a>
                 </div>
             </div>

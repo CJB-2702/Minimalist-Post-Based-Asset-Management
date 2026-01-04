@@ -168,8 +168,8 @@ def _check_debug_data_present(module_name, debug_data):
         from app.data.core.user_info.user import User
         from app.data.core.major_location import MajorLocation
         from app.data.core.asset_info.asset import Asset
-        from app.data.core.supply.part import Part
-        from app.data.core.supply.tool import Tool
+        from app.data.core.supply.part_definition import PartDefinition
+        from app.data.core.supply.tool_definition import ToolDefinition
         
         # Check users
         if 'Users' in debug_data.get('Core', {}):
@@ -204,7 +204,7 @@ def _check_debug_data_present(module_name, debug_data):
                 for part_data in debug_data['Core']['Supply']['parts']:
                     part_number = part_data.get('part_number')
                     if part_number:
-                        if Part.query.filter_by(part_number=part_number).first():
+                        if PartDefinition.query.filter_by(part_number=part_number).first():
                             return True
             
             # Check tools
@@ -212,7 +212,7 @@ def _check_debug_data_present(module_name, debug_data):
                 for tool_data in debug_data['Core']['Supply']['tools']:
                     tool_name = tool_data.get('tool_name')
                     if tool_name:
-                        if Tool.query.filter_by(tool_name=tool_name).first():
+                        if ToolDefinition.query.filter_by(tool_name=tool_name).first():
                             return True
     
     elif module_name == 'assets':
@@ -235,8 +235,8 @@ def _check_debug_data_present(module_name, debug_data):
         # Check if proto part demands AND proto action tools exist (more specific check)
         from app.data.maintenance.proto_templates.proto_part_demands import ProtoPartDemand
         from app.data.maintenance.proto_templates.proto_action_tools import ProtoActionTool
-        from app.data.core.supply.part import Part
-        from app.data.core.supply.tool import Tool
+        from app.data.core.supply.part_definition import PartDefinition
+        from app.data.core.supply.tool_definition import ToolDefinition
         
         proto_part_demand_exists = False
         proto_action_tool_exists = False
@@ -248,7 +248,7 @@ def _check_debug_data_present(module_name, debug_data):
                 action_name = demand_data.get('proto_action_item_action_name')
                 
                 if part_number and action_name:
-                    part = Part.query.filter_by(part_number=part_number).first()
+                    part = PartDefinition.query.filter_by(part_number=part_number).first()
                     if part:
                         from app.data.maintenance.proto_templates.proto_actions import ProtoActionItem
                         proto_action_item = ProtoActionItem.query.filter_by(action_name=action_name).first()
@@ -268,7 +268,7 @@ def _check_debug_data_present(module_name, debug_data):
                 action_name = tool_data.get('proto_action_item_action_name')
                 
                 if tool_name and action_name:
-                    tool = Tool.query.filter_by(tool_name=tool_name).first()
+                    tool = ToolDefinition.query.filter_by(tool_name=tool_name).first()
                     if tool:
                         from app.data.maintenance.proto_templates.proto_actions import ProtoActionItem
                         proto_action_item = ProtoActionItem.query.filter_by(action_name=action_name).first()
@@ -290,8 +290,29 @@ def _check_debug_data_present(module_name, debug_data):
         return False
     
     elif module_name == 'inventory':
-        # Check for inventory records
-        # Simplified check - can be enhanced
+        # Check for inventory records - specifically purchase orders
+        from app.data.inventory.ordering.purchase_order_header import PurchaseOrderHeader
+        from app.data.core.major_location import MajorLocation
+        
+        # Check if purchase orders from debug data already exist
+        if 'PurchaseOrders' in debug_data:
+            for po_data in debug_data['PurchaseOrders']:
+                vendor_name = po_data.get('vendor_name')
+                major_location_name = po_data.get('major_location_name')
+                
+                if vendor_name:
+                    # Check if a PO with this vendor and location already exists
+                    query = PurchaseOrderHeader.query.filter_by(vendor_name=vendor_name)
+                    
+                    if major_location_name:
+                        major_location = MajorLocation.query.filter_by(name=major_location_name).first()
+                        if major_location:
+                            query = query.filter_by(major_location_id=major_location.id)
+                    
+                    existing_po = query.first()
+                    if existing_po:
+                        return True
+        
         return False
     
     return False

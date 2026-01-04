@@ -67,9 +67,9 @@ def init_app(app):
         # IMPORTANT: Import core route modules BEFORE registering the blueprint
         # These modules add routes to maintenance_bp, so they must be imported first
         try:
-            from .maintenance.core import action_managment, part_demand, delays, tool
+            from .maintenance.core import action_managment, part_demand, blockers, tool
             # These modules import maintenance_bp and add routes to it
-            logger.info("Loaded maintenance core route modules (action_managment, part_demand, delays, tool)")
+            logger.info("Loaded maintenance core route modules (action_managment, part_demand, blockers, tool)")
         except ImportError as e:
             logger.debug(f"Maintenance core route modules not available: {e}")
         
@@ -116,7 +116,7 @@ def init_app(app):
                 maintenance_action_sets,
                 actions, 
                 part_demands, 
-                delays,
+                blockers,
                 template_actions,
                 proto_action_items,
                 template_part_demands,
@@ -127,7 +127,7 @@ def init_app(app):
             app.register_blueprint(maintenance_action_sets.bp, url_prefix='/maintenance', name='maintenance_action_sets')
             app.register_blueprint(actions.bp, url_prefix='/maintenance', name='actions')
             app.register_blueprint(part_demands.bp, url_prefix='/maintenance', name='part_demands')
-            app.register_blueprint(delays.bp, url_prefix='/maintenance', name='delays')
+            app.register_blueprint(blockers.bp, url_prefix='/maintenance', name='blockers')
             app.register_blueprint(template_actions.bp, url_prefix='/maintenance', name='template_actions')
             app.register_blueprint(proto_action_items.bp, url_prefix='/maintenance', name='proto_action_items')
             app.register_blueprint(template_part_demands.bp, url_prefix='/maintenance', name='template_part_demands')
@@ -179,18 +179,26 @@ def init_app(app):
     # Register supply blueprints (integrated into core section)
     try:
         from .core.supply.main import supply_bp
-        from .core.supply import parts as core_supply_parts, tools as core_supply_tools, issuable_tools as core_supply_issuable_tools
+        from .core.supply import parts as core_supply_parts, tools as core_supply_tools
         
         # Register main supply blueprint with /core prefix
         app.register_blueprint(supply_bp, url_prefix='/core')
         
-        # Register parts, tools, and issuable_tools blueprints separately to avoid nested endpoint names
-        app.register_blueprint(core_supply_parts.bp, url_prefix='/core/supply/parts')
+        # Register parts and tools blueprints separately to avoid nested endpoint names
+        app.register_blueprint(core_supply_parts.bp, url_prefix='/core/supply/part-definitions')
         app.register_blueprint(core_supply_tools.bp, url_prefix='/core/supply/tools')
-        app.register_blueprint(core_supply_issuable_tools.bp, url_prefix='/core/supply/issuable-tools')
         
         logger.info("Registered core supply blueprints")
     except ImportError as e:
         logger.warning(f"Core supply blueprints not available: {e}")
+    
+    # Register inventory blueprint
+    try:
+        from .inventory import inventory_bp
+        app.register_blueprint(inventory_bp)
+        logger.info("Registered inventory blueprint")
+    except Exception as e:
+        logger.error(f"Failed to register inventory blueprint: {e}", exc_info=True)
+        raise  # Re-raise to make errors visible
     
     logger.info("All route blueprints registered successfully") 

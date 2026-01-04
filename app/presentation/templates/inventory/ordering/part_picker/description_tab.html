@@ -1,0 +1,92 @@
+<div>
+    <h6 class="mb-3">Select Part</h6>
+    
+    <label class="form-label">Search Parts</label>
+    <div class="input-group mb-2">
+        <input type="text" 
+               class="form-control" 
+               name="search"
+               placeholder="Type to filter by part name or description..."
+               value="{{ search }}"
+               hx-get="{{ url_for('inventory.purchase_order_part_picker', mode='description', po_id=po_id) }}"
+               hx-trigger="input changed delay:300ms"
+               hx-target="#part-picker-content"
+               hx-include="[name='category'], [name='manufacturer']">
+    </div>
+    <small class="text-muted d-block mb-3">Searching parts by description across all categories.</small>
+    
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <label class="form-label small">Category</label>
+            <select class="form-select form-select-sm" 
+                    name="category"
+                    hx-get="{{ url_for('inventory.purchase_order_part_picker', mode='description', po_id=po_id) }}"
+                    hx-trigger="change"
+                    hx-target="#part-picker-content"
+                    hx-include="[name='search'], [name='manufacturer']">
+                <option value="">All Categories</option>
+                {% for cat in categories %}
+                <option value="{{ cat }}" {% if category == cat %}selected{% endif %}>{{ cat }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label small">Manufacturer</label>
+            <select class="form-select form-select-sm"
+                    name="manufacturer"
+                    hx-get="{{ url_for('inventory.purchase_order_part_picker', mode='description', po_id=po_id) }}"
+                    hx-trigger="change"
+                    hx-target="#part-picker-content"
+                    hx-include="[name='search'], [name='category']">
+                <option value="">All Manufacturers</option>
+                {% for man in manufacturers %}
+                <option value="{{ man }}" {% if manufacturer == man %}selected{% endif %}>{{ man }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+    
+    <div class="parts-list-container">
+        {% if parts %}
+            {% for part in parts %}
+            <div class="part-picker-item">
+                <div class="part-number">#{{ loop.index }}</div>
+                <div class="part-content">
+                    <div class="part-header">
+                        <span class="part-id">{{ part.part_number }}</span>
+                        {% if part.category %}
+                        <span class="category-tag">{{ part.category }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="part-description">{{ part.part_name }}</div>
+                    {% if part.description %}
+                    <div class="part-description text-muted" style="font-size: 12px;">{{ part.description[:100] }}{% if part.description|length > 100 %}...{% endif %}</div>
+                    {% endif %}
+                    <div class="part-metadata">
+                        {% if part.last_unit_cost %}
+                        <span class="metadata-tag tag-cost">${{ "%.2f"|format(part.last_unit_cost) }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <button class="select-part-btn" 
+                        onclick="selectPartForPO({{ part.id }}, '{{ part.part_number }}', '{{ part.part_name }}', {{ part.last_unit_cost or 0 }})">
+                    <i class="bi bi-check"></i> Select
+                </button>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="text-center p-4 text-muted">
+                {% if search %}
+                No parts found matching "{{ search }}"
+                {% else %}
+                Start typing to search for parts...
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+    
+    {% if parts %}
+    <div class="mt-2 text-muted small">{{ parts|length }} matches</div>
+    {% endif %}
+</div>
+

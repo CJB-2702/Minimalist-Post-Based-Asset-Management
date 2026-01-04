@@ -51,9 +51,6 @@
                     <a href="{{ url_for('core_supply_tools.create') }}" class="btn btn-outline-danger">
                         <i class="bi bi-plus-circle"></i> Add Tool Definition
                     </a>
-                    <a href="{{ url_for('core_supply_issuable_tools.create') }}" class="btn btn-outline-danger">
-                        <i class="bi bi-plus-circle"></i> Add Issuable Tool
-                    </a>
                 </div>
             </div>
         </div>
@@ -127,8 +124,7 @@
                                     <strong>{{ part.part_name }}</strong>
                                     <br>
                                     <small class="text-muted">
-                                        Stock: {{ part.current_stock_level }} {{ part.unit_of_measure or 'units' }} 
-                                        (Min: {{ part.minimum_stock_level }})
+                                        {{ part.part_number }} • {{ part.category or 'Uncategorized' }}
                                     </small>
                                 </div>
                                 <a href="{{ url_for('core_supply_parts.detail', part_id=part.id) }}" class="btn btn-sm btn-outline-warning">
@@ -162,7 +158,7 @@
                                     <strong>{{ part.part_name }}</strong>
                                     <br>
                                     <small class="text-muted">
-                                        Stock: {{ part.current_stock_level }} {{ part.unit_of_measure or 'units' }}
+                                        {{ part.part_number }} • {{ part.category or 'Uncategorized' }}
                                     </small>
                                 </div>
                                 <a href="{{ url_for('core_supply_parts.detail', part_id=part.id) }}" class="btn btn-sm btn-outline-danger">
@@ -229,11 +225,8 @@
                         <a href="{{ url_for('core_supply_tools.list') }}" class="btn btn-outline-success">
                             <i class="bi bi-tools"></i> View All Tools
                         </a>
-                        <a href="{{ url_for('actions.list') }}" class="btn btn-outline-warning">
-                            <i class="bi bi-clipboard-check"></i> View Maintenance Actions
-                        </a>
-                        <a href="{{ url_for('maintenance_plans.list') }}" class="btn btn-outline-info">
-                            <i class="bi bi-plus-circle"></i> View Maintenance Plans
+                        <a href="{{ url_for('maintenance.index') }}" class="btn btn-outline-warning">
+                            <i class="bi bi-clipboard-check"></i> Maintenance Portal
                         </a>
                     </div>
                 </div>

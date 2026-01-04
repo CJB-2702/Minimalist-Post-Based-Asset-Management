@@ -5,7 +5,7 @@ from .base import (
     Action,
     PartDemand,
     ActionTool,
-    MaintenanceDelay
+    MaintenanceBlocker
 )
 
 # Template models
@@ -46,7 +46,7 @@ __all__ = [
     'Action',
     'PartDemand',
     'ActionTool',
-    'MaintenanceDelay',
+    'MaintenanceBlocker',
     
     # Template models
     'TemplateActionSet',

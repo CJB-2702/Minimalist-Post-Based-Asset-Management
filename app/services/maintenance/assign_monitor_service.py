@@ -369,19 +369,27 @@ class AssignMonitorService:
         if not technician or not technician.is_active:
             raise ValueError(f"Technician {assigned_user_id} not found or not active")
         
-        # Get maintenance context
+        # Get maintenance context and assignment manager
         maintenance_context = MaintenanceContext.from_event(event_id)
         
         if not maintenance_context or not maintenance_context.struct:
             raise ValueError(f"Maintenance event {event_id} not found")
         
-        # Assign event using MaintenanceContext method
-        maintenance_context.assign_event(
+        # Assign event using assignment manager
+        assignment_manager = maintenance_context.get_assignment_manager()
+        comment_text = assignment_manager.assign(
             assigned_user_id=assigned_user_id,
             assigned_by_id=assigned_by_id,
             planned_start_datetime=planned_start_datetime,
             priority=priority,
             notes=notes
+        )
+        
+        # Add comment to event
+        maintenance_context.add_comment(
+            user_id=assigned_by_id,
+            content=comment_text,
+            is_human_made=True
         )
         
         # Return the maintenance_action_set from the context

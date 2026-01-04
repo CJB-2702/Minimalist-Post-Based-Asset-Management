@@ -1,0 +1,335 @@
+{% extends "base.html" %}
+
+{% block title %}Purchase Order Line {{ po_line.id }} - Inventory Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="bi bi-list-ul text-primary"></i> Purchase Order Line #{{ po_line.id }}
+                    </h1>
+                    <p class="text-muted mb-0">
+                        PO: <a href="{{ url_for('inventory.purchase_order_view', po_id=po_line.purchase_order.id) }}">
+                            {{ po_line.purchase_order.po_number }}
+                        </a>
+                    </p>
+                </div>
+                <div>
+                    <a href="{{ url_for('inventory.purchase_order_lines_view') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to PO Lines List
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PO Line Information -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle"></i> Line Item Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th width="40%">Line Number:</th>
+                                    <td><strong>{{ po_line.line_number }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <th>Part Number:</th>
+                                    <td><code>{{ po_line.part.part_number }}</code></td>
+                                </tr>
+                                <tr>
+                                    <th>Part Name:</th>
+                                    <td>{{ po_line.part.part_name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Quantity Ordered:</th>
+                                    <td><strong>{{ po_line.quantity_ordered }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <th>Quantity Accepted:</th>
+                                    <td>{{ po_line.quantity_accepted or 0 }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Quantity Rejected:</th>
+                                    <td>{{ po_line.quantity_rejected or 0 }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Unit Cost:</th>
+                                    <td>${{ "%.2f"|format(po_line.unit_cost or 0) }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Line Total:</th>
+                                    <td><strong>${{ "%.2f"|format(po_line.line_total) }}</strong></td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th width="40%">Status:</th>
+                                    <td>
+                                        <span class="badge {% if po_line.status == 'Complete' %}bg-success{% elif po_line.status == 'Shipped' %}bg-info{% elif po_line.status == 'Ordered' %}bg-primary{% elif po_line.status == 'Cancelled' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                            {{ po_line.status }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Expected Delivery:</th>
+                                    <td>{{ po_line.expected_delivery_date.strftime('%Y-%m-%d') if po_line.expected_delivery_date else 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Created:</th>
+                                    <td>{{ po_line.created_at.strftime('%Y-%m-%d %H:%M') if po_line.created_at else 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Created By:</th>
+                                    <td>{{ po_line.created_by.username if po_line.created_by else 'N/A' }}</td>
+                                </tr>
+                                {% if po_line.notes %}
+                                <tr>
+                                    <th>Notes:</th>
+                                    <td>{{ po_line.notes }}</td>
+                                </tr>
+                                {% endif %}
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Purchase Order Header Info -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-receipt"></i> Purchase Order
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless table-sm">
+                        <tr>
+                            <th>PO Number:</th>
+                            <td>
+                                <a href="{{ url_for('inventory.purchase_order_view', po_id=po_line.purchase_order.id) }}">
+                                    <strong>{{ po_line.purchase_order.po_number }}</strong>
+                                </a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Vendor:</th>
+                            <td>{{ po_line.purchase_order.vendor_name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Order Date:</th>
+                            <td>{{ po_line.purchase_order.order_date.strftime('%Y-%m-%d') if po_line.purchase_order.order_date else 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Status:</th>
+                            <td>
+                                <span class="badge {% if po_line.purchase_order.status == 'Arrived' %}bg-success{% elif po_line.purchase_order.status == 'Shipped' %}bg-info{% elif po_line.purchase_order.status == 'Ordered' %}bg-primary{% elif po_line.purchase_order.status == 'Cancelled' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                    {{ po_line.purchase_order.status }}
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Created By:</th>
+                            <td>{{ po_line.purchase_order.created_by.username if po_line.purchase_order.created_by else 'N/A' }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Linked Part Demands -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-link-45deg"></i> Linked Part Demands ({{ demand_links|length }})
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if demand_links %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Demand ID</th>
+                                    <th>Part</th>
+                                    <th>Quantity Allocated</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                    <th>Event</th>
+                                    <th>Asset</th>
+                                    <th>Assigned To</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for link in demand_links %}
+                                {% set demand = link.part_demand %}
+                                {% if demand %}
+                                <tr>
+                                    <td><code>{{ demand.id }}</code></td>
+                                    <td>
+                                        <strong>{{ demand.part.part_number }}</strong><br>
+                                        <small class="text-muted">{{ demand.part.part_name }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">{{ link.quantity_allocated }}</span>
+                                        <small class="text-muted">of {{ demand.quantity_required }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge {% if demand.status == 'Complete' or demand.status == 'Installed' %}bg-success{% elif demand.status == 'Ordered' or demand.status == 'Shipped' or demand.status == 'Arrived' or demand.status == 'At Inventory' %}bg-warning{% else %}bg-secondary{% endif %}">
+                                            {{ demand.status }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if demand.action %}
+                                        <strong>{{ demand.action.action_name }}</strong>
+                                        {% if demand.action.assigned_user %}
+                                        <br><small class="text-muted">Assigned: {{ demand.action.assigned_user.username }}</small>
+                                        {% endif %}
+                                        {% else %}
+                                        <span class="text-muted">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if demand.action and demand.action.maintenance_action_set and demand.action.maintenance_action_set.event %}
+                                        {% set event = demand.action.maintenance_action_set.event %}
+                                        {% set mas = demand.action.maintenance_action_set %}
+                                        <a href="{{ url_for('maintenance_event.view_maintenance_event', event_id=event.id) }}">
+                                            Event #{{ event.id }}
+                                        </a>
+                                        {% if mas.assigned_user %}
+                                        <br><small class="text-muted">Assigned: {{ mas.assigned_user.username }}</small>
+                                        {% endif %}
+                                        {% else %}
+                                        <span class="text-muted">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if demand.action and demand.action.maintenance_action_set and demand.action.maintenance_action_set.asset %}
+                                        {% set asset = demand.action.maintenance_action_set.asset %}
+                                        <a href="{{ url_for('core_assets.detail', asset_id=asset.id) }}">
+                                            {{ asset.name }}
+                                        </a>
+                                        {% else %}
+                                        <span class="text-muted">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if demand.action and demand.action.maintenance_action_set %}
+                                        {% set mas = demand.action.maintenance_action_set %}
+                                        {% if mas.assigned_user %}
+                                        {{ mas.assigned_user.username }}
+                                        {% else %}
+                                        <span class="text-muted">Unassigned</span>
+                                        {% endif %}
+                                        {% else %}
+                                        <span class="text-muted">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% if link.notes %}
+                                <tr>
+                                    <td colspan="8" class="text-muted small">
+                                        <i class="bi bi-chat-left-text"></i> <strong>Link Notes:</strong> {{ link.notes }}
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> No part demands linked to this purchase order line.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Part Arrivals -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-box-arrow-in-down"></i> Part Arrivals ({{ po_line.part_arrivals.count() }})
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if po_line.part_arrivals.count() > 0 %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Arrival ID</th>
+                                    <th>Package Header</th>
+                                    <th>Quantity Received</th>
+                                    <th>Received Date</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for arrival in po_line.part_arrivals %}
+                                <tr>
+                                    <td><code>{{ arrival.id }}</code></td>
+                                    <td>
+                                        {% if arrival.package_header %}
+                                        <a href="{{ url_for('inventory.po_arrival_detail', id=arrival.package_header.id) }}">
+                                            Package #{{ arrival.package_header.id }}
+                                        </a>
+                                        {% else %}
+                                        <span class="text-muted">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ arrival.quantity_received }}</td>
+                                    <td>{{ arrival.created_at.strftime('%Y-%m-%d %H:%M') if arrival.created_at else 'N/A' }}</td>
+                                    <td>
+                                        <span class="badge bg-success">Received</span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> No part arrivals recorded for this purchase order line.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+
+
+
+
+
+
+
+
+

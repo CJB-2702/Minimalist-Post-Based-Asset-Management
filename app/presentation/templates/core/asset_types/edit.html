@@ -65,15 +65,15 @@
                         <h6 class="alert-heading">Asset Type Statistics</h6>
                         <div class="row text-center">
                             <div class="col-4">
-                                <strong>{{ MakeModel.query.filter_by(asset_type_id=asset_type.id).count() }}</strong><br>
+                                <strong>{{ total_make_models }}</strong><br>
                                 <small>Make/Models</small>
                             </div>
                             <div class="col-4">
-                                <strong>{{ len(asset_type.make_models.filter_by(is_active=True).all()) }}</strong><br>
+                                <strong>{{ active_make_models }}</strong><br>
                                 <small>Active Make/Models</small>
                             </div>
                             <div class="col-4">
-                                <strong>{{ len(asset_type.make_models.filter_by(is_active=False).all()) }}</strong><br>
+                                <strong>{{ inactive_make_models }}</strong><br>
                                 <small>Inactive Make/Models</small>
                             </div>
                         </div>

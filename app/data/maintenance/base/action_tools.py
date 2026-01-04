@@ -27,7 +27,7 @@ class ActionTool(VirtualActionTool):
     
     # Relationships
     action = relationship('Action', back_populates='action_tools')
-    tool = relationship('Tool', foreign_keys='ActionTool.tool_id', lazy='select')
+    tool = relationship('ToolDefinition', foreign_keys='ActionTool.tool_id', lazy='select')
     
     # User relationships
     assigned_to_user = relationship('User', foreign_keys=[assigned_to_user_id], backref='assigned_action_tools')

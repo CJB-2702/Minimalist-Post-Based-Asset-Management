@@ -3,14 +3,16 @@ Manager Portal Main Routes
 Dashboard and main navigation for maintenance managers
 """
 
-from flask import Blueprint, render_template, request
+from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for
 from flask_login import login_required, current_user
 from app.logger import get_logger
+from app import db
 from app.buisness.maintenance import (
     MaintenanceContext,
     TemplateMaintenanceContext,
     ProtoActionContext,
 )
+from app.services.maintenance.part_demand_service import PartDemandService
 
 logger = get_logger("asset_management.routes.maintenance.manager")
 
@@ -201,7 +203,306 @@ def assign_monitor():
 @manager_bp.route('/approve-review')
 @login_required
 def approve_review():
-    """Approve and review - Approve part demands, review delays"""
+    """Approve and review - Approve part demands, review blockers"""
     logger.info(f"Approve & review accessed by {current_user.username}")
     return render_template('maintenance/user_views/manager/approve_review.html')
+
+
+@manager_bp.route('/part-demands')
+@login_required
+def part_demands():
+    """Part demands portal - View and approve part demands"""
+    logger.info(f"Part demands portal accessed by {current_user.username}")
+    
+    # Get filter parameters
+    part_id = request.args.get('part_id', type=int)
+    part_description = request.args.get('part_description', '').strip() or None
+    maintenance_event_id = request.args.get('maintenance_event_id', type=int)
+    asset_id = request.args.get('asset_id', type=int)
+    assigned_to_id = request.args.get('assigned_to_id', type=int)
+    major_location_id = request.args.get('major_location_id', type=int)
+    status = request.args.get('status', '').strip() or None
+    sort_by = request.args.get('sort_by', '').strip() or None
+    
+    # Get filtered part demands
+    try:
+        part_demands_list = PartDemandService.get_filtered_part_demands(
+            part_id=part_id,
+            part_description=part_description,
+            maintenance_event_id=maintenance_event_id,
+            asset_id=asset_id,
+            assigned_to_id=assigned_to_id,
+            major_location_id=major_location_id,
+            status=status,
+            sort_by=sort_by
+        )
+    except Exception as e:
+        logger.error(f"Error loading part demands: {e}")
+        part_demands_list = []
+        flash('Error loading part demands', 'error')
+    
+    # Get filter options
+    try:
+        from app.data.core.supply.part_definition import PartDefinition
+        from app.data.core.asset_info.asset import Asset
+        from app.data.core.major_location import MajorLocation
+        from app.data.core.user_info.user import User
+        from app.data.maintenance.base.maintenance_action_sets import MaintenanceActionSet
+        from app.data.maintenance.base.part_demands import PartDemand
+        
+        # Get unique statuses
+        statuses = db.session.query(PartDemand.status).distinct().all()
+        status_options = [s[0] for s in statuses if s[0]]
+        
+        # Get users for assigned_to filter
+        users = User.query.filter_by(is_active=True).order_by(User.username).all()
+        
+        # Get major locations
+        locations = MajorLocation.query.filter_by(is_active=True).order_by(MajorLocation.name).all()
+        
+    except Exception as e:
+        logger.warning(f"Could not load filter options: {e}")
+        status_options = []
+        users = []
+        locations = []
+    
+    return render_template(
+        'maintenance/user_views/manager/part_demands.html',
+        part_demands=part_demands_list,
+        status_options=status_options,
+        users=users,
+        locations=locations,
+        filters={
+            'part_id': part_id,
+            'part_description': part_description or '',
+            'maintenance_event_id': maintenance_event_id,
+            'asset_id': asset_id,
+            'assigned_to_id': assigned_to_id,
+            'major_location_id': major_location_id,
+            'status': status,
+            'sort_by': sort_by
+        }
+    )
+
+
+@manager_bp.route('/part-demands/approve', methods=['POST'])
+@login_required
+def approve_part_demand():
+    """Approve a single part demand"""
+    try:
+        part_demand_id = request.form.get('part_demand_id', type=int)
+        notes = request.form.get('notes', '').strip() or None
+        
+        if not part_demand_id:
+            flash('Part demand ID is required', 'error')
+            return redirect(url_for('manager_portal.part_demands'))
+        
+        result = PartDemandService.approve_part_demand(
+            part_demand_id=part_demand_id,
+            user_id=current_user.id,
+            notes=notes
+        )
+        
+        flash(result['message'], 'success')
+    except ValueError as e:
+        flash(str(e), 'error')
+    except Exception as e:
+        logger.error(f"Error approving part demand: {e}")
+        flash('Error approving part demand', 'error')
+    
+    # Preserve filter parameters from form
+    filter_params = {}
+    for key in ['part_id', 'part_description', 'maintenance_event_id', 'asset_id', 
+                'assigned_to_id', 'major_location_id', 'status', 'sort_by']:
+        value = request.form.get(key)
+        if value:
+            filter_params[key] = value
+    
+    return redirect(url_for('manager_portal.part_demands', **filter_params))
+
+
+@manager_bp.route('/part-demands/reject', methods=['POST'])
+@login_required
+def reject_part_demand():
+    """Reject a single part demand"""
+    try:
+        part_demand_id = request.form.get('part_demand_id', type=int)
+        reason = request.form.get('reason', '').strip()
+        
+        if not part_demand_id:
+            flash('Part demand ID is required', 'error')
+            return redirect(url_for('manager_portal.part_demands'))
+        
+        if not reason:
+            flash('Rejection reason is required', 'error')
+            return redirect(url_for('manager_portal.part_demands'))
+        
+        result = PartDemandService.reject_part_demand(
+            part_demand_id=part_demand_id,
+            user_id=current_user.id,
+            reason=reason
+        )
+        
+        flash(result['message'], 'success')
+    except ValueError as e:
+        flash(str(e), 'error')
+    except Exception as e:
+        logger.error(f"Error rejecting part demand: {e}")
+        flash('Error rejecting part demand', 'error')
+    
+    # Preserve filter parameters from form
+    filter_params = {}
+    for key in ['part_id', 'part_description', 'maintenance_event_id', 'asset_id', 
+                'assigned_to_id', 'major_location_id', 'status', 'sort_by']:
+        value = request.form.get(key)
+        if value:
+            filter_params[key] = value
+    
+    return redirect(url_for('manager_portal.part_demands', **filter_params))
+
+
+@manager_bp.route('/part-demands/bulk-approve', methods=['POST'])
+@login_required
+def bulk_approve_part_demands():
+    """Bulk approve multiple part demands"""
+    try:
+        part_demand_ids = request.form.getlist('part_demand_ids', type=int)
+        notes = request.form.get('notes', '').strip() or None
+        
+        if not part_demand_ids:
+            flash('No part demands selected', 'error')
+            # Preserve filter parameters
+            filter_params = {}
+            for key in ['part_id', 'part_description', 'maintenance_event_id', 'asset_id', 
+                        'assigned_to_id', 'major_location_id', 'status', 'sort_by']:
+                value = request.form.get(key)
+                if value:
+                    filter_params[key] = value
+            return redirect(url_for('manager_portal.part_demands', **filter_params))
+        
+        result = PartDemandService.bulk_approve_part_demands(
+            part_demand_ids=part_demand_ids,
+            user_id=current_user.id,
+            notes=notes
+        )
+        
+        flash(result['message'], 'success')
+        if result['errors']:
+            for error in result['errors'][:5]:  # Show first 5 errors
+                flash(error, 'warning')
+    except Exception as e:
+        logger.error(f"Error bulk approving part demands: {e}")
+        flash('Error bulk approving part demands', 'error')
+    
+    # Preserve filter parameters from form
+    filter_params = {}
+    for key in ['part_id', 'part_description', 'maintenance_event_id', 'asset_id', 
+                'assigned_to_id', 'major_location_id', 'status', 'sort_by']:
+        value = request.form.get(key)
+        if value:
+            filter_params[key] = value
+    
+    return redirect(url_for('manager_portal.part_demands', **filter_params))
+
+
+@manager_bp.route('/part-demands/bulk-reject', methods=['POST'])
+@login_required
+def bulk_reject_part_demands():
+    """Bulk reject multiple part demands"""
+    try:
+        part_demand_ids = request.form.getlist('part_demand_ids', type=int)
+        reason = request.form.get('reason', '').strip()
+        
+        # Preserve filter parameters helper
+        filter_params = {}
+        for key in ['part_id', 'part_description', 'maintenance_event_id', 'asset_id', 
+                    'assigned_to_id', 'major_location_id', 'status', 'sort_by']:
+            value = request.form.get(key)
+            if value:
+                filter_params[key] = value
+        
+        if not part_demand_ids:
+            flash('No part demands selected', 'error')
+            return redirect(url_for('manager_portal.part_demands', **filter_params))
+        
+        if not reason:
+            flash('Rejection reason is required', 'error')
+            return redirect(url_for('manager_portal.part_demands', **filter_params))
+        
+        result = PartDemandService.bulk_reject_part_demands(
+            part_demand_ids=part_demand_ids,
+            user_id=current_user.id,
+            reason=reason
+        )
+        
+        flash(result['message'], 'success')
+        if result['errors']:
+            for error in result['errors'][:5]:  # Show first 5 errors
+                flash(error, 'warning')
+    except ValueError as e:
+        flash(str(e), 'error')
+    except Exception as e:
+        logger.error(f"Error bulk rejecting part demands: {e}")
+        flash('Error bulk rejecting part demands', 'error')
+    
+    # Preserve filter parameters from form
+    filter_params = {}
+    for key in ['part_id', 'part_description', 'maintenance_event_id', 'asset_id', 
+                'assigned_to_id', 'major_location_id', 'status', 'sort_by']:
+        value = request.form.get(key)
+        if value:
+            filter_params[key] = value
+    
+    return redirect(url_for('manager_portal.part_demands', **filter_params))
+
+
+@manager_bp.route('/part-demands/bulk-change-part', methods=['POST'])
+@login_required
+def bulk_change_part_id():
+    """Bulk change part ID for multiple part demands"""
+    try:
+        part_demand_ids = request.form.getlist('part_demand_ids', type=int)
+        new_part_id = request.form.get('new_part_id', type=int)
+        
+        # Preserve filter parameters helper
+        filter_params = {}
+        for key in ['part_id', 'part_description', 'maintenance_event_id', 'asset_id', 
+                    'assigned_to_id', 'major_location_id', 'status', 'sort_by']:
+            value = request.form.get(key)
+            if value:
+                filter_params[key] = value
+        
+        if not part_demand_ids:
+            flash('No part demands selected', 'error')
+            return redirect(url_for('manager_portal.part_demands', **filter_params))
+        
+        if not new_part_id:
+            flash('New part ID is required', 'error')
+            return redirect(url_for('manager_portal.part_demands', **filter_params))
+        
+        result = PartDemandService.bulk_change_part_id(
+            part_demand_ids=part_demand_ids,
+            new_part_id=new_part_id,
+            user_id=current_user.id
+        )
+        
+        flash(result['message'], 'success')
+        if result['errors']:
+            for error in result['errors'][:5]:  # Show first 5 errors
+                flash(error, 'warning')
+    except ValueError as e:
+        flash(str(e), 'error')
+    except Exception as e:
+        logger.error(f"Error bulk changing part ID: {e}")
+        flash('Error bulk changing part ID', 'error')
+    
+    # Preserve filter parameters from form
+    filter_params = {}
+    for key in ['part_id', 'part_description', 'maintenance_event_id', 'asset_id', 
+                'assigned_to_id', 'major_location_id', 'status', 'sort_by']:
+        value = request.form.get(key)
+        if value:
+            filter_params[key] = value
+    
+    return redirect(url_for('manager_portal.part_demands', **filter_params))
 

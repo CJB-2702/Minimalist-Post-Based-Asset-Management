@@ -1,0 +1,63 @@
+<div class="col-md-6 position-relative" id="unlinked_part_searchbar_container">
+    <label class="form-label">Part</label>
+    <input type="hidden" id="unlinked_part_id" value="">
+    <input type="text"
+           class="form-control"
+           id="unlinked_part_search"
+           name="unlinked_part_search"
+           placeholder="Search parts by number, name, or description..."
+           autocomplete="off"
+           value="{{ search or '' }}"
+           hx-get="{{ url_for('inventory.search_bars_parts_unlinked_po') }}"
+           hx-trigger="keyup changed delay:300ms"
+           hx-target="#unlinked_part_searchbar_container"
+           hx-swap="outerHTML"
+           hx-include="#unlinked_part_search">
+    <div id="unlinked_part_dropdown"
+         class="dropdown-menu w-100"
+         style="{% if parts and parts|length > 0 %}display:block;{% else %}display:none;{% endif %} max-height: 260px; overflow:auto;">
+        <div id="unlinked_part_results">
+            {% if error %}
+            <div class="dropdown-item-text text-danger">
+                <i class="bi bi-exclamation-triangle"></i> Error: {{ error }}
+            </div>
+            {% elif parts %}
+                {% if showing < total_count %}
+                <div class="dropdown-item-text text-muted small">
+                    Showing {{ showing }} of {{ total_count }} matches
+                </div>
+                {% endif %}
+                {% for part in parts %}
+                <a href="#"
+                   class="dropdown-item {% if selected_part_id == part.id %}active{% endif %}"
+                   data-part-id="{{ part.id }}"
+                   data-part-number="{{ part.part_number }}"
+                   data-part-name="{{ part.part_name }}"
+                   data-last-cost="{{ part.last_unit_cost or 0 }}"
+                   style="cursor: pointer; transition: background-color 0.2s;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>{{ part.part_number }}</strong> - {{ part.part_name }}
+                            {% if part.description %}
+                            <br><small class="text-muted">{{ part.description[:50] }}{% if part.description|length > 50 %}...{% endif %}</small>
+                            {% endif %}
+                        </div>
+                        {% if part.last_unit_cost %}
+                        <span class="badge bg-secondary ms-2">${{ "%.2f"|format(part.last_unit_cost) }}</span>
+                        {% endif %}
+                    </div>
+                </a>
+                {% endfor %}
+            {% else %}
+            <div class="dropdown-item-text text-muted">
+                {% if search %}
+                No parts found matching "{{ search }}"
+                {% else %}
+                Start typing to search for parts...
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="form-text">Type at least 1 character to search.</div>
+</div>

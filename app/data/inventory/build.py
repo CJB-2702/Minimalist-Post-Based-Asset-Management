@@ -6,12 +6,17 @@ This module handles the initialization and setup of Phase 6 inventory models.
 
 from pathlib import Path
 from app import db
-from app.data.inventory.base import (
+from app.data.inventory.ordering import (
     PurchaseOrderHeader,
     PurchaseOrderLine,
-    PartDemandPurchaseOrderLine,
+    PartDemandPurchaseOrderLink
+)
+from app.data.inventory.arrivals import (
     PackageHeader,
-    PartArrival,
+    PartArrival
+)
+from app.data.inventory.inventory import (
+    Storeroom,
     ActiveInventory,
     InventoryMovement
 )
@@ -29,9 +34,10 @@ def build_models():
     models = [
         PurchaseOrderHeader,
         PurchaseOrderLine,
-        PartDemandPurchaseOrderLine,
+        PartDemandPurchaseOrderLink,
         PackageHeader,
         PartArrival,
+        Storeroom,
         ActiveInventory,
         InventoryMovement
     ]
@@ -98,9 +104,14 @@ def verify_relationships():
         assert hasattr(InventoryMovement, 'initial_arrival')
         assert hasattr(InventoryMovement, 'previous_movement')
         
+        # Test Storeroom relationships
+        assert hasattr(Storeroom, 'major_location')
+        assert hasattr(Storeroom, 'active_inventory')
+        
         # Test ActiveInventory relationships
         assert hasattr(ActiveInventory, 'part')
-        assert hasattr(ActiveInventory, 'major_location')
+        assert hasattr(ActiveInventory, 'storeroom')
+        assert hasattr(ActiveInventory, 'major_location_id')  # Property
         
         print("Phase 6: All relationships verified successfully")
         return True
@@ -132,7 +143,7 @@ def get_model_info():
                 'description': 'Purchase order line items'
             },
             {
-                'name': 'PartDemandPurchaseOrderLine',
+                'name': 'PartDemandPurchaseOrderLink',
                 'table': 'part_demand_purchase_order_lines',
                 'description': 'Links part demands to PO lines'
             },
@@ -147,9 +158,14 @@ def get_model_info():
                 'description': 'Individual part receipts'
             },
             {
+                'name': 'Storeroom',
+                'table': 'storerooms',
+                'description': 'Physical storerooms within major locations'
+            },
+            {
                 'name': 'ActiveInventory',
                 'table': 'active_inventory',
-                'description': 'Current inventory levels by location'
+                'description': 'Current inventory levels by bin location'
             },
             {
                 'name': 'InventoryMovement',
@@ -160,10 +176,12 @@ def get_model_info():
         'features': [
             'Purchase order management',
             'Part receiving and inspection',
-            'Inventory tracking by location',
+            'Storeroom and bin-level inventory tracking',
+            '3D coordinate system for bin locations',
             'Complete traceability chain (initial_arrival_id, previous_movement_id)',
             'Integration with maintenance part demands',
-            'Cost tracking and valuation'
+            'Cost tracking and valuation',
+            '6-month average cost calculation'
         ]
     }
 

@@ -414,7 +414,7 @@ class EventPortalService:
             Dictionary with filter options
         """
         return {
-            'statuses': ['Planned', 'In Progress', 'Delayed', 'Complete'],
+            'statuses': ['Planned', 'In Progress', 'Blocked', 'Delayed', 'Complete'],
             'priorities': ['Low', 'Medium', 'High', 'Critical'],
             'users': User.query.filter_by(is_active=True).order_by(User.username).all(),
             'assets': Asset.query.filter_by(status='Active').order_by(Asset.name).all(),

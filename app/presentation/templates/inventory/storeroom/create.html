@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Create Storeroom{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Page Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="bi bi-plus-circle text-primary"></i> Create New Storeroom
+                    </h1>
+                    <p class="text-muted mb-0">Add a new physical storeroom location</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('inventory.storeroom_index') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Cancel
+                    </a>
+                </div>
+            </div>
+
+            <!-- Create Form -->
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('inventory.storeroom_create') }}" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="room_name" class="form-label">
+                                Storeroom Name <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="room_name" name="room_name" required
+                                   placeholder="e.g., Los Angeles Main Storeroom"
+                                   autofocus>
+                            <div class="form-text">A descriptive name for this storeroom</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="major_location_id" class="form-label">
+                                Major Location <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="major_location_id" name="major_location_id" required>
+                                <option value="">Select a major location...</option>
+                                {% for location in major_locations %}
+                                <option value="{{ location.id }}">{{ location.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">The facility where this storeroom is located</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="address" class="form-label">Address/Notes</label>
+                            <textarea class="form-control" id="address" name="address" rows="4"
+                                      placeholder="Optional address, building number, or other notes"></textarea>
+                            <div class="form-text">Optional: physical address or descriptive notes</div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="svg_file" class="form-label">Storeroom Layout SVG (Optional)</label>
+                            <input type="file" class="form-control" id="svg_file" name="svg_file" accept=".svg">
+                            <div class="form-text">
+                                Optional: Upload an SVG file with a 'locations' layer. Locations will be created automatically from labeled elements.
+                            </div>
+                        </div>
+                        
+                        <hr class="my-4">
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('inventory.storeroom_index') }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-lg"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg"></i> Create Storeroom
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Help Text -->
+            <div class="alert alert-info mt-4">
+                <h6 class="alert-heading"><i class="bi bi-info-circle"></i> Next Steps</h6>
+                <p class="mb-0">
+                    After creating the storeroom, you'll be able to add locations and bins using simple forms.
+                    SVG layout visualization will be available in Phase 2.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

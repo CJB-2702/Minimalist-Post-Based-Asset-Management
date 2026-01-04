@@ -232,7 +232,8 @@ class AssetDetailsContext(AssetContext):
         model_detail_count = 0
         if self._asset.make_model_id:
             model_struct = ModelDetailsStruct(self._asset.make_model_id)
-            model_detail_count = sum(len(records) for records in model_struct.asdict().values() if records)
+            # Model details are single objects (not lists), so count non-None values
+            model_detail_count = sum(1 for record in model_struct.asdict().values() if record is not None)
         
         return asset_detail_count + model_detail_count
     

@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Package Arrival{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="bi bi-box-seam text-success"></i> Package: {{ package.package_number }}
+                    </h1>
+                    <p class="text-muted mb-0">
+                        Status: <strong>{{ package.status }}</strong>
+                        {% if package.tracking_number %} • Tracking: {{ package.tracking_number }}{% endif %}
+                        {% if package.carrier %} • Carrier: {{ package.carrier }}{% endif %}
+                    </p>
+                </div>
+                <div>
+                    <a href="{{ url_for('inventory.arrival_linkage_portal', package_id=package.id) }}" 
+                       class="btn btn-primary me-2">
+                        <i class="bi bi-link-45deg"></i> Link to PO Lines
+                    </a>
+                    <a href="{{ url_for('inventory.package_arrival_edit', id=package.id) }}" class="btn btn-success me-2">
+                        <i class="bi bi-clipboard-check"></i> Inspect / Accept
+                    </a>
+                    <a href="{{ url_for('inventory.po_arrivals') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Arrivals List
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> Package Header</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3"><strong>Received Date:</strong> {{ package.received_date.strftime('%Y-%m-%d') if package.received_date else '' }}</div>
+                        <div class="col-md-3"><strong>Location:</strong> {{ package.major_location.name if package.major_location else 'N/A' }}</div>
+                        <div class="col-md-3"><strong>Storeroom:</strong> {{ package.storeroom.room_name if package.storeroom else 'N/A' }}</div>
+                        <div class="col-md-3"><strong>Received By:</strong> {{ package.received_by.username if package.received_by else 'N/A' }}</div>
+                        <div class="col-12"><strong>Notes:</strong> {{ package.notes or '' }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-list-check"></i> Part Arrivals</h5>
+                </div>
+                <div class="card-body">
+                    {% if part_arrivals %}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Part</th>
+                                    <th>PO</th>
+                                    <th>Qty</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for a in part_arrivals %}
+                                <tr>
+                                    <td>
+                                        <div><strong>{{ a.part.part_number if a.part else a.part_id }}</strong></div>
+                                        <div class="text-muted small">{{ a.part.part_name if a.part else '' }}</div>
+                                    </td>
+                                    <td>
+                                        {% if a.purchase_order_line and a.purchase_order_line.purchase_order %}
+                                            <a href="{{ url_for('inventory.purchase_order_view', po_id=a.purchase_order_line.purchase_order.id) }}">
+                                                {{ a.purchase_order_line.purchase_order.po_number }}
+                                            </a>
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ a.quantity_received }}</td>
+                                    <td>{{ a.status }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-info-circle"></i> No part arrivals found for this package.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+

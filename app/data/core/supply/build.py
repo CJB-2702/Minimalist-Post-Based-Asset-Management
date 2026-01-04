@@ -13,9 +13,8 @@ def build_models():
     Build supply models - this is a no-op since models are imported
     when the app is created, which registers them with SQLAlchemy
     """
-    import app.data.core.supply.part
-    import app.data.core.supply.tool
-    import app.data.core.supply.issuable_tool
+    import app.data.core.supply.part_definition
+    import app.data.core.supply.tool_definition
     
     logger.info("Supply models build completed")
 
@@ -34,14 +33,13 @@ def test_supply_independence():
         logger.info("Testing supply independence...")
         
         # Test that supply models can be imported without maintenance
-        from app.data.core.supply.part import Part
-        from app.data.core.supply.tool import Tool
-        from app.data.core.supply.issuable_tool import IssuableTool
+        from app.data.core.supply.part_definition import PartDefinition
+        from app.data.core.supply.tool_definition import ToolDefinition
         from app.data.maintenance.base.part_demands import PartDemand
         
         # Test that we can query supply tables
-        parts_count = Part.query.count()
-        tools_count = Tool.query.count()
+        parts_count = PartDefinition.query.count()
+        tools_count = ToolDefinition.query.count()
         demands_count = PartDemand.query.count()
         
         logger.info(f"Supply independence test passed - Parts: {parts_count}, Tools: {tools_count}, Demands: {demands_count}")

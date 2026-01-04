@@ -9,8 +9,8 @@ import json
 from app.buisness.maintenance.builders.template_builder_context import TemplateBuilderContext
 from app.data.maintenance.builders.template_builder_memory import TemplateBuilderMemory
 from app.data.maintenance.templates.template_action_sets import TemplateActionSet
-from app.data.core.supply.part import Part
-from app.data.core.supply.tool import Tool
+from app.data.core.supply.part_definition import PartDefinition
+from app.data.core.supply.tool_definition import ToolDefinition
 
 
 class TemplateBuilderService:
@@ -119,14 +119,14 @@ class TemplateBuilderService:
             Dictionary with part information or None if not found
         """
         try:
-            part = Part.query.get(part_id)
+            part = PartDefinition.query.get(part_id)
             if part:
                 return {
                     'id': part.id,
                     'part_number': part.part_number,
                     'part_name': part.part_name,
                     'description': part.description,
-                    'unit_cost': part.unit_cost,
+                    'unit_cost': part.last_unit_cost,
                 }
         except Exception:
             pass
@@ -144,7 +144,7 @@ class TemplateBuilderService:
             Dictionary with tool information or None if not found
         """
         try:
-            tool = Tool.query.get(tool_id)
+            tool = ToolDefinition.query.get(tool_id)
             if tool:
                 return {
                     'id': tool.id,

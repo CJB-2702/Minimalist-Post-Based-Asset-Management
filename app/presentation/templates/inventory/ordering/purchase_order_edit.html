@@ -1,0 +1,350 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Purchase Order {{ po_context.header.po_number }} - Inventory Management{% endblock %}
+
+{% block head %}
+<script>
+// Part selection handler
+window.selectPart = function(partId, partNumber, partName, lastCost) {
+    document.getElementById('part_id').value = partId;
+    document.getElementById('part_search').value = `${partNumber} - ${partName}`;
+    document.getElementById('part_dropdown').style.display = 'none';
+    
+    // Set default unit cost if available
+    if (lastCost) {
+        document.getElementById('unit_cost').value = lastCost.toFixed(2);
+    }
+    
+    // Enable quantity and cost fields
+    document.getElementById('quantity').disabled = false;
+    document.getElementById('unit_cost').disabled = false;
+};
+
+// Show/hide dropdown on HTMX swap
+document.body.addEventListener('htmx:afterSwap', function(event) {
+    if (event.detail.target.id === 'part_results') {
+        const dropdown = document.getElementById('part_dropdown');
+        const results = document.getElementById('part_results');
+        if (results && results.children.length > 0) {
+            dropdown.style.display = 'block';
+        } else {
+            dropdown.style.display = 'none';
+        }
+    }
+});
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(event) {
+    const partSearch = document.getElementById('part_search');
+    const partDropdown = document.getElementById('part_dropdown');
+    if (partSearch && partDropdown && !partSearch.contains(event.target) && !partDropdown.contains(event.target)) {
+        partDropdown.style.display = 'none';
+    }
+});
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="bi bi-pencil text-primary"></i> Edit Purchase Order: {{ po_context.header.po_number }}
+                    </h1>
+                    <p class="text-muted mb-0">{{ po_context.header.vendor_name }}</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('inventory.purchase_order_view', po_id=po_context.purchase_order_id) }}" 
+                       class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to View
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Header Form -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle"></i> Purchase Order Header
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('inventory.purchase_order_edit', po_id=po_context.purchase_order_id) }}">
+                        <input type="hidden" name="action" value="update_header">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="vendor_name" class="form-label">Vendor Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="vendor_name" name="vendor_name" 
+                                       value="{{ po_context.header.vendor_name }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="vendor_contact" class="form-label">Vendor Contact</label>
+                                <input type="text" class="form-control" id="vendor_contact" name="vendor_contact" 
+                                       value="{{ po_context.header.vendor_contact or '' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="location_id" class="form-label">Delivery Location *</label>
+                                <select class="form-select" id="location_id" name="location_id" required>
+                                    <option value="">Select Location</option>
+                                    {% for location in locations %}
+                                    <option value="{{ location.id }}"
+                                            {% if po_context.header.major_location_id == location.id %}selected{% endif %}>
+                                        {{ location.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="expected_delivery_date" class="form-label">Expected Delivery Date</label>
+                                <input type="date" class="form-control" id="expected_delivery_date" name="expected_delivery_date" 
+                                       value="{{ po_context.header.expected_delivery_date.strftime('%Y-%m-%d') if po_context.header.expected_delivery_date else '' }}">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="shipping_cost" class="form-label">Shipping Cost</label>
+                                <input type="number" class="form-control" id="shipping_cost" name="shipping_cost" 
+                                       step="0.01" min="0" value="{{ po_context.header.shipping_cost or 0.00 }}">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="tax_amount" class="form-label">Tax Amount</label>
+                                <input type="number" class="form-control" id="tax_amount" name="tax_amount" 
+                                       step="0.01" min="0" value="{{ po_context.header.tax_amount or 0.00 }}">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Total Cost</label>
+                                <input type="text" class="form-control" 
+                                       value="${{ '%.2f'|format(po_context.header.total_cost or 0) }}" readonly>
+                            </div>
+                            <div class="col-md-12">
+                                <label for="notes" class="form-label">Notes</label>
+                                <textarea class="form-control" id="notes" name="notes" rows="3">{{ po_context.header.notes or '' }}</textarea>
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-circle"></i> Update Header
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Existing Lines -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-list-ul"></i> Line Items ({{ po_context.lines|length }})
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if po_context.lines %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Line #</th>
+                                    <th>Part Number</th>
+                                    <th>Part Name</th>
+                                    <th>Quantity</th>
+                                    <th>Unit Cost</th>
+                                    <th>Line Total</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for line in po_context.lines %}
+                                {% include 'inventory/ordering/_line_item_row.html' %}
+                                {% endfor %}
+                            </tbody>
+                            <tfoot>
+                                <tr class="table-secondary">
+                                    <th colspan="5" class="text-end">Subtotal:</th>
+                                    <td><strong>${{ "%.2f"|format((po_context.header.total_cost or 0) - (po_context.header.shipping_cost or 0) - (po_context.header.tax_amount or 0)) }}</strong></td>
+                                    <td></td>
+                                </tr>
+                                <tr class="table-secondary">
+                                    <th colspan="5" class="text-end">Shipping:</th>
+                                    <td><strong>${{ "%.2f"|format(po_context.header.shipping_cost or 0) }}</strong></td>
+                                    <td></td>
+                                </tr>
+                                <tr class="table-secondary">
+                                    <th colspan="5" class="text-end">Tax:</th>
+                                    <td><strong>${{ "%.2f"|format(po_context.header.tax_amount or 0) }}</strong></td>
+                                    <td></td>
+                                </tr>
+                                <tr class="table-primary">
+                                    <th colspan="5" class="text-end">Total:</th>
+                                    <td><strong>${{ "%.2f"|format(po_context.header.total_cost or 0) }}</strong></td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> No line items. Add line items above.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Part Picker Portal -->
+    <div class="row mb-4">
+        <div class="col-12" 
+             id="part-picker-container"
+             hx-get="{{ url_for('inventory.purchase_order_part_picker', mode='description', po_id=po_context.purchase_order_id) }}"
+             hx-trigger="load"
+             hx-swap="innerHTML">
+            <!-- Part picker will be loaded here via HTMX -->
+        </div>
+    </div>
+</div>
+
+<script>
+// Handle part selection - add to purchase order
+window.selectPartForPO = function(partId, partNumber, partName, unitCost) {
+    console.log('selectPartForPO called:', { partId, partNumber, partName, unitCost });
+    
+    // Validate inputs
+    if (!partId) {
+        window.alert('Part ID is required');
+        return;
+    }
+    
+    // Create form data
+    const formData = new FormData();
+    formData.append('part_id', partId);
+    formData.append('quantity', '1'); // Default quantity
+    formData.append('unit_cost', unitCost || '0');
+    
+    const url = '{{ url_for("inventory.purchase_order_add_part", po_id=po_context.purchase_order_id) }}';
+    console.log('Submitting to:', url);
+    console.log('Form data:', {
+        part_id: partId,
+        quantity: '1',
+        unit_cost: unitCost || '0'
+    });
+    
+    // Show loading indicator
+    const loadingMsg = document.createElement('div');
+    loadingMsg.className = 'alert alert-info';
+    loadingMsg.textContent = 'Adding part...';
+    loadingMsg.style.position = 'fixed';
+    loadingMsg.style.top = '20px';
+    loadingMsg.style.right = '20px';
+    loadingMsg.style.zIndex = '9999';
+    document.body.appendChild(loadingMsg);
+    
+    // Submit via fetch with HTMX header
+    fetch(url, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'HX-Request': 'true'
+        }
+    }).then(response => {
+        console.log('Response status:', response.status);
+        return response.text().then(text => {
+            console.log('Response text:', text);
+            
+            // Remove loading indicator
+            if (loadingMsg.parentNode) {
+                loadingMsg.parentNode.removeChild(loadingMsg);
+            }
+            
+            if (response.ok) {
+                // Show success message
+                const successMsg = document.createElement('div');
+                successMsg.className = 'alert alert-success';
+                successMsg.textContent = 'Part added successfully! Reloading...';
+                successMsg.style.position = 'fixed';
+                successMsg.style.top = '20px';
+                successMsg.style.right = '20px';
+                successMsg.style.zIndex = '9999';
+                document.body.appendChild(successMsg);
+                
+                // Insert the response (which includes a script to reload)
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = text;
+                document.body.appendChild(tempDiv);
+                
+                // Execute any scripts in the response
+                const scripts = tempDiv.querySelectorAll('script');
+                scripts.forEach(script => {
+                    const newScript = document.createElement('script');
+                    newScript.textContent = script.textContent;
+                    document.body.appendChild(newScript);
+                });
+                
+                // Fallback: reload after 1 second if script didn't execute
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                // Show error message
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = text;
+                const alertElement = tempDiv.querySelector('.alert');
+                
+                const errorMsg = document.createElement('div');
+                errorMsg.className = 'alert alert-danger';
+                if (alertElement) {
+                    errorMsg.textContent = alertElement.textContent.trim();
+                } else {
+                    errorMsg.textContent = 'Error adding part to purchase order';
+                }
+                errorMsg.style.position = 'fixed';
+                errorMsg.style.top = '20px';
+                errorMsg.style.right = '20px';
+                errorMsg.style.zIndex = '9999';
+                document.body.appendChild(errorMsg);
+                
+                // Remove error message after 5 seconds
+                setTimeout(() => {
+                    if (errorMsg.parentNode) {
+                        errorMsg.parentNode.removeChild(errorMsg);
+                    }
+                }, 5000);
+            }
+        });
+    }).catch(error => {
+        console.error('Error:', error);
+        
+        // Remove loading indicator
+        if (loadingMsg.parentNode) {
+            loadingMsg.parentNode.removeChild(loadingMsg);
+        }
+        
+        // Show error message
+        const errorMsg = document.createElement('div');
+        errorMsg.className = 'alert alert-danger';
+        errorMsg.textContent = 'Error adding part to purchase order: ' + error.message;
+        errorMsg.style.position = 'fixed';
+        errorMsg.style.top = '20px';
+        errorMsg.style.right = '20px';
+        errorMsg.style.zIndex = '9999';
+        document.body.appendChild(errorMsg);
+        
+        // Remove error message after 5 seconds
+        setTimeout(() => {
+            if (errorMsg.parentNode) {
+                errorMsg.parentNode.removeChild(errorMsg);
+            }
+        }, 5000);
+    });
+};
+</script>
+{% endblock %}
+

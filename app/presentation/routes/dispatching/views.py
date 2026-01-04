@@ -15,6 +15,21 @@ from app.data.core.user_info.user import User
 @dispatching_bp.route('/')
 @login_required
 def index():
+    """Dispatching module landing page with links to dispatcher and user portals"""
+    return render_template('dispatching/index.html')
+
+
+@dispatching_bp.route('/user-portal')
+@login_required
+def user_portal():
+    """User portal for viewing assigned vehicles and work assignments"""
+    # TODO: Implement user portal functionality
+    return render_template('dispatching/user_portal.html')
+
+
+@dispatching_bp.route('/dispatcher-portal')
+@login_required
+def dispatcher_portal():
     """Dispatch console with overview statistics and recent activity"""
     from app.data.dispatching.outcomes.standard_dispatch import StandardDispatch
     from app.data.dispatching.outcomes.contract import Contract
@@ -58,7 +73,7 @@ def index():
         'total_reimbursements': total_reimbursements
     }
     
-    return render_template('dispatching/index.html', 
+    return render_template('dispatching/dispatcher_portal.html', 
                          stats=stats,
                          recent_requests=recent_requests,
                          upcoming=upcoming,
@@ -173,7 +188,31 @@ def dispatches_detail(item_id):
     from app.data.dispatching.outcomes.standard_dispatch import StandardDispatch
     dispatch = StandardDispatch.query.get_or_404(item_id)
     ctx = DispatchContext.from_request_id(dispatch.request_id)
-    return render_template('dispatching/dispatches_detail.html', ctx=ctx, item=dispatch, dispatch=dispatch)
+    
+    # Get all outcomes for this request (excluding current dispatch to avoid duplication)
+    all_outcomes = []
+    other_outcomes = []
+    if ctx.dispatch:
+        all_outcomes.append(('dispatch', ctx.dispatch))
+        # Only add to other_outcomes if it's a different dispatch
+        if ctx.dispatch.id != dispatch.id:
+            other_outcomes.append(('dispatch', ctx.dispatch))
+    if ctx.contract:
+        all_outcomes.append(('contract', ctx.contract))
+        other_outcomes.append(('contract', ctx.contract))
+    if ctx.reimbursement:
+        all_outcomes.append(('reimbursement', ctx.reimbursement))
+        other_outcomes.append(('reimbursement', ctx.reimbursement))
+    if ctx.reject:
+        all_outcomes.append(('reject', ctx.reject))
+        other_outcomes.append(('reject', ctx.reject))
+    
+    return render_template('dispatching/dispatches_detail.html', 
+                         ctx=ctx, 
+                         item=dispatch, 
+                         dispatch=dispatch,
+                         all_outcomes=all_outcomes,
+                         other_outcomes=other_outcomes)
 
 
 # CRUD: Contract
@@ -252,11 +291,19 @@ def outcome_create(request_id, outcome_type):
                 # Parse assigned_by_id
                 assigned_by_id = int(form.get('assigned_by_id')) if form.get('assigned_by_id') else None
                 
+                # Parse assigned_to_id
+                assigned_to_id = int(form.get('assigned_to_id')) if form.get('assigned_to_id') else None
+                
+                # Parse assett_dispatched_id
+                assett_dispatched_id = int(form.get('assett_dispatched_id')) if form.get('assett_dispatched_id') else None
+                
                 # Parse conflicts_resolved
                 conflicts_resolved = form.get('conflicts_resolved') == '1'
                 
                 dispatch = ctx.create_dispatch_outcome(
                     assigned_by_id=assigned_by_id,
+                    assigned_to_id=assigned_to_id,
+                    assett_dispatched_id=assett_dispatched_id,
                     created_by_id=created_by_id,
                     scheduled_start=scheduled_start,
                     scheduled_end=scheduled_end,
@@ -330,6 +377,11 @@ def outcome_create(request_id, outcome_type):
     # Get data for forms
     assets = None
     users = None
+    default_scheduled_start = None
+    default_scheduled_end = None
+    default_assigned_by_id = None
+    default_assigned_to_id = None
+    
     if outcome_type == 'dispatch':
         # Get assets matching the request's asset type
         if ctx.request.asset_type_id:
@@ -339,12 +391,130 @@ def outcome_create(request_id, outcome_type):
         else:
             assets = Asset.query.limit(100).all()
         users = User.query.filter_by(is_active=True).all()
+        
+        # Pre-fill from request data
+        if ctx.request.desired_start:
+            # Format datetime for datetime-local input (YYYY-MM-DDTHH:MM)
+            default_scheduled_start = ctx.request.desired_start.strftime('%Y-%m-%dT%H:%M')
+        if ctx.request.desired_end:
+            default_scheduled_end = ctx.request.desired_end.strftime('%Y-%m-%dT%H:%M')
+        
+        # Default assigned_by to current user
+        if current_user.is_authenticated:
+            default_assigned_by_id = current_user.id
+        
+        # Default assigned_to to requester
+        if ctx.request.requester_id:
+            default_assigned_to_id = ctx.request.requester_id
     
     return render_template(f'dispatching/outcomes/{outcome_type}_form.html',
                          request_id=request_id,
                          request=ctx.request,
                          assets=assets or [],
-                         users=users or [])
+                         users=users or [],
+                         default_scheduled_start=default_scheduled_start,
+                         default_scheduled_end=default_scheduled_end,
+                         default_assigned_by_id=default_assigned_by_id,
+                         default_assigned_to_id=default_assigned_to_id)
+
+
+# Card rendering routes for sub-rendering
+@dispatching_bp.route('/requests/<int:request_id>/card/request')
+def request_card(request_id):
+    """Render request card"""
+    ctx = DispatchContext.from_request_id(request_id)
+    return render_template('dispatching/outcomes/request_card.html', request=ctx.request)
+
+
+@dispatching_bp.route('/outcomes/dispatch/<int:dispatch_id>/card')
+def dispatch_card(dispatch_id):
+    """Render dispatch outcome card"""
+    from app.data.dispatching.outcomes.standard_dispatch import StandardDispatch
+    dispatch = StandardDispatch.query.get_or_404(dispatch_id)
+    return render_template('dispatching/outcomes/dispatch_card.html', dispatch=dispatch)
+
+
+@dispatching_bp.route('/outcomes/contract/<int:contract_id>/card')
+def contract_card(contract_id):
+    """Render contract outcome card"""
+    from app.data.dispatching.outcomes.contract import Contract
+    contract = Contract.query.get_or_404(contract_id)
+    return render_template('dispatching/outcomes/contract_card.html', contract=contract)
+
+
+@dispatching_bp.route('/outcomes/reimbursement/<int:reimbursement_id>/card')
+def reimbursement_card(reimbursement_id):
+    """Render reimbursement outcome card"""
+    from app.data.dispatching.outcomes.reimbursement import Reimbursement
+    reimbursement = Reimbursement.query.get_or_404(reimbursement_id)
+    return render_template('dispatching/outcomes/reimbursement_card.html', reimbursement=reimbursement)
+
+
+@dispatching_bp.route('/outcomes/reject/<int:reject_id>/card')
+def reject_card(reject_id):
+    """Render reject outcome card"""
+    from app.data.dispatching.outcomes.reject import Reject
+    reject = Reject.query.get_or_404(reject_id)
+    return render_template('dispatching/outcomes/reject_card.html', reject=reject)
+
+
+@dispatching_bp.route('/requests/<int:request_id>/outcome/dispatch/asset-select-card')
+@login_required
+def asset_select_card(request_id):
+    """HTMX endpoint to return asset selection card with filters and asset list"""
+    from app.services.core.asset_service import AssetService
+    
+    ctx = DispatchContext.from_request_id(request_id)
+    
+    # Get filter parameters from request
+    asset_type_id = request.args.get('asset_type_id', type=int)
+    location_id = request.args.get('location_id', type=int)
+    make_model_id = request.args.get('make_model_id', type=int)
+    status = request.args.get('status', type=str)
+    serial_number = request.args.get('serial_number', type=str)
+    name = request.args.get('name', type=str)
+    
+    # Build filtered query using AssetService
+    # Only pass asset_type_id if explicitly provided, otherwise let it default from request
+    filter_asset_type_id = asset_type_id if asset_type_id else (ctx.request.asset_type_id if ctx.request.asset_type_id else None)
+    
+    query = AssetService.build_filtered_query(
+        asset_type_id=filter_asset_type_id,
+        location_id=location_id,
+        make_model_id=make_model_id,
+        status=status,
+        serial_number=serial_number,
+        name=name
+    )
+    
+    # Get assets (limit to 50 for the selection card)
+    assets = query.limit(50).all()
+    
+    # Get filter options
+    asset_types = AssetType.query.filter_by(is_active=True).all()
+    locations = MajorLocation.query.all()
+    make_models = []
+    if asset_type_id or ctx.request.asset_type_id:
+        from app.data.core.asset_info.make_model import MakeModel
+        make_models = MakeModel.query.filter_by(
+            asset_type_id=asset_type_id or ctx.request.asset_type_id
+        ).all()
+    
+    return render_template('dispatching/outcomes/asset_select_card.html',
+                         request_id=request_id,
+                         request=ctx.request,
+                         assets=assets,
+                         asset_types=asset_types,
+                         locations=locations,
+                         make_models=make_models,
+                         current_filters={
+                             'asset_type_id': asset_type_id or ctx.request.asset_type_id,
+                             'location_id': location_id,
+                             'make_model_id': make_model_id,
+                             'status': status,
+                             'serial_number': serial_number,
+                             'name': name
+                         })
 
 
 

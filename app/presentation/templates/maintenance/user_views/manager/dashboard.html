@@ -135,19 +135,19 @@
             </div>
         </div>
 
-        <!-- Approve & Review -->
+        <!-- Part Demands -->
         <div class="col-lg-4 col-md-6">
-            <div class="card workflow-card danger shadow-sm">
+            <div class="card workflow-card warning shadow-sm">
                 <div class="card-body text-center d-flex flex-column p-4">
-                    <div class="workflow-icon text-danger">
-                        <i class="bi bi-check-circle"></i>
+                    <div class="workflow-icon text-warning">
+                        <i class="bi bi-box-seam"></i>
                     </div>
-                    <h4 class="card-title mb-3">Approve & Review</h4>
+                    <h4 class="card-title mb-3">Part Demands</h4>
                     <p class="card-text flex-grow-1 mb-3">
-                        Approve part demands, review delays, and manage maintenance approvals.
+                        View and approve part demands with filters and bulk actions for efficient management.
                     </p>
-                    <a href="{{ url_for('manager_portal.approve_review') }}" class="btn btn-danger btn-lg mt-auto">
-                        <i class="bi bi-arrow-right-circle"></i> Approve & Review
+                    <a href="{{ url_for('manager_portal.part_demands') }}" class="btn btn-warning btn-lg mt-auto">
+                        <i class="bi bi-arrow-right-circle"></i> Part Demands
                     </a>
                 </div>
             </div>
@@ -184,6 +184,24 @@
                     </p>
                     <a href="{{ url_for('manager_portal.plan_maintenance') }}" class="btn btn-success btn-lg mt-auto">
                         <i class="bi bi-arrow-right-circle"></i> Plan Maintenance
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Approve & Review -->
+        <div class="col-lg-4 col-md-6">
+            <div class="card workflow-card danger shadow-sm">
+                <div class="card-body text-center d-flex flex-column p-4">
+                    <div class="workflow-icon text-danger">
+                        <i class="bi bi-check-circle"></i>
+                    </div>
+                    <h4 class="card-title mb-3">Approve & Review</h4>
+                    <p class="card-text flex-grow-1 mb-3">
+                        Approve part demands, review blockers, and manage maintenance approvals.
+                    </p>
+                    <a href="{{ url_for('manager_portal.approve_review') }}" class="btn btn-danger btn-lg mt-auto">
+                        <i class="bi bi-arrow-right-circle"></i> Approve & Review
                     </a>
                 </div>
             </div>

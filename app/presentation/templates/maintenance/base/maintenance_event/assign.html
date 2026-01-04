@@ -135,7 +135,7 @@
                     </div>
                     <div class="col-md-6 mb-2">
                         <strong>Status:</strong> 
-                        <span class="badge bg-{% if maintenance.status == 'Planned' %}secondary{% elif maintenance.status == 'In Progress' %}primary{% elif maintenance.status == 'Delayed' %}warning{% else %}success{% endif %}">
+                        <span class="badge bg-{% if maintenance.status == 'Planned' %}secondary{% elif maintenance.status == 'In Progress' %}primary{% elif maintenance.status == 'Delayed' or maintenance.status == 'Blocked' %}danger{% else %}success{% endif %}">
                             {{ maintenance.status }}
                         </span>
                     </div>

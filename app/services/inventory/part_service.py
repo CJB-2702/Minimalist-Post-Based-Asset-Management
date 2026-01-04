@@ -5,8 +5,8 @@ Presentation service for part-related queries (stock status, demands).
 
 from typing import Dict, List, Optional, Any
 from app.data.maintenance.base.part_demands import PartDemand
-from app.data.core.supply.part import Part
-from app.services.inventory.inventory_service import InventoryService
+from app.data.core.supply.part_definition import PartDefinition
+from app.services.inventory.inventory.inventory_service import InventoryService
 
 
 class PartService:
@@ -51,43 +51,6 @@ class PartService:
         ).order_by(PartDemand.created_at.desc()).limit(limit).all()
     
     @staticmethod
-    def get_stock_status(part_id: int) -> Dict[str, Any]:
-        """
-        Get stock status for a part.
-        
-        Args:
-            part_id: Part ID
-            
-        Returns:
-            Dictionary with stock status information
-        """
-        part = Part.query.get(part_id)
-        if not part:
-            return {'error': 'Part not found'}
-        
-        current_stock = part.current_stock_level or 0
-        minimum_stock = part.minimum_stock_level or 0
-        
-        is_low_stock = minimum_stock > 0 and current_stock <= minimum_stock
-        is_out_of_stock = current_stock <= 0
-        
-        if is_out_of_stock:
-            stock_status = 'out'
-        elif is_low_stock:
-            stock_status = 'low'
-        else:
-            stock_status = 'in_stock'
-        
-        return {
-            'part_id': part_id,
-            'current_stock_level': current_stock,
-            'minimum_stock_level': minimum_stock,
-            'is_low_stock': is_low_stock,
-            'is_out_of_stock': is_out_of_stock,
-            'stock_status': stock_status
-        }
-    
-    @staticmethod
     def get_stock_summary(part_id: int) -> Dict[str, Any]:
         """
         Get comprehensive stock summary for a part.
@@ -100,17 +63,10 @@ class PartService:
         Returns:
             Dictionary with comprehensive stock information
         """
-        # Get basic stock status
-        stock_status = PartService.get_stock_status(part_id)
-        
         # Get inventory summary across all locations
         inventory_summary = InventoryService.get_stock_summary(part_id)
         
-        # Combine information
-        return {
-            **stock_status,
-            **inventory_summary
-        }
+        return inventory_summary
     
     @staticmethod
     def get_demand_count(part_id: int) -> int:

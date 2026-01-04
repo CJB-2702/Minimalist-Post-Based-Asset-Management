@@ -18,7 +18,7 @@ class ProtoActionTool(VirtualActionTool):
     
     # Relationships
     proto_action_item = relationship('ProtoActionItem', back_populates='proto_action_tools')
-    tool = relationship('Tool', foreign_keys='ProtoActionTool.tool_id', lazy='select')
+    tool = relationship('ToolDefinition', foreign_keys='ProtoActionTool.tool_id', lazy='select')
     
     def __repr__(self):
         tool_name = self.tool.tool_name if self.tool else "Unknown"

@@ -1,0 +1,38 @@
+<div class="row g-3">
+    <div class="col-md-6">
+        <label for="vendor_name" class="form-label">Vendor Name <span class="text-danger">*</span></label>
+        <input type="text" class="form-control" id="vendor_name" name="vendor_name" required>
+    </div>
+    <div class="col-md-6">
+        <label for="vendor_contact" class="form-label">Vendor Contact</label>
+        <input type="text" class="form-control" id="vendor_contact" name="vendor_contact">
+    </div>
+    <div class="col-md-6">
+        <label for="location_id" class="form-label">Delivery Location *</label>
+        <select class="form-select" id="location_id" name="location_id" required>
+            <option value="">Select Location</option>
+            {% for location in locations %}
+            <option value="{{ location.id }}">{{ location.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-6">
+        <label for="expected_delivery_date" class="form-label">Expected Delivery Date</label>
+        <input type="date" class="form-control" id="expected_delivery_date" name="expected_delivery_date">
+    </div>
+    <div class="col-md-4">
+        <label for="shipping_cost" class="form-label">Shipping Cost</label>
+        <input type="number" class="form-control" id="shipping_cost" name="shipping_cost" 
+               step="0.01" min="0" value="0.00">
+    </div>
+    <div class="col-md-4">
+        <label for="tax_amount" class="form-label">Tax Amount</label>
+        <input type="number" class="form-control" id="tax_amount" name="tax_amount" 
+               step="0.01" min="0" value="0.00">
+    </div>
+    <div class="col-md-12">
+        <label for="notes" class="form-label">Notes</label>
+        <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+    </div>
+</div>
+

@@ -105,7 +105,17 @@ def edit(asset_type_id):
         existing_asset_type = AssetType.query.filter_by(name=name).first()
         if existing_asset_type and existing_asset_type.id != asset_type.id:
             flash('Asset type name already exists', 'error')
-            return render_template('core/asset_types/edit.html', asset_type=asset_type, Asset=Asset, MakeModel=MakeModel)
+            # Get counts for template
+            total_make_models = MakeModel.query.filter_by(asset_type_id=asset_type.id).count()
+            active_make_models = MakeModel.query.filter_by(asset_type_id=asset_type.id, is_active=True).count()
+            inactive_make_models = MakeModel.query.filter_by(asset_type_id=asset_type.id, is_active=False).count()
+            return render_template('core/asset_types/edit.html', 
+                                 asset_type=asset_type, 
+                                 Asset=Asset, 
+                                 MakeModel=MakeModel,
+                                 total_make_models=total_make_models,
+                                 active_make_models=active_make_models,
+                                 inactive_make_models=inactive_make_models)
         
         # Update asset type
         asset_type.name = name
@@ -119,7 +129,18 @@ def edit(asset_type_id):
         flash('Asset type updated successfully', 'success')
         return redirect(url_for('asset_types.detail', asset_type_id=asset_type.id))
     
-    return render_template('core/asset_types/edit.html', asset_type=asset_type, Asset=Asset, MakeModel=MakeModel)
+    # Get counts for template
+    total_make_models = MakeModel.query.filter_by(asset_type_id=asset_type.id).count()
+    active_make_models = MakeModel.query.filter_by(asset_type_id=asset_type.id, is_active=True).count()
+    inactive_make_models = MakeModel.query.filter_by(asset_type_id=asset_type.id, is_active=False).count()
+    
+    return render_template('core/asset_types/edit.html', 
+                         asset_type=asset_type, 
+                         Asset=Asset, 
+                         MakeModel=MakeModel,
+                         total_make_models=total_make_models,
+                         active_make_models=active_make_models,
+                         inactive_make_models=inactive_make_models)
 
 @bp.route('/asset-types/<int:asset_type_id>/delete', methods=['POST'])
 @login_required

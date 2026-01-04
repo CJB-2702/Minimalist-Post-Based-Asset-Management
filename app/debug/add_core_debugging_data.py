@@ -226,20 +226,57 @@ def _insert_assets(assets_data, system_user_id):
 
 def _insert_supply(supply_data, system_user_id):
     """Insert supply data (parts and tools) - now part of core"""
-    from app.data.core.supply.part import Part
-    from app.data.core.supply.tool import Tool
+    from app.data.core.supply.part_definition import PartDefinition
+    from app.data.core.supply.tool_definition import ToolDefinition
     from app.data.core.user_info.user import User
     from datetime import datetime
     
     # Insert parts
     if 'parts' in supply_data:
         for part_data in supply_data['parts']:
-            Part.find_or_create_from_dict(
+            # Make a copy to avoid modifying the original
+            part_data = part_data.copy()
+            
+            # Map unit_cost to last_unit_cost if present
+            if 'unit_cost' in part_data and 'last_unit_cost' not in part_data:
+                part_data['last_unit_cost'] = part_data.pop('unit_cost')
+            
+            # Remove fields that shouldn't be in PartDefinition
+            inventory_fields = ['current_stock_level', 'minimum_stock_level', 'maximum_stock_level']
+            for field in inventory_fields:
+                part_data.pop(field, None)
+            
+            # Find or create the part
+            part, created = PartDefinition.find_or_create_from_dict(
                 part_data,
                 user_id=system_user_id,
-                lookup_fields=['part_number']
+                lookup_fields=['part_number'],
+                commit=False  # Don't commit yet, we'll update if needed
             )
-            logger.debug(f"Inserted part: {part_data.get('part_number')}")
+            
+            if created:
+                logger.debug(f"Created new part: {part.part_number}")
+            else:
+                # Update existing part with new data, especially last_unit_cost
+                updated = False
+                for key, value in part_data.items():
+                    # Skip audit fields and fields that are None
+                    if key in ['created_by_id', 'updated_by_id', 'created_at', 'updated_at']:
+                        continue
+                    if value is None:
+                        continue
+                    
+                    # Update the field if it's different
+                    if hasattr(part, key) and getattr(part, key) != value:
+                        setattr(part, key, value)
+                        updated = True
+                        logger.debug(f"Updated {key} for part {part.part_number}: {getattr(part, key)} -> {value}")
+                
+                if updated:
+                    part.updated_by_id = system_user_id
+                    logger.info(f"Updated existing part: {part.part_number}")
+                else:
+                    logger.debug(f"Part {part.part_number} already up to date")
     
     # Insert tools
     if 'tools' in supply_data:
@@ -260,7 +297,7 @@ def _insert_supply(supply_data, system_user_id):
                         logger.warning(f"Invalid date format for {date_field}")
                         tool_data.pop(date_field, None)
             
-            Tool.find_or_create_from_dict(
+            ToolDefinition.find_or_create_from_dict(
                 tool_data,
                 user_id=system_user_id,
                 lookup_fields=['tool_name']

@@ -6,7 +6,7 @@ from flask_login import login_required, current_user
 from app.logger import get_logger
 from app import db
 from app.data.maintenance.base.part_demands import PartDemand
-from app.buisness.maintenance.base.maintenance_action_set_struct import MaintenanceActionSetStruct
+from app.buisness.maintenance.base.structs.maintenance_action_set_struct import MaintenanceActionSetStruct
 from app.buisness.maintenance.base.maintenance_context import MaintenanceContext
 from app.buisness.core.event_context import EventContext
 
@@ -38,8 +38,8 @@ def issue_part_demand(part_demand_id):
         # Generate automated comment
         if struct.event_id:
             event_context = EventContext(struct.event_id)
-            from app.data.core.supply.part import Part
-            part = Part.query.get(part_demand.part_id)
+            from app.data.core.supply.part_definition import PartDefinition
+            part = PartDefinition.query.get(part_demand.part_id)
             part_name = part.part_name if part else f"Part #{part_demand.part_id}"
             comment_text = f"Part issued: {part_name} x{part_demand.quantity_required} by {current_user.username}"
             event_context.add_comment(
@@ -104,8 +104,8 @@ def cancel_part_demand(part_demand_id):
         # Generate automated comment
         if struct.event_id:
             event_context = EventContext(struct.event_id)
-            from app.data.core.supply.part import Part
-            part = Part.query.get(part_demand.part_id)
+            from app.data.core.supply.part_definition import PartDefinition
+            part = PartDefinition.query.get(part_demand.part_id)
             part_name = part.part_name if part else f"Part #{part_demand.part_id}"
             comment_text = f"Part demand cancelled: {part_name} x{part_demand.quantity_required} by {current_user.username}. Reason: {cancellation_comment}"
             event_context.add_comment(
@@ -164,8 +164,8 @@ def undo_part_demand(part_demand_id):
         # Generate automated comment
         if struct.event_id:
             event_context = EventContext(struct.event_id)
-            from app.data.core.supply.part import Part
-            part = Part.query.get(part_demand.part_id)
+            from app.data.core.supply.part_definition import PartDefinition
+            part = PartDefinition.query.get(part_demand.part_id)
             part_name = part.part_name if part else f"Part #{part_demand.part_id}"
             comment_text = f"Part demand reset to planned: {part_name} x{part_demand.quantity_required} by {current_user.username}"
             event_context.add_comment(
@@ -274,8 +274,8 @@ def update_part_demand(part_demand_id):
         # Generate automated comment
         if struct.event_id:
             event_context = EventContext(struct.event_id)
-            from app.data.core.supply.part import Part
-            part = Part.query.get(part_demand.part_id)
+            from app.data.core.supply.part_definition import PartDefinition
+            part = PartDefinition.query.get(part_demand.part_id)
             part_name = part.part_name if part else f"Part #{part_demand.part_id}"
             comment_text = f"Part demand updated: {part_name} x{part_demand.quantity_required} by {current_user.username}"
             if status:

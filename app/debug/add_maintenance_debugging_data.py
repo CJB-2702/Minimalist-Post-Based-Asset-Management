@@ -152,7 +152,7 @@ def _insert_proto_part_demands(demands_data, system_user_id):
     """Insert proto part demands"""
     from app.data.maintenance.proto_templates.proto_part_demands import ProtoPartDemand
     from app.data.maintenance.proto_templates.proto_actions import ProtoActionItem
-    from app.data.core.supply.part import Part
+    from app.data.core.supply.part_definition import PartDefinition
     
     for demand_data in demands_data:
         # Make a copy to avoid modifying the original
@@ -180,7 +180,7 @@ def _insert_proto_part_demands(demands_data, system_user_id):
         # Handle part_number reference
         if 'part_number' in demand_data:
             part_number = demand_data.pop('part_number')
-            part = Part.query.filter_by(part_number=part_number).first()
+            part = PartDefinition.query.filter_by(part_number=part_number).first()
             if part:
                 demand_data['part_id'] = part.id
                 logger.debug(f"Found part '{part_number}' (id={part.id})")
@@ -216,7 +216,7 @@ def _insert_proto_action_tools(tools_data, system_user_id):
     """Insert proto action tools"""
     from app.data.maintenance.proto_templates.proto_action_tools import ProtoActionTool
     from app.data.maintenance.proto_templates.proto_actions import ProtoActionItem
-    from app.data.core.supply.tool import Tool
+    from app.data.core.supply.tool_definition import ToolDefinition
     
     for tool_data in tools_data:
         # Make a copy to avoid modifying the original
@@ -243,7 +243,7 @@ def _insert_proto_action_tools(tools_data, system_user_id):
         # Handle tool_name reference
         if 'tool_name' in tool_data:
             tool_name = tool_data.pop('tool_name')
-            tool = Tool.query.filter_by(tool_name=tool_name).first()
+            tool = ToolDefinition.query.filter_by(tool_name=tool_name).first()
             if tool:
                 tool_data['tool_id'] = tool.id
                 logger.debug(f"Found tool '{tool_name}' (id={tool.id})")
@@ -279,7 +279,7 @@ def _insert_template_part_demands(demands_data, system_user_id):
     """Insert template part demands"""
     from app.data.maintenance.templates.template_part_demands import TemplatePartDemand
     from app.data.maintenance.templates.template_actions import TemplateActionItem
-    from app.data.core.supply.part import Part
+    from app.data.core.supply.part_definition import PartDefinition
     
     for demand_data in demands_data:
         # Handle template_action_item reference
@@ -295,7 +295,7 @@ def _insert_template_part_demands(demands_data, system_user_id):
         # Handle part_number reference
         if 'part_number' in demand_data:
             part_number = demand_data.pop('part_number')
-            part = Part.query.filter_by(part_number=part_number).first()
+            part = PartDefinition.query.filter_by(part_number=part_number).first()
             if part:
                 demand_data['part_id'] = part.id
             else:
@@ -374,7 +374,7 @@ def _insert_template_action_tools(tools_data, system_user_id):
     """Insert template action tools (explicit ones from JSON, in addition to auto-copied ones)"""
     from app.data.maintenance.templates.template_action_tools import TemplateActionTool
     from app.data.maintenance.templates.template_actions import TemplateActionItem
-    from app.data.core.supply.tool import Tool
+    from app.data.core.supply.tool_definition import ToolDefinition
     
     for tool_data in tools_data:
         # Make a copy to avoid modifying the original
@@ -393,7 +393,7 @@ def _insert_template_action_tools(tools_data, system_user_id):
         # Handle tool_name reference
         if 'tool_name' in tool_data:
             tool_name = tool_data.pop('tool_name')
-            tool = Tool.query.filter_by(tool_name=tool_name).first()
+            tool = ToolDefinition.query.filter_by(tool_name=tool_name).first()
             if tool:
                 tool_data['tool_id'] = tool.id
             else:

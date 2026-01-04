@@ -34,6 +34,10 @@ class Event(UserCreatedBase, DataInsertionMixin):
     def __repr__(self):
         return f'<Event {self.event_type}: {self.description}>'
     
+    property
+    def valid_statuses(self):
+        return ['Planned', 'In Progress', 'Complete', 'Cancelled','Failed', 'Skipped', 'Blocked']
+    
     @classmethod
     def add_event(cls, event_type, description, user_id=None, asset_id=None, major_location_id=None, status=None):
         """

@@ -5,7 +5,7 @@ Provides a clean interface for managing parts and their related data.
 
 from typing import List, Optional, Union
 from app import db
-from app.data.core.supply.part import Part
+from app.data.core.supply.part_definition import PartDefinition
 from app.data.maintenance.base.part_demands import PartDemand
 
 
@@ -17,15 +17,15 @@ class PartContext:
     - Accessing part, part demands, stock status
     """
     
-    def __init__(self, part: Union[Part, int]):
+    def __init__(self, part: Union[PartDefinition, int]):
         """
-        Initialize PartContext with a Part instance or ID.
+        Initialize PartContext with a PartDefinition instance or ID.
         
         Args:
-            part: Part instance or part ID
+            part: PartDefinition instance or part ID
         """
         if isinstance(part, int):
-            self._part = Part.query.get_or_404(part)
+            self._part = PartDefinition.query.get_or_404(part)
             self._part_id = part
         else:
             self._part = part
@@ -35,8 +35,8 @@ class PartContext:
         self._part_demands = None
     
     @property
-    def part(self) -> Part:
-        """Get the Part instance"""
+    def part(self) -> PartDefinition:
+        """Get the PartDefinition instance"""
         return self._part
     
     @property
@@ -74,28 +74,6 @@ class PartContext:
         # Import here to avoid circular import
         from app.services.inventory.part_service import PartService
         return PartService.get_recent_demands(self._part_id, limit)
-    
-    @property
-    def is_low_stock(self) -> bool:
-        """Check if part is low on stock"""
-        if self._part.minimum_stock_level is None:
-            return False
-        return self._part.current_stock_level <= self._part.minimum_stock_level
-    
-    @property
-    def is_out_of_stock(self) -> bool:
-        """Check if part is out of stock"""
-        return self._part.current_stock_level <= 0
-    
-    @property
-    def stock_status(self) -> str:
-        """Get stock status as string"""
-        if self.is_out_of_stock:
-            return 'out'
-        elif self.is_low_stock:
-            return 'low'
-        else:
-            return 'in_stock'
     
     @property
     def demand_count(self) -> int:

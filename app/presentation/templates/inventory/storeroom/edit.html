@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}Edit {{ storeroom.room_name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Page Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="bi bi-pencil text-primary"></i> Edit Storeroom
+                    </h1>
+                    <p class="text-muted mb-0">{{ storeroom.room_name }}</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('inventory.storeroom_build', storeroom_id=storeroom.id) }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Cancel
+                    </a>
+                </div>
+            </div>
+
+            <!-- Edit Form -->
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('inventory.storeroom_edit', storeroom_id=storeroom.id) }}">
+                        <div class="mb-3">
+                            <label for="room_name" class="form-label">
+                                Storeroom Name <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="room_name" name="room_name" 
+                                   value="{{ storeroom.room_name }}" required
+                                   autofocus>
+                            <div class="form-text">A descriptive name for this storeroom</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="major_location_id" class="form-label">
+                                Major Location <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="major_location_id" name="major_location_id" required>
+                                <option value="">Select a major location...</option>
+                                {% for location in major_locations %}
+                                <option value="{{ location.id }}" 
+                                        {% if location.id == storeroom.major_location_id %}selected{% endif %}>
+                                    {{ location.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">The facility where this storeroom is located</div>
+                            {% if storeroom.active_inventory.count() > 0 %}
+                            <div class="alert alert-warning mt-2 mb-0">
+                                <i class="bi bi-exclamation-triangle"></i> 
+                                Cannot change major location: {{ storeroom.active_inventory.count() }} inventory records exist
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="address" class="form-label">Address/Notes</label>
+                            <textarea class="form-control" id="address" name="address" rows="4">{{ storeroom.address or '' }}</textarea>
+                            <div class="form-text">Optional: physical address or descriptive notes</div>
+                        </div>
+                        
+                        <hr class="my-4">
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('inventory.storeroom_build', storeroom_id=storeroom.id) }}" 
+                               class="btn btn-outline-secondary">
+                                <i class="bi bi-x-lg"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg"></i> Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Danger Zone -->
+            <div class="card border-danger shadow-sm mt-4">
+                <div class="card-header bg-danger text-white">
+                    <h6 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Danger Zone</h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2">
+                        <strong>Delete this storeroom:</strong> This will permanently delete the storeroom, 
+                        all its locations, and all bins. This action cannot be undone.
+                    </p>
+                    {% if storeroom.active_inventory.count() > 0 %}
+                    <button class="btn btn-danger" disabled>
+                        <i class="bi bi-trash"></i> Cannot Delete ({{ storeroom.active_inventory.count() }} inventory records)
+                    </button>
+                    {% else %}
+                    <button type="button" class="btn btn-danger" onclick="confirmDelete()">
+                        <i class="bi bi-trash"></i> Delete Storeroom
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Form (hidden) -->
+<form id="deleteForm" method="POST" action="{{ url_for('inventory.storeroom_delete', storeroom_id=storeroom.id) }}" style="display:none;"></form>
+
+<script>
+function confirmDelete() {
+    if (confirm('Are you sure you want to delete this storeroom?\n\nThis will also delete all locations and bins. This action cannot be undone.')) {
+        document.getElementById('deleteForm').submit();
+    }
+}
+</script>
+{% endblock %}
+

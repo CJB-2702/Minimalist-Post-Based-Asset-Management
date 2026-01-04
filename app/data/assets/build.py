@@ -30,6 +30,9 @@ def build_models():
     import app.data.assets.model_details.emissions_info
     import app.data.assets.model_details.model_info
     
+    # Import asset parent history
+    import app.data.assets.asset_parent_history
+    
     # Import detail table templates
     import app.data.assets.detail_table_templates.asset_details_from_asset_type
     import app.data.assets.detail_table_templates.asset_details_from_model_type

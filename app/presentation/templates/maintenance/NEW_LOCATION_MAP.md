@@ -28,7 +28,7 @@ Core maintenance operations and base templates moved here:
 | `action_creator_portal.html` | `base/action_creator_portal.html` | Moved |
 | `actions/` | `base/actions/` | Moved |
 | `create_maintenance_event.html` | `base/create_maintenance_event.html` | Moved |
-| `delays/` | `base/delays/` | Moved |
+| `blockers/` | `base/blockers/` | Moved |
 | `do_maintenance.html` | `base/do_maintenance.html` | Moved |
 | `edit_maintenance_event.html` | `base/edit_maintenance_event.html` | Moved |
 | `event_portal/` | `base/event_portal/` | Moved |
@@ -91,7 +91,7 @@ All route handlers that reference these templates need to be updated with the ne
 - `maintenance/action_creator_portal.html` → `maintenance/base/action_creator_portal.html`
 - `maintenance/event_portal/...` → `maintenance/base/event_portal/...`
 - `maintenance/actions/...` → `maintenance/base/actions/...`
-- `maintenance/delays/...` → `maintenance/base/delays/...`
+- `maintenance/blockers/...` → `maintenance/base/blockers/...`
 - `maintenance/part_demands/...` → `maintenance/base/part_demands/...`
 - `maintenance/maintenance_action_sets/...` → `maintenance/base/maintenance_action_sets/...`
 - `maintenance/maintenance_event/...` → `maintenance/base/maintenance_event/...`

@@ -87,9 +87,6 @@
                                             <a class="dropdown-item" href="{{ url_for('core_supply_tools.list') }}">
                                                 <i class="bi bi-tools"></i> Tool Definitions
                                             </a>
-                                            <a class="dropdown-item" href="{{ url_for('core_supply_issuable_tools.list') }}">
-                                                <i class="bi bi-wrench"></i> Issuable Tools
-                                            </a>
                                             <hr class="dropdown-divider m-0">
                                             
                                             <!-- User Info Section -->
@@ -153,6 +150,39 @@
                             <li><a class="dropdown-item" href="{{ url_for('technician_portal.continue_discussion') }}">
                                 <i class="bi bi-chat-dots"></i> Continue Discussion
                             </a></li>
+                        </ul>
+                    </li>
+                    
+                    <!-- Inventory -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            Inventory
+                        </a>
+                        <ul class="dropdown-menu">
+                            {% if endpoint_exists('inventory.index') %}
+                            <li><a class="dropdown-item" href="{{ url_for('inventory.index') }}">
+                                <i class="bi bi-speedometer2"></i> Inventory Management Portal
+                            </a></li>
+                            {% endif %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li><h6 class="dropdown-header">
+                                <i class="bi bi-box-seam"></i> Portals
+                            </h6></li>
+                            {% if endpoint_exists('inventory.purchase_orders_list') %}
+                            <li><a class="dropdown-item" href="{{ url_for('inventory.purchase_orders_list') }}">
+                                <i class="bi bi-receipt"></i> Purchase Order Portal
+                            </a></li>
+                            {% endif %}
+                            {% if endpoint_exists('inventory.create_po_from_single_maintenance') %}
+                            <li><a class="dropdown-item" href="{{ url_for('inventory.create_po_from_single_maintenance') }}">
+                                <i class="bi bi-cart-plus"></i> Create PO (Single Maintenance)
+                            </a></li>
+                            {% endif %}
+                            {% if endpoint_exists('inventory.arrivals_index') %}
+                            <li><a class="dropdown-item" href="{{ url_for('inventory.arrivals_index') }}">
+                                <i class="bi bi-box-arrow-in-down"></i> Arrivals
+                            </a></li>
+                            {% endif %}
                         </ul>
                     </li>
                     

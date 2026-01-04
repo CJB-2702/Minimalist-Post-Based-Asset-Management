@@ -267,7 +267,7 @@ FUNCTIONS (4 total):
 
 
 --------------------------------------------------------------------------------
-File: app/presentation/routes/maintenance/core/delays.py
+File: app/presentation/routes/maintenance/core/blockers.py
 Blueprint: maintenance_bp
 URL Prefix: /maintenance
 
@@ -299,7 +299,7 @@ NEW FILES (core directory):
 - action_managment.py: 11 routes, 11 functions
 - tool.py: 2 routes, 2 functions
 - part_demand.py: 4 routes, 4 functions
-- delays.py: 2 routes, 2 functions
+- blockers.py: 2 routes, 2 functions
 - TOTAL: 28 routes, 27 functions
 
 NOTE: Some routes/functions may appear in multiple files (e.g., tool.py and 
@@ -315,7 +315,7 @@ MISSING FROM NEW FILES (SAVED VERSION):
     Function: create_delay(event_id)
     STATUS: NOT FOUND in saved core/maintenance_event.py
     NOTE: Exists in unsaved version but not in saved version
-    NOTE: delays.py has end_delay and update_delay but NOT create_delay
+    NOTE: blockers.py has end_delay and update_delay but NOT create_delay
 
 3.  @maintenance_event_bp.route('/<int:event_id>/action/create', methods=['POST'])
     Function: create_action(event_id)
@@ -328,7 +328,7 @@ ROUTE SIGNATURE CHANGES:
 - create_action: Changed from create_action(event_id) to create_action() 
   (event_id removed from function signature, may be in request/form data now)
 
-- create_delay: In delays.py, but not in core/maintenance_event.py
+- create_delay: In blockers.py, but not in core/maintenance_event.py
   (may need to check if this was intentionally moved or if it's missing)
 
 - All action-related routes: Changed from requiring event_id in URL to just action_id

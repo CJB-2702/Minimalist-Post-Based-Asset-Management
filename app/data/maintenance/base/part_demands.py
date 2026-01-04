@@ -25,10 +25,11 @@ class PartDemand(VirtualPartDemand):
     maintenance_approval_date = db.Column(db.DateTime, nullable=True)
     supply_approval_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     supply_approval_date = db.Column(db.DateTime, nullable=True)
+    quantity_on_order = db.Column(db.Float, nullable=True)
     
     # Relationships
     action = relationship('Action', back_populates='part_demands')
-    part = relationship('Part', foreign_keys='PartDemand.part_id', lazy='select')
+    part = relationship('PartDefinition', foreign_keys='PartDemand.part_id', lazy='select')
     
     # User relationships
     requested_by = relationship('User', foreign_keys=[requested_by_id], backref='requested_part_demands')

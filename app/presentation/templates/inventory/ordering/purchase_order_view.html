@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+
+{% block title %}Purchase Order {{ po_context.header.po_number }} - Inventory Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="bi bi-receipt text-primary"></i> Purchase Order: {{ po_context.header.po_number }}
+                    </h1>
+                    <p class="text-muted mb-0">{{ po_context.header.vendor_name }}</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('inventory.po_linkage_portal', po_id=po_context.purchase_order_id) }}" 
+                       class="btn btn-success me-2">
+                        <i class="bi bi-link-45deg"></i> Link Demands
+                    </a>
+                    {% if po_context.header.status == 'Draft' %}
+                    <a href="{{ url_for('inventory.purchase_order_edit', po_id=po_context.purchase_order_id) }}" 
+                       class="btn btn-primary me-2">
+                        <i class="bi bi-pencil"></i> Edit
+                    </a>
+                    {% endif %}
+                    <a href="{{ url_for('inventory.purchase_orders_list') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to List
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Purchase Order Header Info -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle"></i> Purchase Order Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th width="40%">PO Number:</th>
+                                    <td><strong>{{ po_context.header.po_number }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <th>Vendor:</th>
+                                    <td>{{ po_context.header.vendor_name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Vendor Contact:</th>
+                                    <td>{{ po_context.header.vendor_contact or 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Order Date:</th>
+                                    <td>{{ po_context.header.order_date.strftime('%Y-%m-%d') if po_context.header.order_date else 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Expected Delivery:</th>
+                                    <td>{{ po_context.header.expected_delivery_date.strftime('%Y-%m-%d') if po_context.header.expected_delivery_date else 'N/A' }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th width="40%">Status:</th>
+                                    <td>
+                                        <span class="badge {% if po_context.header.status == 'Complete' %}bg-success{% elif po_context.header.status == 'Partial' %}bg-warning{% elif po_context.header.status == 'Cancelled' %}bg-danger{% elif po_context.header.status == 'Submitted' %}bg-info{% else %}bg-secondary{% endif %}">
+                                            {{ po_context.header.status }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Location:</th>
+                                    <td>{{ po_context.header.major_location.name if po_context.header.major_location else 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Lines:</th>
+                                    <td>{{ po_context.lines|length }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Created:</th>
+                                    <td>{{ po_context.header.created_at.strftime('%Y-%m-%d %H:%M') if po_context.header.created_at else 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Created By:</th>
+                                    <td>{{ po_context.header.created_by.username if po_context.header.created_by else 'N/A' }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    {% if po_context.header.notes %}
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <strong>Notes:</strong>
+                            <p class="text-muted">{{ po_context.header.notes }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-calculator"></i> Cost Summary
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <th>Subtotal:</th>
+                            <td class="text-end">${{ "%.2f"|format((po_context.header.total_cost or 0) - (po_context.header.shipping_cost or 0) - (po_context.header.tax_amount or 0)) }}</td>
+                        </tr>
+                        <tr>
+                            <th>Shipping:</th>
+                            <td class="text-end">${{ "%.2f"|format(po_context.header.shipping_cost or 0) }}</td>
+                        </tr>
+                        <tr>
+                            <th>Tax:</th>
+                            <td class="text-end">${{ "%.2f"|format(po_context.header.tax_amount or 0) }}</td>
+                        </tr>
+                        <tr class="border-top">
+                            <th><strong>Total:</strong></th>
+                            <td class="text-end"><strong>${{ "%.2f"|format(po_context.header.total_cost or 0) }}</strong></td>
+                        </tr>
+                    </table>
+                    
+                    {% if po_context.header.status == 'Draft' %}
+                    <div class="d-grid gap-2 mt-3">
+                        <form method="POST" action="{{ url_for('inventory.purchase_order_submit', po_id=po_context.purchase_order_id) }}" 
+                              onsubmit="return confirm('Submit this purchase order?');">
+                            <button type="submit" class="btn btn-success w-100">
+                                <i class="bi bi-check-circle"></i> Submit Order
+                            </button>
+                        </form>
+                        <button type="button" class="btn btn-danger w-100" data-bs-toggle="modal" data-bs-target="#cancelModal">
+                            <i class="bi bi-x-circle"></i> Cancel Order
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Purchase Order Lines -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-list-ul"></i> Line Items ({{ po_context.lines|length }})
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if po_context.lines %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Line #</th>
+                                    <th>Part Number</th>
+                                    <th>Part Name</th>
+                                    <th>Quantity Ordered</th>
+                                    <th>Quantity Received</th>
+                                    <th>Unit Cost</th>
+                                    <th>Line Total</th>
+                                    <th>Status</th>
+                                    <th>Part Demands</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for line in po_context.lines %}
+                                <tr>
+                                    <td>{{ line.line_number }}</td>
+                                    <td>{{ line.part.part_number if line.part else 'N/A' }}</td>
+                                    <td>{{ line.part.part_name if line.part else 'N/A' }}</td>
+                                    <td>{{ line.quantity_ordered }}</td>
+                                    <td>{{ line.quantity_received }}</td>
+                                    <td>${{ "%.2f"|format(line.unit_cost) }}</td>
+                                    <td><strong>${{ "%.2f"|format(line.line_total) }}</strong></td>
+                                    <td>
+                                        <span class="badge {% if line.status == 'Complete' %}bg-success{% elif line.status == 'Partial' %}bg-warning{% elif line.status == 'Cancelled' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                            {{ line.status }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% set demand_links = line_demand_links.get(line.id, []) %}
+                                        {% if demand_links %}
+                                            <div class="small">
+                                                {% for link in demand_links %}
+                                                    {% set demand = link.part_demand %}
+                                                    {% if demand %}
+                                                        <div class="mb-1">
+                                                            <strong>Demand #{{ demand.id }}</strong>
+                                                            {% if demand.action %}
+                                                                - {{ demand.action.action_name }}
+                                                                {% if demand.action.maintenance_action_set and demand.action.maintenance_action_set.event %}
+                                                                    <br>
+                                                                    <span class="text-muted">
+                                                                        Event #{{ demand.action.maintenance_action_set.event.id }}
+                                                                    </span>
+                                                                {% endif %}
+                                                            {% endif %}
+                                                            <br>
+                                                            <span class="badge bg-info">Qty: {{ link.quantity_allocated }}</span>
+                                                            <span class="badge {% if demand.status == 'Complete' or demand.status == 'Installed' %}bg-success{% elif demand.status == 'Ordered' or demand.status == 'Shipped' or demand.status == 'Arrived' or demand.status == 'At Inventory' %}bg-warning{% else %}bg-secondary{% endif %}">
+                                                                {{ demand.status }}
+                                                            </span>
+                                                        </div>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                        {% else %}
+                                            <span class="text-muted">None</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> No line items in this purchase order.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cancel Modal -->
+{% if po_context.header.status == 'Draft' %}
+<div class="modal fade" id="cancelModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Cancel Purchase Order</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('inventory.purchase_order_cancel', po_id=po_context.purchase_order_id) }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="reason" class="form-label">Cancellation Reason</label>
+                        <textarea class="form-control" id="reason" name="reason" rows="3" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-danger">Cancel Purchase Order</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+
+

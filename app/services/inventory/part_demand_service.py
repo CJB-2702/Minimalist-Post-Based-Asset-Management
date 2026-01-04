@@ -5,7 +5,7 @@ Presentation service for part demand inventory availability and fulfillment quer
 
 from typing import Dict, List, Optional, Any
 from app.data.maintenance.base.part_demands import PartDemand
-from app.data.inventory.base import ActiveInventory, InventoryMovement
+from app.data.inventory.inventory import ActiveInventory, InventoryMovement
 from app.data.core.asset_info.asset import Asset
 
 
@@ -100,7 +100,7 @@ class PartDemandInventoryService:
         Returns:
             List of PartDemand objects
         """
-        from app.data.inventory.base import PurchaseOrderHeader
+        from app.data.inventory.ordering import PurchaseOrderHeader
         
         po = PurchaseOrderHeader.query.get(po_id)
         if not po:
@@ -176,8 +176,8 @@ class PartDemandInventoryService:
         Returns:
             List of PartDemand objects
         """
-        from app.data.maintenance.base.action import Action
-        from app.data.maintenance.base.maintenance_action_set import MaintenanceActionSet
+        from app.data.maintenance.base.actions import Action
+        from app.data.maintenance.base.maintenance_action_sets import MaintenanceActionSet
         
         query = PartDemand.query.filter(
             PartDemand.status.in_(['Planned', 'Pending'])

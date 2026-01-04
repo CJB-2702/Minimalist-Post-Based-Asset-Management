@@ -10,6 +10,7 @@ class Asset(UserCreatedBase):
     name = db.Column(db.String(100), nullable=False)
     serial_number = db.Column(db.String(100), unique=True, nullable=False)
     status = db.Column(db.String(50), default='Active')
+    mission_capability_status = db.Column(db.String(20), nullable=True)
     major_location_id = db.Column(db.Integer, db.ForeignKey('major_locations.id'), nullable=True)
     make_model_id = db.Column(db.Integer, db.ForeignKey('make_models.id'),nullable=False)
     asset_type_id = db.Column(db.Integer, db.ForeignKey('asset_types.id'),nullable=False)
@@ -19,6 +20,7 @@ class Asset(UserCreatedBase):
     meter4 = db.Column(db.Float, nullable=True)
     tags = db.Column(db.JSON, nullable=True) # try not to use this if at all possible, left because sometimes users find a good reason.
     detail_rows_created = db.Column(db.JSON, nullable=True) 
+    current_parent_asset_id = db.Column(db.Integer, db.ForeignKey('assets.id'), nullable=True)
     # Relationships
     major_location = db.relationship('MajorLocation', overlaps="assets")
     make_model = db.relationship('MakeModel', overlaps="assets")

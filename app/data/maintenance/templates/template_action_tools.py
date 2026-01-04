@@ -18,7 +18,7 @@ class TemplateActionTool(VirtualActionTool):
     
     # Relationships
     template_action_item = relationship('TemplateActionItem', back_populates='template_action_tools')
-    tool = relationship('Tool', foreign_keys='TemplateActionTool.tool_id', lazy='select')
+    tool = relationship('ToolDefinition', foreign_keys='TemplateActionTool.tool_id', lazy='select')
     
     @classmethod
     def get_column_dict(cls) -> set:

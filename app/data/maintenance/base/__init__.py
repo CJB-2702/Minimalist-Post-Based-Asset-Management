@@ -3,7 +3,7 @@ from .maintenance_action_sets import MaintenanceActionSet
 from .actions import Action
 from .part_demands import PartDemand
 from .action_tools import ActionTool
-from .maintenance_delays import MaintenanceDelay
+from .maintenance_blockers import MaintenanceBlocker
 
 __all__ = [
     'MaintenancePlan',
@@ -11,5 +11,5 @@ __all__ = [
     'Action',
     'PartDemand',
     'ActionTool',
-    'MaintenanceDelay'
+    'MaintenanceBlocker'
 ]

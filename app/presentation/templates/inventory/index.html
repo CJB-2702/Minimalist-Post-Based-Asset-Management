@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block title %}Inventory Management Portal{% endblock %}
+
+{% block head %}
+<style>
+    .section-card {
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        border: none;
+        border-radius: 12px;
+        height: 100%;
+    }
+    
+    .section-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    
+    .section-header {
+        border-bottom: 2px solid #e9ecef;
+        padding-bottom: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .action-link {
+        display: block;
+        padding: 0.75rem 1rem;
+        margin-bottom: 0.5rem;
+        border-radius: 6px;
+        text-decoration: none;
+        transition: all 0.2s ease-in-out;
+        width: 100%;
+    }
+    
+    .action-link:hover {
+        transform: translateX(5px);
+        text-decoration: none;
+    }
+    
+    .coming-soon {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="bi bi-box-seam text-danger"></i> Inventory Management Portal
+                    </h1>
+                    <p class="text-muted mb-0">Manage inventory, parts, supplies, and procurement</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Home
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Three Main Sections -->
+    <div class="row g-4">
+        <!-- Purchase Order Management -->
+        <div class="col-lg-4">
+            <div class="card section-card shadow-sm">
+                <div class="card-body">
+                    <div class="section-header">
+                        <h4 class="mb-0">
+                            <i class="bi bi-receipt text-primary"></i> Purchase Order Management
+                        </h4>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6 class="text-muted mb-2">View Portal</h6>
+                        <a href="{{ url_for('inventory.purchase_orders_list') }}" class="btn btn-primary btn-sm w-100">
+                            <i class="bi bi-list-ul"></i> View Purchase Orders
+                        </a>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6 class="text-muted mb-2">Create Purchase Orders</h6>
+                        <div>
+                            <a href="{{ url_for('inventory.create_po_from_single_maintenance') }}" class="action-link btn btn-outline-primary">
+                                <i class="bi bi-wrench"></i> From Single Maintenance Event
+                            </a>
+                        </div>
+                        <div>
+                            <a href="{{ url_for('inventory.create_po_from_part_demands') }}" class="action-link btn btn-outline-primary">
+                                <i class="bi bi-list-check"></i> From Part Demands
+                            </a>
+                        </div>
+                        <div>
+                            <a href="{{ url_for('inventory.create_unlinked_purchase_order') }}" class="action-link btn btn-outline-primary">
+                                <i class="bi bi-file-plus"></i> Create Unlinked PO
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-0">
+                        <h6 class="text-muted mb-2">Linkage Portal</h6>
+                        <a href="{{ url_for('inventory.purchase_orders_list') }}" class="action-link btn btn-outline-secondary">
+                            <i class="bi bi-link-45deg"></i> Link Demands to PO
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Arrival Management -->
+        <div class="col-lg-4">
+            <div class="card section-card shadow-sm">
+                <div class="card-body">
+                    <div class="section-header">
+                        <h4 class="mb-0">
+                            <i class="bi bi-box-arrow-in-down text-success"></i> Arrival Management
+                        </h4>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6 class="text-muted mb-2">View Portal</h6>
+                        <a href="{{ url_for('inventory.po_arrivals') }}" class="btn btn-success btn-sm w-100">
+                            <i class="bi bi-list-ul"></i> View Arrivals
+                        </a>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6 class="text-muted mb-2">Create Arrivals</h6>
+                        <div>
+                            <a href="{{ url_for('inventory.arrivals_index') }}" class="action-link btn btn-outline-success">
+                                <i class="bi bi-check-circle"></i> From Single Purchase Order
+                            </a>
+                        </div>
+                        <div>
+                            <a href="{{ url_for('inventory.arrivals_index') }}" class="action-link btn btn-outline-success">
+                                <i class="bi bi-list-check"></i> From PO Lines
+                            </a>
+                        </div>
+                        <div>
+                            <a href="{{ url_for('inventory.create_unlinked_arrival') }}" class="action-link btn btn-outline-success">
+                                <i class="bi bi-file-plus"></i> Create Unlinked Arrival
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-0">
+                        <h6 class="text-muted mb-2">Linkage Portal</h6>
+                        <a href="{{ url_for('inventory.po_arrivals') }}" class="action-link btn btn-outline-secondary">
+                            <i class="bi bi-link-45deg"></i> Link Arrivals to PO
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Manage Inventory -->
+        <div class="col-lg-4">
+            <div class="card section-card shadow-sm">
+                <div class="card-body">
+                    <div class="section-header">
+                        <h4 class="mb-0">
+                            <i class="bi bi-clipboard-data text-info"></i> Manage Inventory
+                        </h4>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6 class="text-muted mb-2">View Inventory</h6>
+                        <a href="{{ url_for('inventory.active_inventory_view') }}" class="btn btn-info btn-sm w-100">
+                            <i class="bi bi-eye"></i> View Active Inventory
+                        </a>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6 class="text-muted mb-2">Storeroom Management</h6>
+                        <a href="{{ url_for('inventory.storeroom_index') }}" class="btn btn-info btn-sm w-100">
+                            <i class="bi bi-map"></i> Storeroom Designer
+                        </a>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6 class="text-muted mb-2">Inventory Operations</h6>
+                        <div>
+                            <a href="{{ url_for('inventory.initial_stocking') }}" class="action-link btn btn-outline-info">
+                                <i class="bi bi-box-arrow-in-down"></i> Initial Stocking Portal
+                            </a>
+                        </div>
+                        <div>
+                            <a href="{{ url_for('inventory.issue_parts') }}" class="action-link btn btn-outline-info">
+                                <i class="bi bi-box-arrow-right"></i> Issue Portal
+                            </a>
+                        </div>
+                        <div>
+                            <a href="{{ url_for('inventory.part_issues_list') }}" class="action-link btn btn-outline-info">
+                                <i class="bi bi-list-ul"></i> View Part Issues
+                            </a>
+                        </div>
+                        <div>
+                            <div class="action-link btn btn-outline-secondary coming-soon" disabled>
+                                <i class="bi bi-hourglass-split"></i> Inventory Creation or Deletion Without Arrivals or Issues
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

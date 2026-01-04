@@ -1,0 +1,348 @@
+<div class="card part-picker-card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="bi bi-search"></i> Part Picker Portal
+        </h5>
+    </div>
+    <div class="card-body">
+        <!-- Tabs -->
+        <ul class="nav nav-tabs mb-3" id="partPickerTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link {% if mode == 'description' %}active{% endif %}" 
+                        id="tab-description" 
+                        hx-get="{{ url_for('inventory.purchase_order_part_picker', mode='description', po_id=po_id) }}"
+                        hx-target="#part-picker-content"
+                        hx-swap="innerHTML"
+                        type="button">
+                    by Part description
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link {% if mode == 'inventory' %}active{% endif %}" 
+                        id="tab-inventory"
+                        hx-get="{{ url_for('inventory.purchase_order_part_picker', mode='inventory', po_id=po_id) }}"
+                        hx-target="#part-picker-content"
+                        hx-swap="innerHTML"
+                        type="button">
+                    by inventory
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link {% if mode == 'maintenance' %}active{% endif %}" 
+                        id="tab-maintenance"
+                        hx-get="{{ url_for('inventory.purchase_order_part_picker', mode='maintenance', po_id=po_id) }}"
+                        hx-target="#part-picker-content"
+                        hx-swap="innerHTML"
+                        type="button">
+                    by maintenance event
+                </button>
+            </li>
+        </ul>
+
+        <!-- Tab Content -->
+        <div id="part-picker-content">
+            {% if mode == 'description' %}
+                {% include 'inventory/ordering/part_picker/description_tab.html' %}
+            {% elif mode == 'inventory' %}
+                {% include 'inventory/ordering/part_picker/inventory_tab.html' %}
+            {% elif mode == 'maintenance' %}
+                {% include 'inventory/ordering/part_picker/maintenance_tab.html' %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.part-picker-card {
+    margin-bottom: 2rem;
+    margin-top: 1rem;
+}
+
+.part-picker-item {
+    display: flex;
+    align-items: flex-start;
+    padding: 12px;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background 0.2s;
+    gap: 12px;
+}
+
+.part-picker-item:hover {
+    background: #f8f9fa;
+}
+
+.part-picker-item:last-child {
+    border-bottom: none;
+}
+
+.part-number {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 14px;
+    min-width: 30px;
+}
+
+.part-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.part-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+}
+
+.part-id {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 15px;
+}
+
+.category-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    background: #e3f2fd;
+    color: #1976d2;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.part-description {
+    font-size: 13px;
+    color: #555;
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.part-metadata {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.metadata-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.tag-stock-good {
+    background: #e0f7fa;
+    color: #00838f;
+}
+
+.tag-stock-low {
+    background: #fff3e0;
+    color: #e65100;
+}
+
+.tag-stock-out {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.tag-location {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.tag-cost {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.tag-demand {
+    background: #f3e5f5;
+    color: #7b1fa2;
+}
+
+.select-part-btn {
+    background: #3498db;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+.select-part-btn:hover {
+    background: #2980b9;
+}
+
+.parts-list-container {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    background: white;
+}
+
+.preview-section {
+    background: #f8f9fa;
+    padding: 16px;
+    border-radius: 6px;
+    border: 1px solid #e0e0e0;
+    height: fit-content;
+}
+
+.preview-title {
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #2c3e50;
+    font-size: 15px;
+}
+
+.preview-item {
+    padding: 8px 0;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.preview-item:last-child {
+    border-bottom: none;
+}
+
+.preview-label {
+    font-size: 11px;
+    color: #666;
+    margin-bottom: 2px;
+}
+
+.preview-value {
+    font-size: 16px;
+    font-weight: 600;
+    color: #2c3e50;
+}
+</style>
+
+<script>
+// Handle part selection - add to purchase order
+// This function should be defined in purchase_order_edit.html
+// If not defined, define a fallback that uses the add-part route
+if (typeof window.selectPartForPO === 'undefined') {
+    window.selectPartForPO = function(partId, partNumber, partName, unitCost) {
+        console.log('selectPartForPO (fallback) called:', { partId, partNumber, partName, unitCost });
+        
+        if (!partId) {
+            window.alert('Part ID is required');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('part_id', partId);
+        formData.append('quantity', '1');
+        formData.append('unit_cost', unitCost || '0');
+        
+        // Try to get po_id from the current URL
+        const urlMatch = window.location.pathname.match(/\/purchase-orders\/(\d+)/);
+        if (urlMatch) {
+            const poId = urlMatch[1];
+            const url = `/inventory/purchase-orders/${poId}/add-part`;
+            console.log('Submitting to:', url);
+            
+            // Show loading indicator
+            const loadingMsg = document.createElement('div');
+            loadingMsg.className = 'alert alert-info';
+            loadingMsg.textContent = 'Adding part...';
+            loadingMsg.style.position = 'fixed';
+            loadingMsg.style.top = '20px';
+            loadingMsg.style.right = '20px';
+            loadingMsg.style.zIndex = '9999';
+            document.body.appendChild(loadingMsg);
+            
+            fetch(url, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'HX-Request': 'true'
+                }
+            }).then(response => {
+                return response.text().then(text => {
+                    // Remove loading indicator
+                    if (loadingMsg.parentNode) {
+                        loadingMsg.parentNode.removeChild(loadingMsg);
+                    }
+                    
+                    if (response.ok) {
+                        // Show success and reload
+                        const successMsg = document.createElement('div');
+                        successMsg.className = 'alert alert-success';
+                        successMsg.textContent = 'Part added successfully! Reloading...';
+                        successMsg.style.position = 'fixed';
+                        successMsg.style.top = '20px';
+                        successMsg.style.right = '20px';
+                        successMsg.style.zIndex = '9999';
+                        document.body.appendChild(successMsg);
+                        
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 500);
+                    } else {
+                        // Show error
+                        const tempDiv = document.createElement('div');
+                        tempDiv.innerHTML = text;
+                        const alertElement = tempDiv.querySelector('.alert');
+                        
+                        const errorMsg = document.createElement('div');
+                        errorMsg.className = 'alert alert-danger';
+                        if (alertElement) {
+                            errorMsg.textContent = alertElement.textContent.trim();
+                        } else {
+                            errorMsg.textContent = 'Error adding part to purchase order';
+                        }
+                        errorMsg.style.position = 'fixed';
+                        errorMsg.style.top = '20px';
+                        errorMsg.style.right = '20px';
+                        errorMsg.style.zIndex = '9999';
+                        document.body.appendChild(errorMsg);
+                        
+                        setTimeout(() => {
+                            if (errorMsg.parentNode) {
+                                errorMsg.parentNode.removeChild(errorMsg);
+                            }
+                        }, 5000);
+                    }
+                });
+            }).catch(error => {
+                console.error('Error:', error);
+                
+                // Remove loading indicator
+                if (loadingMsg.parentNode) {
+                    loadingMsg.parentNode.removeChild(loadingMsg);
+                }
+                
+                // Show error
+                const errorMsg = document.createElement('div');
+                errorMsg.className = 'alert alert-danger';
+                errorMsg.textContent = 'Error adding part: ' + error.message;
+                errorMsg.style.position = 'fixed';
+                errorMsg.style.top = '20px';
+                errorMsg.style.right = '20px';
+                errorMsg.style.zIndex = '9999';
+                document.body.appendChild(errorMsg);
+                
+                setTimeout(() => {
+                    if (errorMsg.parentNode) {
+                        errorMsg.parentNode.removeChild(errorMsg);
+                    }
+                }, 5000);
+            });
+        } else {
+            window.alert('Could not determine purchase order ID');
+        }
+    };
+}
+</script>
+

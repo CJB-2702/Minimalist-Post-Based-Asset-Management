@@ -8,6 +8,7 @@ On import, it registers an enhanced asset factory with AssetContext.
 from .asset_details_context import AssetDetailsContext
 from .make_model_context import MakeModelDetailsContext
 from .model_detail_context import ModelDetailContext
+from .asset_parent_child_relationship_manager import AssetParentChildRelationshipManager
 from .asset_type_details.asset_details_struct import AssetDetailsStruct
 from .model_details.model_details_struct import ModelDetailsStruct
 
@@ -80,5 +81,5 @@ else:
 AssetContext = AssetDetailsContext
 MakeModelContext = MakeModelDetailsContext
 
-__all__ = ['AssetDetailsContext', 'MakeModelDetailsContext', 'ModelDetailContext', 'AssetDetailsStruct', 'ModelDetailsStruct', 'AssetContext', 'MakeModelContext']
+__all__ = ['AssetDetailsContext', 'MakeModelDetailsContext', 'ModelDetailContext', 'AssetParentChildRelationshipManager', 'AssetDetailsStruct', 'ModelDetailsStruct', 'AssetContext', 'MakeModelContext']
 

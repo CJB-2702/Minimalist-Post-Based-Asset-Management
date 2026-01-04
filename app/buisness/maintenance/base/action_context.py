@@ -7,7 +7,7 @@ Provides action lifecycle management, statistics, and completion tracking.
 from typing import List, Optional, Union, Dict, Any
 from datetime import datetime
 from app import db
-from app.buisness.maintenance.base.action_struct import ActionStruct
+from app.buisness.maintenance.base.structs.action_struct import ActionStruct
 from app.data.maintenance.base.actions import Action
 from app.data.maintenance.base.part_demands import PartDemand
 from app.data.maintenance.base.action_tools import ActionTool

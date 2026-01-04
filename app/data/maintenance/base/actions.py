@@ -38,6 +38,7 @@ class Action(VirtualActionItem):
     part_demands = relationship('PartDemand', back_populates='action', cascade='all, delete-orphan', lazy='selectin', order_by='PartDemand.sequence_order')
     action_tools = relationship('ActionTool', back_populates='action', cascade='all, delete-orphan', lazy='selectin', order_by='ActionTool.sequence_order')
     
+    
     # User relationships
     assigned_user = relationship('User', foreign_keys=[assigned_user_id], backref='assigned_actions')
     assigned_by = relationship('User', foreign_keys=[assigned_by_id], backref='assigned_actions_by_me')

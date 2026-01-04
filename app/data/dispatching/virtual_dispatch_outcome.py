@@ -1,3 +1,4 @@
+
 from app import db
 from app.data.core.user_created_base import UserCreatedBase
 from sqlalchemy.ext.declarative import declared_attr

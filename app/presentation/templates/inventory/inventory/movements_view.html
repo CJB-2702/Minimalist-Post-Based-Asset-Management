@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+
+{% block title %}Inventory Movements{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="bi bi-arrow-left-right text-info"></i> Inventory Movements
+                    </h1>
+                    <p class="text-muted mb-0">View and filter inventory movement history and audit trail</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('inventory.index') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Inventory
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-funnel"></i> Filters</h5>
+                </div>
+                <div class="card-body">
+                    <form method="GET" action="{{ url_for('inventory.movements_view') }}" class="row g-3">
+                        <div class="col-md-2">
+                            <label class="form-label">Part Number</label>
+                            <input type="text" class="form-control" name="part_number" value="{{ current_filters.part_number }}" placeholder="Part number">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Part Name</label>
+                            <input type="text" class="form-control" name="part_name" value="{{ current_filters.part_name }}" placeholder="Part name">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Movement Type</label>
+                            <select class="form-select" name="movement_type">
+                                <option value="">All Types</option>
+                                {% for mt in movement_types %}
+                                <option value="{{ mt }}" {% if current_filters.movement_type == mt %}selected{% endif %}>{{ mt }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Location</label>
+                            <select class="form-select" name="location_id">
+                                <option value="">All Locations</option>
+                                {% for loc in locations %}
+                                <option value="{{ loc.id }}" {% if current_filters.location_id == loc.id %}selected{% endif %}>{{ loc.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Storeroom</label>
+                            <select class="form-select" name="storeroom_id">
+                                <option value="">All Storerooms</option>
+                                {% for s in storerooms %}
+                                <option value="{{ s.id }}" {% if current_filters.storeroom_id == s.id %}selected{% endif %}>{{ s.room_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Search</label>
+                            <input type="text" class="form-control" name="search" value="{{ current_filters.search }}" placeholder="Part number or name">
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label">Date From</label>
+                            <input type="date" class="form-control" name="date_from" value="{{ current_filters.date_from }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Date To</label>
+                            <input type="date" class="form-control" name="date_to" value="{{ current_filters.date_to }}">
+                        </div>
+
+                        <div class="col-12">
+                            <button class="btn btn-primary" type="submit">
+                                <i class="bi bi-search"></i> Apply Filters
+                            </button>
+                            <a class="btn btn-outline-secondary" href="{{ url_for('inventory.movements_view') }}">
+                                <i class="bi bi-x-circle"></i> Clear
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-list-ul"></i> Movements
+                        <span class="badge bg-secondary">{{ pagination.total }} total</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if pagination.items %}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Date/Time</th>
+                                    <th>Type</th>
+                                    <th>Part</th>
+                                    <th class="text-end">Quantity Δ</th>
+                                    <th>Location</th>
+                                    <th>Storeroom</th>
+                                    <th>From Location</th>
+                                    <th>To Location</th>
+                                    <th class="text-end">Unit Cost</th>
+                                    <th>Reference</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for mov in pagination.items %}
+                                <tr>
+                                    <td>
+                                        <div>{{ mov.movement_date.strftime('%Y-%m-%d') if mov.movement_date else 'N/A' }}</div>
+                                        <div class="text-muted small">{{ mov.movement_date.strftime('%H:%M:%S') if mov.movement_date else '' }}</div>
+                                    </td>
+                                    <td>
+                                        <span class="badge 
+                                            {% if mov.movement_type == 'Receipt' %}bg-success
+                                            {% elif mov.movement_type == 'Issue' %}bg-danger
+                                            {% elif mov.movement_type == 'Adjustment' %}bg-warning
+                                            {% elif mov.movement_type == 'BinTransfer' or mov.movement_type == 'Relocation' %}bg-info
+                                            {% elif mov.movement_type == 'Return' %}bg-secondary
+                                            {% else %}bg-secondary{% endif %}">
+                                            {{ mov.movement_type }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if mov.part %}
+                                        <div><strong>{{ mov.part.part_number }}</strong></div>
+                                        <div class="text-muted small">{{ mov.part.part_name }}</div>
+                                        {% else %}
+                                        <div><strong>Part #{{ mov.part_id }}</strong></div>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <strong class="{% if mov.quantity_delta > 0 %}text-success{% elif mov.quantity_delta < 0 %}text-danger{% endif %}">
+                                            {% if mov.quantity_delta > 0 %}+{% endif %}{{ '%.2f'|format(mov.quantity_delta) }}
+                                        </strong>
+                                    </td>
+                                    <td>
+                                        {% if mov.major_location %}
+                                        {{ mov.major_location.name }}
+                                        {% else %}
+                                        <span class="text-muted">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if mov.storeroom %}
+                                        {{ mov.storeroom.room_name }}
+                                        {% else %}
+                                        <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if mov.from_location %}
+                                        {{ mov.from_location.name }}
+                                        {% else %}
+                                        <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if mov.to_location %}
+                                        {{ mov.to_location.name }}
+                                        {% else %}
+                                        <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        {% if mov.unit_cost %}
+                                        ${{ '%.2f'|format(mov.unit_cost) }}
+                                        {% else %}
+                                        <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if mov.part_arrival_id %}
+                                        <span class="badge bg-info">Arrival #{{ mov.part_arrival_id }}</span>
+                                        {% elif mov.part_issue_id %}
+                                        <span class="badge bg-warning">Issue #{{ mov.part_issue_id }}</span>
+                                        {% else %}
+                                        <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    {% if pagination.pages > 1 %}
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination justify-content-center mt-3">
+                            {% if pagination.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('inventory.movements_view', page=pagination.prev_num, part_id=current_filters.part_id, part_number=current_filters.part_number, part_name=current_filters.part_name, location_id=current_filters.location_id, storeroom_id=current_filters.storeroom_id, movement_type=current_filters.movement_type, date_from=current_filters.date_from, date_to=current_filters.date_to, search=current_filters.search) }}">Previous</a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">Previous</span>
+                            </li>
+                            {% endif %}
+
+                            {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                                {% if page_num %}
+                                    {% if page_num == pagination.page %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ page_num }}</span>
+                                    </li>
+                                    {% else %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('inventory.movements_view', page=page_num, part_id=current_filters.part_id, part_number=current_filters.part_number, part_name=current_filters.part_name, location_id=current_filters.location_id, storeroom_id=current_filters.storeroom_id, movement_type=current_filters.movement_type, date_from=current_filters.date_from, date_to=current_filters.date_to, search=current_filters.search) }}">{{ page_num }}</a>
+                                    </li>
+                                    {% endif %}
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">…</span>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if pagination.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('inventory.movements_view', page=pagination.next_num, part_id=current_filters.part_id, part_number=current_filters.part_number, part_name=current_filters.part_name, location_id=current_filters.location_id, storeroom_id=current_filters.storeroom_id, movement_type=current_filters.movement_type, date_from=current_filters.date_from, date_to=current_filters.date_to, search=current_filters.search) }}">Next</a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">Next</span>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                    {% else %}
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-info-circle"></i> No movements found matching the filters.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+
+
+
+
+
+
+
+

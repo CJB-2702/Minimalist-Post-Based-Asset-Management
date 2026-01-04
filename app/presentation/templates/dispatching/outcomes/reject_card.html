@@ -1,0 +1,70 @@
+<div class="card mb-3 info-card danger">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="bi bi-x-circle"></i> Rejection Outcome
+        </h5>
+    </div>
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-4">Reject ID</dt>
+            <dd class="col-sm-8">#{{ reject.id }}</dd>
+            
+            <dt class="col-sm-4">Rejection Category</dt>
+            <dd class="col-sm-8">
+                {% if reject.rejection_category %}
+                    <span class="badge bg-danger">{{ reject.rejection_category }}</span>
+                {% else %}
+                    <span class="text-muted">No category</span>
+                {% endif %}
+            </dd>
+            
+            <dt class="col-sm-12 mt-2">Reason</dt>
+            <dd class="col-sm-12">
+                <div class="text-muted">{{ reject.reason }}</div>
+            </dd>
+            
+            {% if reject.notes %}
+            <dt class="col-sm-12 mt-2">Notes</dt>
+            <dd class="col-sm-12">
+                <div class="text-muted">{{ reject.notes }}</div>
+            </dd>
+            {% endif %}
+            
+            {% if reject.alternative_suggestion %}
+            <dt class="col-sm-12 mt-2">Alternative Suggestion</dt>
+            <dd class="col-sm-12">
+                <div class="text-info">{{ reject.alternative_suggestion }}</div>
+            </dd>
+            {% endif %}
+            
+            <dt class="col-sm-4">Can Resubmit</dt>
+            <dd class="col-sm-8">
+                {% if reject.can_resubmit %}
+                    <span class="badge bg-warning">Resubmission Allowed</span>
+                {% else %}
+                    <span class="badge bg-secondary">Resubmission Not Allowed</span>
+                {% endif %}
+            </dd>
+            
+            {% if reject.resubmit_after %}
+            <dt class="col-sm-4">Resubmit After</dt>
+            <dd class="col-sm-8">
+                {{ reject.resubmit_after.strftime('%Y-%m-%d') if reject.resubmit_after else 'N/A' }}
+            </dd>
+            {% endif %}
+            
+            <dt class="col-sm-4">Created</dt>
+            <dd class="col-sm-8">
+                <small class="text-muted">
+                    {{ reject.created_at.strftime('%Y-%m-%d %H:%M') if reject.created_at else 'N/A' }}
+                </small>
+            </dd>
+            
+            {% if reject.created_by %}
+            <dt class="col-sm-4">Created By</dt>
+            <dd class="col-sm-8">{{ reject.created_by.username if reject.created_by else 'N/A' }}</dd>
+            {% endif %}
+        </dl>
+    </div>
+</div>
+
