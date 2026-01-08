@@ -31,9 +31,26 @@ def create_app():
     
     # Configuration
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///asset_management.db')
+
+    # Prefer an explicit DATABASE_URL env var; if not provided, store the
+    # SQLite database inside the project's `instance/` directory so it is
+    # persisted via the docker-compose volume and path resolution is reliable.
+    from pathlib import Path
+    base_dir = Path(__file__).parent.parent
+    instance_dir = base_dir / 'instance'
+    instance_dir.mkdir(parents=True, exist_ok=True)
+    """
+    db_env = os.environ.get('DATABASE_URL')
+    if db_env:
+        app.config['SQLALCHEMY_DATABASE_URI'] = db_env
+    else:
+        # Use absolute path to avoid relative path issues inside the container
+    """
+    default_db_path = instance_dir / 'asset_management.db'
+    app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{str(default_db_path.resolve())}"
+
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    
+
     logger.debug(f"Database URI: {app.config['SQLALCHEMY_DATABASE_URI']}")
     
     # Initialize extensions with app

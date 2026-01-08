@@ -8,7 +8,7 @@
         "is_active": true,
         "is_system": true,
         "is_admin": false,
-        "password": "system-password-not-for-login"
+        "password": "system-password-not-for-login-12345"
       },
       "Admin": {
         "id": 1,
@@ -17,7 +17,7 @@
         "is_active": true,
         "is_system": false,
         "is_admin": true,
-        "password": "admin"
+        "password": "admin-password-change-me-12345"
       }
     },
     "Events": {

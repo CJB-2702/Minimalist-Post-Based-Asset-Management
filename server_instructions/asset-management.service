@@ -1,0 +1,16 @@
+[Unit]
+Description=Public Asset Management Server
+After=network.target
+
+[Service]
+Type=simple
+User=assetmgr
+Group=assetmgr
+WorkingDirectory=/home/public-asset-managment
+ExecStart=/home/public-asset-managment/onstart.sh
+Restart=on-failure
+RestartSec=10
+PIDFile=/home/public-asset-managment/asset-management.pid
+
+[Install]
+WantedBy=multi-user.target

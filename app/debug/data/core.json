@@ -9,7 +9,24 @@
         "is_system": false,
         "is_admin": false,
         "password": "Generic_User"
+      },
+      "Brandon": {
+        "username": "Brandon",
+        "email": "Brandon@assetmanagement.local",
+        "is_active": true,
+        "is_system": false,
+        "is_admin": false,
+        "password": "BrandonRocks9876"
+      },
+      "Ron": {
+        "username": "Ron",
+        "email": "Ron@assetmanagement.local",
+        "is_active": true,
+        "is_system": false,
+        "is_admin": false,
+        "password": "RonRocks9876"
       }
+
     },
     "Locations": {
       "San_Diego_HQ": {

@@ -13,8 +13,8 @@ activate_venv() {
 activate_venv
 
 # Set Flask environment variables
-export FLASK_APP=run.py
-export FLASK_ENV=development
+export FLASK_APP=app.py
+export FLASK_ENV=production
 export PYTHONPATH="${PYTHONPATH}:$(pwd)"
 
 

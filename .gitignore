@@ -121,3 +121,8 @@ large_attachments/
 
 
 cookies.txt
+certs
+*.pem
+*.key
+*.credentials
+*.com
