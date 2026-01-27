@@ -1,0 +1,57 @@
+<!-- Filters and Search Results - Combined in Collapsible Card -->
+<div class="card mb-4">
+  <div class="card-header">
+    <div class="d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">
+        <i class="bi bi-funnel"></i> Filters & Search Results
+      </h5>
+      <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#filtersSearchCollapse" aria-expanded="true" aria-controls="filtersSearchCollapse">
+        <i class="bi bi-chevron-down" id="collapseIcon"></i>
+      </button>
+    </div>
+  </div>
+  <div class="collapse show" id="filtersSearchCollapse">
+    <div class="card-body">
+      <!-- Filters -->
+      <div class="mb-4" style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px;">
+        {% set action_url = url_for('inventory.create_arrival') %}
+        {% set clear_url = url_for('inventory.create_arrival') %}
+        {% set status_label = 'Status' %}
+        {% set status_placeholder = '(Default: Ordered/Shipped)' %}
+        {% set use_htmx = true %}
+        {% set hx_target = '#search-results-container' %}
+        {% set hx_indicator = '#search-results-loading' %}
+        {% include 'inventory/purchase_orders/components/po_search_form.html' %}
+      </div>
+
+      <!-- Search Results -->
+      <div id="search-results-loading" class="htmx-indicator text-center py-3">
+        <div class="spinner-border spinner-border-sm text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <small class="text-muted d-block mt-2">Loading search results...</small>
+      </div>
+      <div id="search-results-container">
+        {% include 'inventory/arrivals/components/search_results_table.html' %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Update collapse icon on toggle
+  document.addEventListener('DOMContentLoaded', function() {
+    const collapseElement = document.getElementById('filtersSearchCollapse');
+    const icon = document.getElementById('collapseIcon');
+    if (collapseElement && icon) {
+      collapseElement.addEventListener('show.bs.collapse', function() {
+        icon.classList.remove('bi-chevron-up');
+        icon.classList.add('bi-chevron-down');
+      });
+      collapseElement.addEventListener('hide.bs.collapse', function() {
+        icon.classList.remove('bi-chevron-down');
+        icon.classList.add('bi-chevron-up');
+      });
+    }
+  });
+</script>

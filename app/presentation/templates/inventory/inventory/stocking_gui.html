@@ -479,10 +479,12 @@ function submitMovement() {
     submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Submitting...';
     
     // Submit
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     fetch('{{ url_for("inventory.submit_stocking_movement") }}', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
         },
         body: JSON.stringify({
             inventory_ids: inventoryIds,

@@ -291,7 +291,7 @@ def _check_debug_data_present(module_name, debug_data):
     
     elif module_name == 'inventory':
         # Check for inventory records - specifically purchase orders
-        from app.data.inventory.ordering.purchase_order_header import PurchaseOrderHeader
+        from app.data.inventory.purchasing.purchase_order_header import PurchaseOrderHeader
         from app.data.core.major_location import MajorLocation
         
         # Check if purchase orders from debug data already exist

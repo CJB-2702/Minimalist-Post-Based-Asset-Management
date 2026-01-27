@@ -19,6 +19,11 @@ def init_app(app):
     """Initialize all route blueprints with the Flask app"""
     logger.debug("Initializing route blueprints")
 
+    # Register public routes (non-authenticated pages)
+    from .public import public_bp
+    app.register_blueprint(public_bp)
+    logger.info("Registered public routes blueprint")
+
     # Don't register main again - it's already registered in app/__init__.py
     app.register_blueprint(core.bp, url_prefix='/core')
     app.register_blueprint(assets.bp, url_prefix='/assets')
@@ -67,9 +72,9 @@ def init_app(app):
         # IMPORTANT: Import core route modules BEFORE registering the blueprint
         # These modules add routes to maintenance_bp, so they must be imported first
         try:
-            from .maintenance.core import action_managment, part_demand, blockers, tool
+            from .maintenance.core import action_managment, part_demand, blockers, limitations, tool
             # These modules import maintenance_bp and add routes to it
-            logger.info("Loaded maintenance core route modules (action_managment, part_demand, blockers, tool)")
+            logger.info("Loaded maintenance core route modules (action_managment, part_demand, blockers, limitations, tool)")
         except ImportError as e:
             logger.debug(f"Maintenance core route modules not available: {e}")
         
@@ -79,8 +84,18 @@ def init_app(app):
         
         # Register maintenance event blueprint (now in core subdirectory)
         try:
-            from .maintenance.core.maintenance_event import maintenance_event_bp
-            app.register_blueprint(maintenance_event_bp)
+            # Register maintenance event portal blueprints (decomposed from maintenance_event.py)
+            from .maintenance.core.view_portal import maintenance_event_bp as view_bp
+            from .maintenance.core.work_portal import maintenance_event_bp as work_bp
+            from .maintenance.core.edit_portal import maintenance_event_bp as edit_bp
+            from .maintenance.core.assign_portal import maintenance_event_bp as assign_bp
+            from .maintenance.core.maintenance_management import maintenance_event_bp as mgmt_bp
+            
+            app.register_blueprint(view_bp)
+            app.register_blueprint(work_bp)
+            app.register_blueprint(edit_bp)
+            app.register_blueprint(assign_bp)
+            app.register_blueprint(mgmt_bp)
             logger.info("Registered maintenance event blueprint")
         except ImportError as e:
             logger.debug(f"Maintenance event blueprint not available: {e}")
@@ -199,6 +214,15 @@ def init_app(app):
         logger.info("Registered inventory blueprint")
     except Exception as e:
         logger.error(f"Failed to register inventory blueprint: {e}", exc_info=True)
+        raise  # Re-raise to make errors visible
+    
+    # Register searchbar blueprint
+    try:
+        from .searchbar import searchbar_bp
+        app.register_blueprint(searchbar_bp)
+        logger.info("Registered searchbar blueprint")
+    except Exception as e:
+        logger.error(f"Failed to register searchbar blueprint: {e}", exc_info=True)
         raise  # Re-raise to make errors visible
     
     logger.info("All route blueprints registered successfully") 

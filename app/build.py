@@ -7,6 +7,7 @@ Handles phased building of models and data insertion
 from app import create_app, db
 from pathlib import Path
 import json
+import os
 from app.logger import get_logger
 
 logger = get_logger("asset_management.build")
@@ -128,12 +129,35 @@ def insert_critical_data():
         if 'Essential' in critical_data and 'Users' in critical_data['Essential']:
             logger.info("Inserting essential users...")
             for user_key, user_data in critical_data['Essential']['Users'].items():
+                # Override passwords from environment variables (security best practice)
+                username = user_data.get('username')
+                if username == 'system':
+                    env_password = os.environ.get('SYSTEM_USER_PASSWORD')
+                    if env_password:
+                        user_data = user_data.copy()  # Don't modify original dict
+                        # Strip quotes if present (python-dotenv usually handles this, but be safe)
+                        env_password = env_password.strip('"').strip("'")
+                        user_data['password'] = env_password
+                        logger.info("Using SYSTEM_USER_PASSWORD from environment")
+                    else:
+                        logger.warning("SYSTEM_USER_PASSWORD not set in environment, using default from JSON")
+                elif username == 'admin':
+                    env_password = os.environ.get('ADMIN_USER_PASSWORD')
+                    if env_password:
+                        user_data = user_data.copy()  # Don't modify original dict
+                        # Strip quotes if present (python-dotenv usually handles this, but be safe)
+                        env_password = env_password.strip('"').strip("'")
+                        user_data['password'] = env_password
+                        logger.info("Using ADMIN_USER_PASSWORD from environment")
+                    else:
+                        logger.warning("ADMIN_USER_PASSWORD not set in environment, using default from JSON")
+                
                 User.find_or_create_from_dict(
                     user_data,
                     user_id=system_user_id,
                     lookup_fields=['username']
                 )
-                logger.info(f"Inserted essential user: {user_data.get('username')}")
+                logger.info(f"Inserted essential user: {username}")
         
         # Insert Essential Events (System_Initialized)
         if 'Essential' in critical_data and 'Events' in critical_data['Essential']:

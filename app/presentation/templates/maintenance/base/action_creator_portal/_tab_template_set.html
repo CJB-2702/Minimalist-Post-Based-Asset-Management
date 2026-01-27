@@ -1,0 +1,65 @@
+                <div class="tab-pane fade show active" id="creator-template-pane" role="tabpanel">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-file-earmark-text"></i> Select Template Action Set
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <!-- Search -->
+                            <div class="mb-3">
+                                <label for="templateSearch" class="form-label">Search Templates</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="templateSearch" 
+                                       placeholder="Type to filter by template name or description..." 
+                                       value=""
+                                       hx-get="{{ url_for('action_creator_portal.search_template_action_sets') }}"
+                                       hx-trigger="input changed delay:300ms, focus"
+                                       hx-target="#template-action-sets-results"
+                                       hx-swap="innerHTML"
+                                       hx-include="[name='maintenance_action_set_id']"
+                                       name="search">
+                                <input type="hidden" name="maintenance_action_set_id" value="{{ maintenance_action_set_id }}">
+                                <small class="text-muted">Searching template action sets and their action items</small>
+                            </div>
+
+                            <!-- Template Action Sets List -->
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Template Action Sets</label>
+                                <div class="list-group" style="max-height: 400px; overflow-y: auto;" id="template-action-sets-results">
+                                    {% if template_action_sets %}
+                                        {% for template_set in template_action_sets %}
+                                        <div class="list-group-item action-item" 
+                                             data-template-set-id="{{ template_set.id }}" 
+                                             style="cursor: pointer;"
+                                             onclick="selectTemplateActionSet({{ template_set.id }}, {{ maintenance_action_set_id }})">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div>
+                                                    <h6 class="mb-1">{{ template_set.task_name }}</h6>
+                                                    <small class="text-muted">
+                                                        Template action set with {{ template_set.template_action_items|length }} actions
+                                                    </small>
+                                                </div>
+                                                <span class="badge bg-primary">{{ template_set.template_action_items|length }} actions</span>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <div class="list-group-item">
+                                            <p class="text-muted mb-0">No template action sets found.</p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Template Action Items List (populated via HTMX when template set is selected) -->
+                            <div id="template-action-items-container" style="display: none;">
+                                <label class="form-label fw-bold">Action Items in Selected Template</label>
+                                <div class="list-group" style="max-height: 400px; overflow-y: auto;" id="template-action-items-list">
+                                    <!-- Will be populated dynamically via HTMX -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>

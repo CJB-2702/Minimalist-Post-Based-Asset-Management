@@ -1,0 +1,157 @@
+{% extends "public/base.html" %}
+
+{% block title %}Features - EBAMS{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="hero-section">
+    <div class="container">
+        <h1 class="hero-title">EBAMS Features</h1>
+        <p class="hero-subtitle">Comprehensive tools to manage your entire asset lifecycle</p>
+    </div>
+</div>
+
+<!-- Features Section -->
+<div class="content-section">
+    <div class="container">
+        <div class="row g-4">
+            <!-- Asset Creation -->
+            <div class="col-md-6 col-lg-4">
+                <div class="feature-card">
+                    <div class="feature-icon blue text-center">
+                        <i class="bi bi-file-earmark-text"></i>
+                    </div>
+                    <h3 class="text-center mb-3">Asset Creation</h3>
+                    <p class="text-muted">
+                        Easily create assets, add custom details and data based off make, model, and asset type. 
+                        Flexible detail tables allow you to capture exactly the information you need for each asset category.
+                    </p>
+                    <ul class="list-unstyled">
+                        <li><i class="bi bi-check-circle text-success"></i> Custom detail templates</li>
+                        <li><i class="bi bi-check-circle text-success"></i> Asset type categorization</li>
+                        <li><i class="bi bi-check-circle text-success"></i> Make and model tracking</li>
+                        <li><i class="bi bi-check-circle text-success"></i> Automatic detail population</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Inventory Management -->
+            <div class="col-md-6 col-lg-4">
+                <div class="feature-card">
+                    <div class="feature-icon green text-center">
+                        <i class="bi bi-boxes"></i>
+                    </div>
+                    <h3 class="text-center mb-3">Inventory</h3>
+                    <p class="text-muted">
+                        Define parts, manage inventory, plan demand based off of maintenance. Track stock levels 
+                        across multiple locations and link parts to maintenance events for accurate demand forecasting.
+                    </p>
+                    <ul class="list-unstyled">
+                        <li><i class="bi bi-check-circle text-success"></i> Multi-location tracking</li>
+                        <li><i class="bi bi-check-circle text-success"></i> Part demand planning</li>
+                        <li><i class="bi bi-check-circle text-success"></i> Purchase order management</li>
+                        <li><i class="bi bi-check-circle text-success"></i> Stock level monitoring</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Maintenance & Workflows -->
+            <div class="col-md-6 col-lg-4">
+                <div class="feature-card">
+                    <div class="feature-icon yellow text-center">
+                        <i class="bi bi-wrench"></i>
+                    </div>
+                    <h3 class="text-center mb-3">Maintenance & Workflows</h3>
+                    <p class="text-muted">
+                        Build reusable maintenance checklists, set up tickets, configure workflows, and schedule 
+                        operational work orders. Template-based system ensures consistency across your fleet.
+                    </p>
+                    <ul class="list-unstyled">
+                        <li><i class="bi bi-check-circle text-success"></i> Reusable templates</li>
+                        <li><i class="bi bi-check-circle text-success"></i> Scheduled maintenance</li>
+                        <li><i class="bi bi-check-circle text-success"></i> Work order tracking</li>
+                        <li><i class="bi bi-check-circle text-success"></i> Action item checklists</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Reporting & Analytics -->
+            <div class="col-md-6 col-lg-4">
+                <div class="feature-card">
+                    <div class="feature-icon red text-center">
+                        <i class="bi bi-graph-up"></i>
+                    </div>
+                    <h3 class="text-center mb-3">Reporting & Analytics</h3>
+                    <p class="text-muted">
+                        Generate comprehensive reports on asset performance, maintenance costs, and operational 
+                        efficiency. Make data-driven decisions with real-time insights.
+                    </p>
+                    <ul class="list-unstyled">
+                        <li><i class="bi bi-check-circle text-success"></i> Asset performance metrics</li>
+                        <li><i class="bi bi-check-circle text-success"></i> Cost tracking</li>
+                        <li><i class="bi bi-check-circle text-success"></i> Efficiency analysis</li>
+                        <li><i class="bi bi-check-circle text-success"></i> Custom reports</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Dispatching -->
+            <div class="col-md-6 col-lg-4">
+                <div class="feature-card">
+                    <div class="feature-icon purple text-center">
+                        <i class="bi bi-truck"></i>
+                    </div>
+                    <h3 class="text-center mb-3">Dispatching</h3>
+                    <p class="text-muted">
+                        Manage vehicle dispatch requests through dual-portal workflow. Request assets, track 
+                        approval status, and manage dispatch outcomes efficiently.
+                    </p>
+                    <ul class="list-unstyled">
+                        <li><i class="bi bi-check-circle text-success"></i> Request management</li>
+                        <li><i class="bi bi-check-circle text-success"></i> Asset availability tracking</li>
+                        <li><i class="bi bi-check-circle text-success"></i> Approval workflows</li>
+                        <li><i class="bi bi-check-circle text-success"></i> Outcome documentation</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Event Tracking -->
+            <div class="col-md-6 col-lg-4">
+                <div class="feature-card">
+                    <div class="feature-icon orange text-center">
+                        <i class="bi bi-calendar-event"></i>
+                    </div>
+                    <h3 class="text-center mb-3">Event Tracking</h3>
+                    <p class="text-muted">
+                        Complete audit trail of all asset activities. Track changes, maintenance events, 
+                        location updates, and more with comprehensive event logging.
+                    </p>
+                    <ul class="list-unstyled">
+                        <li><i class="bi bi-check-circle text-success"></i> Complete audit trail</li>
+                        <li><i class="bi bi-check-circle text-success"></i> Event attachments</li>
+                        <li><i class="bi bi-check-circle text-success"></i> Comments and notes</li>
+                        <li><i class="bi bi-check-circle text-success"></i> Activity timeline</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Call to Action -->
+        <div class="row mt-5">
+            <div class="col-12 text-center">
+                <h2 class="section-title">Ready to Get Started?</h2>
+                <p class="lead mb-4">Explore our modules to see how EBAMS can transform your asset management</p>
+                <a href="{{ url_for('public.modules') }}" class="btn btn-primary btn-lg me-3">
+                    <i class="bi bi-grid-3x3-gap"></i> View Modules
+                </a>
+                <a href="{{ url_for('public.get_started') }}" class="btn btn-outline-primary btn-lg">
+                    <i class="bi bi-rocket"></i> Get Started
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+

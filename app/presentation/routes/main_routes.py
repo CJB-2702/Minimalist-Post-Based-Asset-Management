@@ -21,6 +21,9 @@ from app import db
 # Import the main blueprint from the package
 from . import main
 
+# Initialize logger
+logger = get_logger("asset_management.routes.main")
+
 @main.route('/')
 @login_required
 def index():
@@ -181,47 +184,6 @@ def dashboard():
                          recent_events=recent_events,
                          location_stats=location_stats,
                          asset_type_stats=asset_type_stats)
-
-@main.route('/search')
-@login_required
-def search():
-    """Global search across all entities"""
-    query = request.args.get('q', '')
-    if not query:
-        return render_template('search.html', results=None)
-    
-    # Search assets
-    assets = Asset.query.filter(
-        Asset.name.ilike(f'%{query}%') |
-        Asset.serial_number.ilike(f'%{query}%')
-    ).limit(10).all()
-    
-    # Search locations
-    locations = MajorLocation.query.filter(
-        MajorLocation.name.ilike(f'%{query}%') |
-        MajorLocation.description.ilike(f'%{query}%')
-    ).limit(10).all()
-    
-    # Search make/models
-    make_models = MakeModel.query.filter(
-        MakeModel.make.ilike(f'%{query}%') |
-        MakeModel.model.ilike(f'%{query}%')
-    ).limit(10).all()
-    
-    # Search users
-    users = User.query.filter(
-        User.username.ilike(f'%{query}%') |
-        User.email.ilike(f'%{query}%')
-    ).limit(10).all()
-    
-    results = {
-        'assets': assets,
-        'locations': locations,
-        'make_models': make_models,
-        'users': users
-    }
-    
-    return render_template('search.html', results=results, query=query)
 
 @main.route('/help')
 @login_required

@@ -1,0 +1,76 @@
+<!-- Create Limitation Modal -->
+<div class="modal fade" id="createLimitationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('maintenance.create_limitation', event_id=event.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <div class="modal-header">
+                    <h5 class="modal-title">Create Asset Capability Limitation</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="editLimitationStatus" class="form-label">Capability Status <span class="text-danger">*</span></label>
+                        <select class="form-select" id="editLimitationStatus" name="limitation_status" required>
+                            <option value="">-- Select Status --</option>
+                            {% for status in allowable_limitation_statuses %}
+                            <option value="{{ status }}">{{ status }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editLimitationDescription" class="form-label">Limitation Description</label>
+                        <textarea class="form-control" id="editLimitationDescription" name="limitation_description" rows="3" 
+                                  placeholder="Describe the operational limitation or issue"></textarea>
+                    </div>
+                    
+                    <div class="mb-3" id="editTemporaryModificationsSection" style="display: none;">
+                        <label for="editTemporaryModifications" class="form-label">Temporary Compensations <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="editTemporaryModifications" name="temporary_modifications" rows="3" 
+                                  placeholder="Describe procedural or hardware compensations"></textarea>
+                        <small class="form-text text-muted">Required for compensation statuses</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editLimitationStartTime" class="form-label">Start Time <span class="text-danger">*</span></label>
+                        <input type="datetime-local" class="form-control" id="editLimitationStartTime" name="start_time" required>
+                    </div>
+                    
+                    {% if active_blockers %}
+                    <div class="mb-3">
+                        <div class="card border-warning">
+                            <div class="card-header bg-warning bg-opacity-10 py-2">
+                                <small class="fw-bold text-warning">
+                                    <i class="bi bi-link-45deg"></i> Link to Active Blocker
+                                </small>
+                            </div>
+                            <div class="card-body py-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="editLinkToBlocker" name="link_to_blocker" value="true">
+                                    <label class="form-check-label" for="editLinkToBlocker">
+                                        Link this limitation to the current blocked status
+                                    </label>
+                                </div>
+                                <small class="form-text text-muted">
+                                    Active blocker: {{ active_blockers[0].reason }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        <label for="editLimitationComment" class="form-label">Comment to Add to Event</label>
+                        <textarea class="form-control" id="editLimitationComment" name="comment" rows="2" 
+                                  placeholder="Optional comment to add to the event log"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">Create Limitation</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

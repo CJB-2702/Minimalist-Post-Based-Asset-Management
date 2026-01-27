@@ -1,0 +1,46 @@
+<!-- Reject Outcome Card for View Pages -->
+<div class="card info-card danger mb-3">
+    <div class="card-header">
+        <h6 class="mb-0">
+            <i class="bi bi-x-circle text-danger"></i> Rejection #{{ reject.id }}
+        </h6>
+    </div>
+    <div class="card-body">
+        {% if reject.rejection_category %}
+        <div class="mb-2">
+            <small class="text-muted d-block">Category</small>
+            <span class="badge bg-danger">{{ reject.rejection_category }}</span>
+        </div>
+        {% endif %}
+        
+        <div class="mb-2">
+            <small class="text-muted d-block">Reason</small>
+            <p class="mb-0">{{ reject.reason[:150] }}{% if reject.reason|length > 150 %}...{% endif %}</p>
+        </div>
+        
+        {% if reject.alternative_suggestion %}
+        <div class="mb-2">
+            <small class="text-muted d-block">Alternative Suggestion</small>
+            <p class="mb-0 small text-muted">{{ reject.alternative_suggestion[:100] }}{% if reject.alternative_suggestion|length > 100 %}...{% endif %}</p>
+        </div>
+        {% endif %}
+        
+        <div class="mb-2">
+            <small class="text-muted d-block">Can Resubmit</small>
+            {% if reject.can_resubmit %}
+                <span class="badge bg-warning text-dark">
+                    Yes{% if reject.resubmit_after %} (after {{ reject.resubmit_after.strftime('%Y-%m-%d') }}){% endif %}
+                </span>
+            {% else %}
+                <span class="badge bg-danger">No</span>
+            {% endif %}
+        </div>
+        
+        <div class="mt-3">
+            <a href="{{ url_for('dispatching.rejects_detail', item_id=reject.id) }}" 
+               class="btn btn-sm btn-danger w-100">
+                <i class="bi bi-eye"></i> View Rejection Details
+            </a>
+        </div>
+    </div>
+</div>

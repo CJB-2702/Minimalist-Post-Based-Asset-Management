@@ -74,7 +74,7 @@
                     <p class="text-muted mb-0">Assign or reassign this maintenance event to a technician</p>
                 </div>
                 <div>
-                    <a href="{{ url_for('maintenance_event.view_maintenance_event', event_id=event.id) }}" class="btn btn-outline-secondary">
+                    <a href="{{ url_for('maintenance_event_view.view_maintenance_event', event_id=event.id) }}" class="btn btn-outline-secondary">
                         <i class="bi bi-arrow-left"></i> Back to Event
                     </a>
                 </div>
@@ -159,7 +159,8 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    <form method="POST" action="{{ url_for('maintenance_event.assign_event', event_id=event.id) }}" id="assignForm" novalidate>
+                    <form method="POST" action="{{ url_for('maintenance_event_assign.assign_event', event_id=event.id) }}" id="assignForm" novalidate>
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                         <div class="mb-3">
                             <label for="technician_search" class="form-label">Technician <span class="text-danger">*</span></label>
                             <div class="position-relative">
@@ -209,7 +210,7 @@
                         </div>
 
                         <div class="d-flex justify-content-between">
-                            <a href="{{ url_for('maintenance_event.view_maintenance_event', event_id=event.id) }}" class="btn btn-outline-secondary">
+                            <a href="{{ url_for('maintenance_event_view.view_maintenance_event', event_id=event.id) }}" class="btn btn-outline-secondary">
                                 <i class="bi bi-x-circle"></i> Cancel
                             </a>
                             <button type="submit" class="btn btn-warning btn-lg">
@@ -348,7 +349,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('assigned') === 'true') {
         // Open view page in new tab
-        const viewUrl = `{{ url_for('maintenance_event.view_maintenance_event', event_id=event.id) }}`;
+        const viewUrl = `{{ url_for('maintenance_event_view.view_maintenance_event', event_id=event.id) }}`;
         window.open(viewUrl, '_blank');
         
         // Remove the parameter from URL without reload

@@ -1,0 +1,39 @@
+<div class="row" data-bin-viewer>
+    <!-- Bin Layout SVG (Left 50%) -->
+    <div class="col-lg-8">
+        <div class="bin-layout-image" data-bin-layout-image>
+            {% if selected_location and selected_location.bin_layout_svg %}
+                {{ selected_location.bin_layout_svg|safe }}
+            {% else %}
+                <div class="text-muted text-center">
+                    <p><em>No bin layout SVG uploaded yet</em></p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Bin List (Right 50%) -->
+    <div class="col-lg-4">
+        <h6 class="mb-3" data-bins-heading>Bins (Optional)</h6>
+        {% if bins_list %}
+            <div class="d-grid gap-2" data-bins-list>
+                {% for bin_item in bins_list %}
+                    {% set bin = bin_item %}
+                    {% include 'inventory/inventory/move_inventory_gui/_bin_card.html' %}
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center text-muted py-3" data-empty-bins>
+                <p><em>No bins found in this location</em></p>
+            </div>
+        {% endif %}
+        <div class="mt-3">
+            <a href="{{ url_for('inventory.move_inventory_gui', initial_active_inventory_id=active_inventory.id, major_location_id=major_location_id, storeroom=storeroom_id, location=location_id) }}"
+               class="btn btn-outline-secondary w-100" 
+               data-skip-bin-btn>
+                <i class="bi bi-x-circle"></i> Skip Bin Selection
+            </a>
+        </div>
+    </div>
+</div>
+

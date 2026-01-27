@@ -13,6 +13,7 @@ from app.data.core.major_location import MajorLocation
 from app.data.core.asset_info.asset_type import AssetType
 from app.buisness.core.user_context import UserContext
 from app.services.core.user_service import UserService
+from app.data.core.user_info.password_validator import PasswordValidator
 from app import db
 
 bp = Blueprint('users', __name__)
@@ -66,8 +67,14 @@ def create():
         is_active = request.form.get('is_active') == 'on'
         
         # Validate password
-        if not password or len(password) < 8:
-            flash('Password must be at least 8 characters long', 'error')
+        if not password:
+            flash('Password is required', 'error')
+            return render_template('core/users/create.html')
+        
+        # Use enhanced password validator
+        is_valid, error_msg = PasswordValidator.validate(password)
+        if not is_valid:
+            flash(error_msg, 'error')
             return render_template('core/users/create.html')
         
         if password != confirm_password:
@@ -123,8 +130,10 @@ def edit(user_id):
         
         # Validate password if provided
         if password:
-            if len(password) < 8:
-                flash('Password must be at least 8 characters long', 'error')
+            # Use enhanced password validator with history checking
+            is_valid, error_msg = PasswordValidator.validate(password, user=user, check_history=True)
+            if not is_valid:
+                flash(error_msg, 'error')
                 return render_template('core/users/edit.html', 
                                      user=user,
                                      Asset=Asset,

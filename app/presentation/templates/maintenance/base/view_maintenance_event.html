@@ -113,6 +113,9 @@
         </div>
     </div>
 
+    <!-- Asset Capability Status Card -->
+    {% include 'maintenance/base/shared_components/capability_status_card.html' %}
+
     {% if active_blockers %}
     <!-- Active Blockers Card -->
     <div class="card mb-4 border-danger" style="background-color: #ffebee;">
@@ -153,88 +156,7 @@
         </div>
     </div>
     
-    <!-- End Blocked Status Modals -->
-    {% for blocker in active_blockers %}
-    <div class="modal fade" id="endBlockedStatusModal{{ blocker.id }}" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <form method="POST" action="{{ url_for('maintenance.end_blocked_status', blocked_status_id=blocker.id) }}">
-                    <div class="modal-header">
-                        <h5 class="modal-title">End Blocked Status</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label class="form-label"><strong>Status:</strong> {{ blocker.mission_capability_status or 'N/A' }}</label>
-                        </div>
-                        {% if blocker.reason %}
-                        <div class="mb-3">
-                            <label class="form-label"><strong>Reason:</strong> {{ blocker.reason }}</label>
-                        </div>
-                        {% endif %}
-                        
-                        <div class="mb-3">
-                            <label for="blocked_status_start_date{{ blocker.id }}" class="form-label">Start Time <span class="text-danger">*</span></label>
-                            <input type="datetime-local" 
-                                   class="form-control" 
-                                   id="blocked_status_start_date{{ blocker.id }}" 
-                                   name="blocked_status_start_date"
-                                   value="{% if blocker.start_date %}{{ blocker.start_date.strftime('%Y-%m-%dT%H:%M') }}{% endif %}"
-                                   required>
-                            <small class="form-text text-muted">When did the blocker start?</small>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="blocked_status_end_date{{ blocker.id }}" class="form-label">End Time <span class="text-danger">*</span></label>
-                            <input type="datetime-local" 
-                                   class="form-control" 
-                                   id="blocked_status_end_date{{ blocker.id }}" 
-                                   name="blocked_status_end_date"
-                                   required>
-                            <small class="form-text text-muted">When did/will the blocker end?</small>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="blocked_status_billable_hours{{ blocker.id }}" class="form-label">Billable Hours Lost <span class="text-danger">*</span></label>
-                            <input type="number" 
-                                   step="0.25" 
-                                   min="0" 
-                                   class="form-control" 
-                                   id="blocked_status_billable_hours{{ blocker.id }}" 
-                                   name="blocked_status_billable_hours"
-                                   value="{% if blocker.billable_hours is not none %}{{ blocker.billable_hours }}{% else %}0{% endif %}"
-                                   required>
-                            <small class="form-text text-muted">Total billable hours lost due to this blocker (0 if none)</small>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="blocked_status_notes{{ blocker.id }}" class="form-label">Update Notes</label>
-                            <textarea class="form-control" 
-                                      id="blocked_status_notes{{ blocker.id }}" 
-                                      name="blocked_status_notes" 
-                                      rows="3"
-                                      placeholder="Optional: Add or update notes about this blocker...">{{ blocker.notes or '' }}</textarea>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="blocked_comment{{ blocker.id }}" class="form-label">Event Comment</label>
-                            <textarea class="form-control" 
-                                      id="blocked_comment{{ blocker.id }}" 
-                                      name="comment" 
-                                      rows="3"
-                                      placeholder="Optional: Add details to the event comment when ending this blocker..."></textarea>
-                            <small class="form-text text-muted">This will be added to the event's comment log</small>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-success">End Blocked Status</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-    {% endfor %}
+    {% include 'maintenance/base/shared_components/end_blocked_status_modals.html' %}
     {% endif %}
 
     <div class="row">
@@ -482,7 +404,7 @@
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
-                        <a href="{{ url_for('maintenance_event.render_edit_page', event_id=event.id) }}" class="btn btn-outline-warning">
+                        <a href="{{ url_for('maintenance_event_edit.render_edit_page', event_id=event.id) }}" class="btn btn-outline-warning">
                             <i class="bi bi-pencil"></i> Edit Event
                         </a>
                         {% if maintenance.status == 'Delayed' or maintenance.status == 'Blocked' or active_blockers %}
@@ -490,7 +412,7 @@
                             <i class="bi bi-tools"></i> Do Work
                         </button>
                         {% else %}
-                        <a href="{{ url_for('maintenance_event.work_maintenance_event', event_id=event.id) }}" class="btn btn-outline-success">
+                        <a href="{{ url_for('maintenance_event_work.work_maintenance_event', event_id=event.id) }}" class="btn btn-outline-success">
                             <i class="bi bi-tools"></i> Do Work
                         </a>
                         {% endif %}
@@ -752,7 +674,7 @@
                         <div class="mb-3 pb-3 {% if not loop.last %}border-bottom{% endif %}">
                             <div class="d-flex justify-content-between align-items-start mb-1">
                                 <div>
-                                    <span class="badge bg-{% if delay.mission_capability_status == 'Mission Capable - Temporary Procedural or Hardware Work Arounds' %}warning{% else %}danger{% endif %} me-2">
+                                    <span class="badge bg-{% if 'Compensation' in delay.mission_capability_status %}warning{% else %}danger{% endif %} me-2">
                                         {{ delay.mission_capability_status or 'N/A' }}
                                     </span>
                                     {% if delay.priority %}
@@ -794,34 +716,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
-    // Initialize end blocked status modals
-    document.addEventListener('DOMContentLoaded', function() {
-        {% for blocker in active_blockers %}
-        const endBlockedModal{{ blocker.id }} = document.getElementById('endBlockedStatusModal{{ blocker.id }}');
-        if (endBlockedModal{{ blocker.id }}) {
-            endBlockedModal{{ blocker.id }}.addEventListener('show.bs.modal', function () {
-                // Set end date to current time (required field)
-                const endDateInput = document.getElementById('blocked_status_end_date{{ blocker.id }}');
-                if (endDateInput) {
-                    const now = new Date();
-                    const year = now.getFullYear();
-                    const month = String(now.getMonth() + 1).padStart(2, '0');
-                    const day = String(now.getDate()).padStart(2, '0');
-                    const hours = String(now.getHours()).padStart(2, '0');
-                    const minutes = String(now.getMinutes()).padStart(2, '0');
-                    endDateInput.value = `${year}-${month}-${day}T${hours}:${minutes}`;
-                }
-                
-                // Ensure billable hours has a value (required field, defaults to 0)
-                const billableHoursInput = document.getElementById('blocked_status_billable_hours{{ blocker.id }}');
-                if (billableHoursInput && !billableHoursInput.value) {
-                    billableHoursInput.value = '0';
-                }
-            });
-        }
-        {% endfor %}
-    });
-</script>
 {% endblock %}
 

@@ -22,6 +22,7 @@
                 </div>
                 <div class="card-body">
                     <form method="POST" action="{{ url_for('maintenance.create_maintenance_event') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                         <div class="mb-4">
                             <label for="asset_id" class="form-label">
                                 <i class="bi bi-box"></i> Select Asset *

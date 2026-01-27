@@ -2,9 +2,8 @@
 Storeroom Routes Package
 """
 
-from .routes import register_storeroom_routes
-
-__all__ = ['register_storeroom_routes']
+# Routes are registered directly using @inventory_bp.route() decorators
+# No registration function needed
 
 
 

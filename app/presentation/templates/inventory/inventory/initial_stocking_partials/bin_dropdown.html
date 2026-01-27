@@ -1,0 +1,15 @@
+<select class="form-select" 
+        name="classic_bin_id" 
+        id="classicBinSelect">
+    <option value="">Select a bin (optional)</option>
+    {% for bin in bins %}
+    <option value="{{ bin.id }}" {% if selected_bin_id == bin.id %}selected{% endif %}>
+        {{ bin.bin_tag }}
+    </option>
+    {% endfor %}
+</select>
+{% if error %}
+<div class="alert alert-danger mt-2">
+    <small>Error loading bins: {{ error }}</small>
+</div>
+{% endif %}

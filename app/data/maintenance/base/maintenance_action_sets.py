@@ -48,6 +48,7 @@ class MaintenanceActionSet(EventDetailVirtual, VirtualActionSet):
     template_action_set = relationship('TemplateActionSet', foreign_keys=[template_action_set_id], back_populates='maintenance_action_sets', lazy='select', overlaps='maintenance_action_sets')
     actions = relationship('Action', back_populates='maintenance_action_set', lazy='selectin', order_by='Action.sequence_order', cascade='all, delete-orphan')
     blockers = relationship('MaintenanceBlocker', back_populates='maintenance_action_set', lazy='selectin', cascade='all, delete-orphan')
+    limitation_records = relationship('AssetLimitationRecord', back_populates='maintenance_action_set', lazy='selectin', cascade='all, delete-orphan')
     
     # User relationships
     assigned_user = relationship('User', foreign_keys=[assigned_user_id], backref='assigned_maintenance_action_sets')

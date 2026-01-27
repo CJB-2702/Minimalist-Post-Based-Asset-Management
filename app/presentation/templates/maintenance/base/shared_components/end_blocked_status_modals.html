@@ -1,0 +1,24 @@
+<!-- End Blocked Status Modals -->
+{% if active_blockers %}
+{% for blocker in active_blockers %}
+{% include 'maintenance/base/shared_components/end_blocked_status_modal.html' %}
+{% endfor %}
+
+<script>
+// Set current time when modals open for end blocked status
+{% for blocker in active_blockers %}
+document.getElementById('endBlockedStatusModal{{ blocker.id }}').addEventListener('show.bs.modal', function() {
+    const endDateInput = document.getElementById('blocked_status_end_date{{ blocker.id }}');
+    if (!endDateInput.value) {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        endDateInput.value = `${year}-${month}-${day}T${hours}:${minutes}`;
+    }
+});
+{% endfor %}
+</script>
+{% endif %}

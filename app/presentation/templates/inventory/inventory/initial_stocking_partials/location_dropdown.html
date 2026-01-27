@@ -1,0 +1,21 @@
+<select class="form-select" 
+        name="classic_location_id" 
+        id="classicLocationSelect" 
+        required
+        hx-get="{{ url_for('inventory.initial_stocking_bins') }}"
+        hx-trigger="change"
+        hx-target="#classicBinSelectContainer"
+        hx-include="[name='classic_location_id']"
+        hx-swap="innerHTML">
+    <option value="">Select a location</option>
+    {% for loc in locations %}
+    <option value="{{ loc.id }}" {% if selected_location_id == loc.id %}selected{% endif %}>
+        {{ loc.location }}
+    </option>
+    {% endfor %}
+</select>
+{% if error %}
+<div class="alert alert-danger mt-2">
+    <small>Error loading locations: {{ error }}</small>
+</div>
+{% endif %}

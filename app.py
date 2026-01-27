@@ -8,7 +8,20 @@ from app import create_app
 from app.build import build_database
 from app.logger import get_logger
 import sys
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+
+
+
 import argparse
+
+# Note: Default user credentials are configured via environment variables.
+# Run 'python generate_env.py' to create .env file with secure passwords.
+# See SECURITY_IMPLEMENTATION_LOG.md for more information.
 
 app = create_app()
 logger = get_logger("asset_management.run")
@@ -105,4 +118,22 @@ if __name__ == '__main__':
     
     logger.debug("")
     logger.debug("Access the application at: http://localhost:5000")
-    app.run(debug=True, host='0.0.0.0', port=5000, use_reloader=False)
+    
+    # Read configuration from environment variables
+    # FLASK_DEBUG: Enable/disable debug mode (default: False for security)
+    debug_mode = os.environ.get('FLASK_DEBUG', 'False').lower() in ('true', '1', 'yes', 'on')
+    
+    # USE_RELOADER: Enable/disable auto-reloader (default: False in production)
+    use_reloader = os.environ.get('USE_RELOADER', 'False').lower() in ('true', '1', 'yes', 'on')
+    
+    # FLASK_HOST: Server host (default: 127.0.0.1 for security)
+    host = os.environ.get('FLASK_HOST', '127.0.0.1')
+    
+    # FLASK_PORT: Server port (default: 5000)
+    port = int(os.environ.get('FLASK_PORT', '5000'))
+    
+    if debug_mode:
+        logger.warning("⚠️  DEBUG MODE ENABLED - Do not use in production!")
+    
+    logger.info(f"Starting server on {host}:{port} (debug={debug_mode}, reloader={use_reloader})")
+    app.run(debug=debug_mode, host=host, port=port, use_reloader=use_reloader)

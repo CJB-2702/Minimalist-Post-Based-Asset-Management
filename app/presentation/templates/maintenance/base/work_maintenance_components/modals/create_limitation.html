@@ -1,0 +1,83 @@
+<!-- Create Capability Limitation Modal -->
+<div class="modal fade" id="createLimitationModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('maintenance.create_limitation', event_id=event.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <div class="modal-header bg-warning bg-opacity-10">
+                    <h5 class="modal-title">
+                        <i class="bi bi-exclamation-diamond text-warning"></i> Add Asset Capability Limitation
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <small><i class="bi bi-info-circle"></i> Use this to record when an asset has degraded operational capability, separate from maintenance progress blockers.</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="limitationStatus" class="form-label">Capability Status <span class="text-danger">*</span></label>
+                        <select class="form-select" id="limitationStatus" name="limitation_status" required>
+                            <option value="">-- Select Status --</option>
+                            {% for status in allowable_limitation_statuses %}
+                            <option value="{{ status }}">{{ status }}</option>
+                            {% endfor %}
+                        </select>
+                        <small class="form-text text-muted">Select the operational capability status of the asset</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="limitationDescription" class="form-label">Limitation Description</label>
+                        <textarea class="form-control" id="limitationDescription" name="limitation_description" rows="3" placeholder="Describe what is limited or degraded"></textarea>
+                        <small class="form-text text-muted">What exactly is limited or degraded?</small>
+                    </div>
+                    
+                    <div class="mb-3" id="temporaryModificationsSection" style="display: none;">
+                        <label for="temporaryModifications" class="form-label">Temporary Modifications <span class="text-danger" id="modificationsRequired">*</span></label>
+                        <textarea class="form-control" id="temporaryModifications" name="temporary_modifications" rows="3" placeholder="Describe procedural, component, or safety compensations"></textarea>
+                        <small class="form-text text-muted">
+                            <strong>Required for Compensation statuses.</strong> Describe procedural, component, or safety compensations that allow the asset to operate.
+                        </small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="limitationStartTime" class="form-label">Start Time <span class="text-danger">*</span></label>
+                        <input type="datetime-local" class="form-control" id="limitationStartTime" name="start_time" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="limitationComment" class="form-label">Comment to Add to Event</label>
+                        <textarea class="form-control" id="limitationComment" name="comment" rows="2" placeholder="Optional comment to add to the event log"></textarea>
+                    </div>
+                    
+                    {% if active_blockers %}
+                    <div class="mb-3">
+                        <div class="card border-warning">
+                            <div class="card-header bg-warning bg-opacity-10 py-2">
+                                <small class="fw-bold text-warning">
+                                    <i class="bi bi-link-45deg"></i> Link to Active Blocker
+                                </small>
+                            </div>
+                            <div class="card-body py-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="linkToBlocker" name="link_to_blocker" value="true">
+                                    <label class="form-check-label" for="linkToBlocker">
+                                        Link this limitation to the current blocked status
+                                    </label>
+                                </div>
+                                <small class="form-text text-muted">
+                                    Active blocker: {{ active_blockers[0].reason }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">Add Capability Limitation</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

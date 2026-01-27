@@ -297,6 +297,7 @@
                                         </span>
                                     {% else %}
                                         <form method="POST" action="{{ url_for('maintenance_plan.create_maintenance_event', plan_id=plan.id) }}" style="display: inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                             <input type="hidden" name="asset_id" value="{{ result.asset_id }}">
                                             <button type="submit" class="btn btn-sm btn-primary">
                                                 <i class="bi bi-plus-circle"></i> Create Event

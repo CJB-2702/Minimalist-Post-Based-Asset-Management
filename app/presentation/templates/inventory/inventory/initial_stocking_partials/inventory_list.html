@@ -1,0 +1,100 @@
+{% if selected_storeroom_id %}
+    {% if unassigned_inventory %}
+    <form id="stockingForm" method="POST" action="#">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th style="width: 40px;">
+                            <input type="checkbox" id="selectAll" title="Select All">
+                        </th>
+                        <th>Part</th>
+                        <th>Major Location</th>
+                        <th>Storeroom</th>
+                        <th class="text-end">Qty On Hand</th>
+                        <th class="text-end">Qty Allocated</th>
+                        <th class="text-end">Available</th>
+                        <th class="text-end">Avg Unit Cost</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for inv in unassigned_inventory %}
+                    <tr data-inventory-id="{{ inv.id }}" data-storeroom-id="{{ inv.storeroom_id if inv.storeroom else '' }}">
+                        <td>
+                            <input type="checkbox" 
+                                   class="form-check-input inventory-checkbox" 
+                                   name="inventory_ids" 
+                                   value="{{ inv.id }}"
+                                   data-quantity="{{ inv.quantity_on_hand - inv.quantity_allocated }}"
+                                   data-storeroom-id="{{ inv.storeroom_id if inv.storeroom else '' }}"
+                                   data-storeroom-name="{{ inv.storeroom.room_name if inv.storeroom else 'N/A' }}">
+                        </td>
+                        <td>
+                            {% if inv.part %}
+                            <div><strong>{{ inv.part.part_number }}</strong></div>
+                            <div class="text-muted small">{{ inv.part.part_name }}</div>
+                            {% else %}
+                            <div><strong>Part #{{ inv.part_id }}</strong></div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if inv.storeroom and inv.storeroom.major_location %}
+                            {{ inv.storeroom.major_location.name }}
+                            {% else %}
+                            <span class="text-muted">N/A</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if inv.storeroom %}
+                            {{ inv.storeroom.room_name }}
+                            {% else %}
+                            <span class="text-muted">N/A</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <strong>{{ '%.2f'|format(inv.quantity_on_hand) }}</strong>
+                        </td>
+                        <td class="text-end">{{ '%.2f'|format(inv.quantity_allocated) }}</td>
+                        <td class="text-end">
+                            <strong>{{ '%.2f'|format(inv.quantity_on_hand - inv.quantity_allocated) }}</strong>
+                        </td>
+                        <td class="text-end">
+                            {% if inv.unit_cost_avg %}
+                            ${{ '%.2f'|format(inv.unit_cost_avg) }}
+                            {% else %}
+                            <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="mt-4 d-flex justify-content-between align-items-center">
+            <div>
+                <span id="selectedCount" class="text-muted">0 items selected</span>
+            </div>
+            <div>
+                <button type="button" class="btn btn-primary" id="useStockingGuiBtn" disabled>
+                    <i class="bi bi-box-arrow-in-right"></i> Use Inventory Stocking GUI
+                </button>
+            </div>
+        </div>
+    </form>
+    {% else %}
+    <div class="alert alert-info mb-0">
+        <i class="bi bi-info-circle"></i> No unassigned inventory found for this storeroom{% if part_search %} matching your search{% endif %}.
+    </div>
+    {% endif %}
+{% else %}
+<div class="alert alert-info">
+    <i class="bi bi-info-circle"></i> Please select a storeroom to view unassigned inventory.
+</div>
+{% endif %}
+{% if error %}
+<div class="alert alert-danger mt-2">
+    <small>Error loading inventory: {{ error }}</small>
+</div>
+{% endif %}

@@ -1,0 +1,97 @@
+<!-- Complete Maintenance Modal -->
+<div class="modal fade" id="completeMaintenanceModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('maintenance_event_work.complete_maintenance', event_id=event.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <div class="modal-header">
+                    <h5 class="modal-title">Complete Maintenance</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="completionComment" class="form-label">Completion Comment <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="completionComment" name="completion_comment" rows="3" required></textarea>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="actualStartDate" class="form-label">Actual Start Date/Time <span class="text-danger">*</span></label>
+                            <input type="datetime-local" class="form-control" id="actualStartDate" name="actual_start_date" 
+                                   value="{% if maintenance.maintenance_action_set.start_date %}{{ maintenance.maintenance_action_set.start_date.strftime('%Y-%m-%dT%H:%M') }}{% endif %}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="actualEndDate" class="form-label">Actual End Date/Time <span class="text-danger">*</span></label>
+                            <input type="datetime-local" class="form-control" id="actualEndDate" name="actual_end_date" 
+                                   value="{% if maintenance.maintenance_action_set.end_date %}{{ maintenance.maintenance_action_set.end_date.strftime('%Y-%m-%dT%H:%M') }}{% endif %}" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="actualBillableHours" class="form-label">Actual Billable Hours <span class="text-danger">*</span></label>
+                        <input type="number" step="any" min="0.2" class="form-control" id="actualBillableHours" name="actual_billable_hours" 
+                               value="{% if maintenance_context.get_billable_hours_manager().actual_hours %}{{ maintenance_context.get_billable_hours_manager().actual_hours }}{% else %}{{ maintenance_context.get_billable_hours_manager().calculated_hours }}{% endif %}" required>
+                        <small class="text-muted">Sum of action billable hours: 
+                            {{ "%.2f"|format(maintenance_context.get_billable_hours_manager().calculated_hours) }}h
+                        </small>
+                    </div>
+                    
+                    <!-- Meter Verification Section -->
+                    {% if asset %}
+                    <hr>
+                    <div class="mb-3">
+                        <h6 class="mb-3">
+                            <i class="bi bi-speedometer2"></i> Meter Verification <span class="text-danger">*</span>
+                        </h6>
+                        <div class="alert alert-info">
+                            <small><i class="bi bi-info-circle"></i> Please verify or update the current meter readings for this asset.</small>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="meter1" class="form-label">Meter 1</label>
+                                <input type="number" step="0.01" class="form-control meter-input" id="meter1" name="meter1" 
+                                       value="{% if asset.meter1 is not none %}{{ asset.meter1 }}{% endif %}"
+                                       placeholder="Enter meter 1 value">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="meter2" class="form-label">Meter 2</label>
+                                <input type="number" step="0.01" class="form-control meter-input" id="meter2" name="meter2" 
+                                       value="{% if asset.meter2 is not none %}{{ asset.meter2 }}{% endif %}"
+                                       placeholder="Enter meter 2 value">
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="meter3" class="form-label">Meter 3</label>
+                                <input type="number" step="0.01" class="form-control meter-input" id="meter3" name="meter3" 
+                                       value="{% if asset.meter3 is not none %}{{ asset.meter3 }}{% endif %}"
+                                       placeholder="Enter meter 3 value">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="meter4" class="form-label">Meter 4</label>
+                                <input type="number" step="0.01" class="form-control meter-input" id="meter4" name="meter4" 
+                                       value="{% if asset.meter4 is not none %}{{ asset.meter4 }}{% endif %}"
+                                       placeholder="Enter meter 4 value">
+                            </div>
+                        </div>
+                        
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="meterVerificationToggle" name="meter_verification_toggle" required>
+                            <label class="form-check-label" for="meterVerificationToggle">
+                                <strong>I confirm the meters are correct</strong>
+                            </label>
+                            <div class="form-text">This checkbox will be automatically checked if you modify any meter values.</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Complete Maintenance</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

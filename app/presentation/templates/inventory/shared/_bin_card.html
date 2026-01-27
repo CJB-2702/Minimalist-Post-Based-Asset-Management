@@ -1,0 +1,65 @@
+{# Bin Card Partial - Based on storeroom/build.html style #}
+{#
+Expects these variables from parent scope:
+  - bin: Bin object or dict with id, bin_tag, display_name (from loop)
+  - selected_bin_id: Currently selected bin ID (from parent)
+  - mode: 'htmx' | 'js' | 'readonly' (from parent)
+  - bin_url: URL for link (set in parent loop for htmx mode)
+  - bin_onclick: JavaScript handler (set in parent loop for js mode)
+  - card_col_class: Bootstrap column class (from parent, default: 'col-6')
+#}
+{% set col_class = card_col_class|default('col-6') %}
+{# Handle both Bin objects and dicts #}
+{% if bin.id is defined %}
+    {# Bin object #}
+    {% set bin_id = bin.id %}
+    {% set bin_tag = bin.bin_tag %}
+    {% set bin_display_name = bin.display_name if bin.display_name is defined else bin.bin_tag %}
+{% else %}
+    {# Bin dict #}
+    {% if bin.get is defined %}
+        {% set bin_id = bin.get('id') %}
+        {% set bin_tag = bin.get('bin_tag') %}
+        {% set bin_display_name = bin.get('display_name', bin_tag) %}
+    {% else %}
+        {% set bin_id = bin['id'] %}
+        {% set bin_tag = bin['bin_tag'] %}
+        {% set bin_display_name = bin.get('display_name', bin_tag) if bin.get is defined else bin['display_name'] if 'display_name' in bin else bin_tag %}
+    {% endif %}
+{% endif %}
+{% set is_selected = (selected_bin_id and bin_id == selected_bin_id) %}
+
+<div class="{{ col_class }}">
+    {% if bin_url %}
+        <a href="{{ bin_url }}" class="text-decoration-none">
+    {% elif bin_onclick %}
+        <div onclick="{{ bin_onclick }}" style="cursor: pointer;">
+    {% endif %}
+    
+    <div class="card location-card{% if is_selected %} selected{% endif %}"
+         data-bin-tag="{{ bin_tag }}"
+         data-bin-id="{{ bin_id }}">
+        <div class="card-body py-2">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div class="flex-grow-1">
+                                                    {% if mode == 'htmx' %}
+                                                        <strong data-bin-name>{{ bin_display_name }}</strong>
+                                                        {% if bin_display_name != bin_tag %}
+                                                        <div class="text-muted small" data-bin-tag-display>Tag: {{ bin_tag }}</div>
+                                                        {% endif %}
+                                                    {% else %}
+                                                        <h6 class="mb-1">{{ bin_display_name }}</h6>
+                                                    {% endif %}
+                                                </div>
+                                                <span class="badge bg-info">ID: {{ bin_id }}</span>
+                                            </div>
+        </div>
+    </div>
+    
+    {% if bin_url %}
+        </a>
+    {% elif bin_onclick %}
+        </div>
+    {% endif %}
+</div>
+

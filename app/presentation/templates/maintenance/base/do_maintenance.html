@@ -186,6 +186,7 @@
                                     <div class="col-md-4 text-end">
                                         {% if action.status == 'Not Started' %}
                                         <form method="POST" action="{{ url_for('maintenance.start_action', action_set_id=action_set.id, action_id=action.id) }}" class="mb-2">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                             <button type="submit" class="btn btn-info w-100">
                                                 <i class="bi bi-play-circle"></i> Start
                                             </button>
@@ -223,6 +224,7 @@
                                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                     </div>
                                     <form method="POST" action="{{ url_for('maintenance.complete_action', action_set_id=action_set.id, action_id=action.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                         <div class="modal-body">
                                             <div class="mb-3">
                                                 <label for="completion_notes{{ action.id }}" class="form-label">Completion Notes</label>
@@ -258,6 +260,7 @@
                                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                     </div>
                                     <form method="POST" action="{{ url_for('maintenance.skip_action', action_set_id=action_set.id, action_id=action.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                         <div class="modal-body">
                                             <div class="alert alert-warning">
                                                 <i class="bi bi-exclamation-triangle"></i>
@@ -540,6 +543,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form method="POST" action="{{ url_for('maintenance.complete_maintenance', action_set_id=action_set.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 <div class="modal-body">
                     <div class="alert alert-info">
                         <i class="bi bi-info-circle"></i>
@@ -572,6 +576,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form method="POST" action="{{ url_for('maintenance.delay_maintenance', action_set_id=action_set.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 <div class="modal-body">
                     <div class="mb-3">
                         <label for="delay_reason" class="form-label">Reason for Delay <span class="text-danger">*</span></label>
@@ -600,6 +605,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form method="POST" action="{{ url_for('maintenance.cancel_maintenance', action_set_id=action_set.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 <div class="modal-body">
                     <div class="alert alert-warning">
                         <i class="bi bi-exclamation-triangle"></i>

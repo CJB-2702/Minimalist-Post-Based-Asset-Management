@@ -71,12 +71,14 @@
             <div class="card-body">
                 {% if action.status == 'Not Started' %}
                 <form method="POST" action="{{ url_for('actions.start_action', action_id=action.id) }}" class="mb-2">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <button type="submit" class="btn btn-success w-100">Start Action</button>
                 </form>
                 {% endif %}
 
                 {% if action.status in ['Not Started', 'In Progress'] %}
                 <form method="POST" action="{{ url_for('actions.complete_action', action_id=action.id) }}" class="mb-2">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <button type="submit" class="btn btn-primary w-100">Complete</button>
                 </form>
                 {% endif %}

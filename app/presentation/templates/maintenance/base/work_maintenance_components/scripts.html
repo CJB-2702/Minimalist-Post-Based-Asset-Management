@@ -1,0 +1,378 @@
+<script>
+// Action Status Modal Handler
+document.getElementById('actionStatusModal').addEventListener('show.bs.modal', function (event) {
+    const button = event.relatedTarget;
+    const actionId = button.getAttribute('data-action-id');
+    const actionName = button.getAttribute('data-action-name');
+    const currentStatus = button.getAttribute('data-current-status');
+    const suggestedStatus = button.getAttribute('data-target-status') || ''; // Optional, for backward compatibility
+    
+    const modal = this;
+    modal.querySelector('#modalActionId').value = actionId;
+    modal.querySelector('#modalActionName').textContent = actionName;
+    modal.querySelector('#modalCurrentStatus').textContent = currentStatus;
+    
+    const statusSelect = modal.querySelector('#modalTargetStatus');
+    statusSelect.value = suggestedStatus; // Set suggested status if provided
+    
+    const form = modal.querySelector('#actionStatusForm');
+    form.action = `/maintenance/action/${actionId}/update-status`;
+    
+    const commentSection = modal.querySelector('#commentSection');
+    const commentRequired = modal.querySelector('#commentRequired');
+    const commentHelp = modal.querySelector('#commentHelp');
+    const commentField = modal.querySelector('#statusComment');
+    const editedCommentField = modal.querySelector('#editedComment');
+    
+    // Store original generated comment for comparison
+    let generatedComment = '';
+    let isUserEdited = false;
+    
+    // Function to generate comment based on status transition
+    function generateComment(fromStatus, toStatus) {
+        const statusTransitions = {
+            'Not Started -> In Progress': 'Action started',
+            'In Progress -> Complete': 'Action completed successfully',
+            'In Progress -> Failed': 'Action failed',
+            'In Progress -> Blocked': 'Action blocked',
+            'In Progress -> Skipped': 'Action skipped',
+            'Blocked -> In Progress': 'Action resumed after being blocked',
+            'Complete -> Failed': 'Action status changed from Complete to Failed',
+            'Failed -> Complete': 'Action status changed from Failed to Complete',
+            'Complete -> In Progress': 'Action reset to In Progress for retry',
+            'Failed -> In Progress': 'Action reset to In Progress for retry',
+            'Skipped -> In Progress': 'Action reset to In Progress',
+        };
+        
+        const transitionKey = `${fromStatus} -> ${toStatus}`;
+        return statusTransitions[transitionKey] || `Status changed from ${fromStatus} to ${toStatus}`;
+    }
+    
+    // Function to update comment based on selected status
+    function updateComment() {
+        const selectedStatus = statusSelect.value;
+        if (!selectedStatus) {
+            commentField.value = '';
+            generatedComment = '';
+            editedCommentField.value = '';
+            isUserEdited = false;
+            return;
+        }
+        
+        generatedComment = generateComment(currentStatus, selectedStatus);
+        
+        // Only update if user hasn't edited, or if they're changing the status again
+        if (!isUserEdited || commentField.value === '') {
+            commentField.value = generatedComment;
+            editedCommentField.value = '';
+        }
+        
+        // Check comment requirements
+        const requiresComment = selectedStatus === 'Blocked' || selectedStatus === 'Failed' || 
+                               (['Complete', 'Failed'].includes(currentStatus) && ['Complete', 'Failed'].includes(selectedStatus));
+        
+        if (requiresComment) {
+            commentField.required = true;
+            commentRequired.style.display = 'inline';
+            commentHelp.textContent = 'A comment is required for this status change. You can edit it before submitting.';
+        } else {
+            commentField.required = false;
+            commentRequired.style.display = 'none';
+            commentHelp.textContent = 'You can add a comment (optional). If you edit it, it will be marked as human-created.';
+        }
+        
+        // Show/hide part demand management section
+        const partDemandsSection = modal.querySelector('#partDemandsSection');
+        partDemandsSection.style.display = (selectedStatus === 'Failed' || selectedStatus === 'Skipped') ? 'block' : 'none';
+        
+        // Reset radio buttons when showing
+        if (partDemandsSection.style.display === 'block') {
+            modal.querySelector('#partDemandLeaveAsIs').checked = true;
+        }
+        
+        // Show/hide complete part demands section
+        const completeSection = modal.querySelector('#completePartDemandsSection');
+        completeSection.style.display = selectedStatus === 'Complete' ? 'block' : 'none';
+        
+        // Show billable hours for completion states
+        const billableSection = modal.querySelector('#billableHoursSection');
+        billableSection.style.display = ['Complete', 'Failed'].includes(selectedStatus) ? 'block' : 'none';
+        
+        // Show completion notes for completion states
+        const notesSection = modal.querySelector('#completionNotesSection');
+        notesSection.style.display = ['Complete', 'Failed', 'Skipped'].includes(selectedStatus) ? 'block' : 'none';
+    }
+    
+    // Track if comment is edited - use a single handler that checks the current generated comment
+    function handleCommentInput() {
+        if (this.value !== generatedComment && generatedComment !== '') {
+            isUserEdited = true;
+            editedCommentField.value = this.value;
+        } else {
+            isUserEdited = false;
+            editedCommentField.value = '';
+        }
+    }
+    
+    // Remove any existing listeners and add new one
+    commentField.removeEventListener('input', handleCommentInput);
+    commentField.addEventListener('input', handleCommentInput);
+    
+    // Update comment when status changes
+    statusSelect.removeEventListener('change', updateComment);
+    statusSelect.addEventListener('change', updateComment);
+    
+    // Initialize on modal open
+    commentField.value = '';
+    generatedComment = '';
+    editedCommentField.value = '';
+    isUserEdited = false;
+    
+    // Generate comment if suggested status is provided
+    if (suggestedStatus) {
+        updateComment();
+    }
+});
+
+// Edit Action Modal Handler
+document.getElementById('editActionModal').addEventListener('show.bs.modal', function (event) {
+    const button = event.relatedTarget;
+    const modal = this;
+    
+    // Get all data attributes
+    const actionId = button.getAttribute('data-action-id');
+    const actionName = button.getAttribute('data-action-name');
+    const currentStatus = button.getAttribute('data-current-status');
+    const maintenanceActionSetId = button.getAttribute('data-maintenance-action-set-id');
+    const templateActionItemId = button.getAttribute('data-template-action-item-id');
+    const assignedById = button.getAttribute('data-assigned-by-id');
+    const sequenceOrder = button.getAttribute('data-sequence-order');
+    const actionNameVal = button.getAttribute('data-action-name-val');
+    const description = button.getAttribute('data-description');
+    const scheduledStartTime = button.getAttribute('data-scheduled-start-time');
+    const startTime = button.getAttribute('data-start-time');
+    const endTime = button.getAttribute('data-end-time');
+    const billableHours = button.getAttribute('data-billable-hours');
+    const estimatedDuration = button.getAttribute('data-estimated-duration');
+    const expectedBillableHours = button.getAttribute('data-expected-billable-hours');
+    const completionNotes = button.getAttribute('data-completion-notes');
+    const safetyNotes = button.getAttribute('data-safety-notes');
+    const notes = button.getAttribute('data-notes');
+    const assignedUserId = button.getAttribute('data-assigned-user-id');
+    const createdAt = button.getAttribute('data-created-at');
+    const updatedAt = button.getAttribute('data-updated-at');
+    
+    // Set hidden fields
+    modal.querySelector('#editActionId').value = actionId;
+    
+    // Set read-only metadata fields
+    modal.querySelector('#editActionIdDisplay').value = actionId;
+    modal.querySelector('#editMaintenanceActionSetId').value = maintenanceActionSetId || '';
+    modal.querySelector('#editTemplateActionItemId').value = templateActionItemId || '';
+    modal.querySelector('#editAssignedById').value = assignedById || '';
+    modal.querySelector('#editCreatedAt').value = createdAt || '';
+    modal.querySelector('#editUpdatedAt').value = updatedAt || '';
+    
+    // Set editable fields
+    modal.querySelector('#editActionNameField').value = actionNameVal || '';
+    modal.querySelector('#editDescription').value = description || '';
+    modal.querySelector('#editStatus').value = currentStatus || 'Not Started';
+    modal.querySelector('#editSequenceOrder').value = sequenceOrder || '1';
+    modal.querySelector('#editScheduledStartTime').value = scheduledStartTime || '';
+    modal.querySelector('#editStartTime').value = startTime || '';
+    modal.querySelector('#editEndTime').value = endTime || '';
+    modal.querySelector('#editBillableHours').value = billableHours || '';
+    modal.querySelector('#editEstimatedDuration').value = estimatedDuration || '';
+    modal.querySelector('#editExpectedBillableHours').value = expectedBillableHours || '';
+    modal.querySelector('#editCompletionNotes').value = completionNotes || '';
+    modal.querySelector('#editSafetyNotes').value = safetyNotes || '';
+    modal.querySelector('#editNotes').value = notes || '';
+    modal.querySelector('#editAssignedUserId').value = assignedUserId || '';
+    
+    // Show/hide reset to In Progress option based on terminal states
+    const terminalStates = ['Complete', 'Failed', 'Skipped'];
+    const resetSection = modal.querySelector('#resetToInProgressSection');
+    const resetCheckbox = modal.querySelector('#resetToInProgress');
+    
+    if (terminalStates.includes(currentStatus)) {
+        resetSection.style.display = 'block';
+        resetCheckbox.checked = false; // Reset checkbox
+    } else {
+        resetSection.style.display = 'none';
+        resetCheckbox.checked = false;
+    }
+    
+    // Initialize tooltip for template_action_item_id warning
+    const templateIdField = modal.querySelector('#editTemplateActionItemId');
+    if (templateIdField) {
+        // Remove existing tooltip if any
+        const existingTooltip = bootstrap.Tooltip.getInstance(templateIdField);
+        if (existingTooltip) {
+            existingTooltip.dispose();
+        }
+        // Initialize new tooltip
+        new bootstrap.Tooltip(templateIdField);
+    }
+    
+    // Set form action
+    const form = modal.querySelector('#editActionForm');
+    form.action = `/maintenance/action/${actionId}/update`;
+});
+
+// Add Part Demand Modal Handler
+document.getElementById('addPartDemandModal').addEventListener('show.bs.modal', function (event) {
+    const button = event.relatedTarget;
+    const actionId = button.getAttribute('data-action-id');
+    const actionName = button.getAttribute('data-action-name');
+    
+    const modal = this;
+    modal.querySelector('#partDemandActionId').value = actionId;
+    modal.querySelector('#partDemandActionName').textContent = actionName;
+    
+    const form = modal.querySelector('#addPartDemandForm');
+    form.action = `/maintenance/action/${actionId}/part-demand/create`;
+});
+
+// Meter Verification Toggle Handler
+document.addEventListener('DOMContentLoaded', function() {
+    const meterInputs = document.querySelectorAll('.meter-input');
+    const verificationToggle = document.getElementById('meterVerificationToggle');
+    
+    if (meterInputs.length > 0 && verificationToggle) {
+        // Store original values
+        const originalValues = {};
+        meterInputs.forEach(function(input) {
+            originalValues[input.id] = input.value || '';
+        });
+        
+        // Function to check if any meter has changed
+        function checkMeterChanges() {
+            let hasChanges = false;
+            meterInputs.forEach(function(input) {
+                const currentValue = input.value || '';
+                const originalValue = originalValues[input.id] || '';
+                if (currentValue !== originalValue) {
+                    hasChanges = true;
+                }
+            });
+            return hasChanges;
+        }
+        
+        // Add event listeners to all meter inputs
+        meterInputs.forEach(function(input) {
+            input.addEventListener('input', function() {
+                if (checkMeterChanges()) {
+                    verificationToggle.checked = true;
+                }
+            });
+            
+            input.addEventListener('change', function() {
+                if (checkMeterChanges()) {
+                    verificationToggle.checked = true;
+                }
+            });
+        });
+    }
+});
+
+// Cancel Part Demand Modal Handler
+document.getElementById('cancelPartDemandModal').addEventListener('show.bs.modal', function (event) {
+    const button = event.relatedTarget;
+    const partDemandId = button.getAttribute('data-part-demand-id');
+    const partName = button.getAttribute('data-part-name');
+    const quantity = button.getAttribute('data-quantity');
+    
+    const modal = this;
+    modal.querySelector('#cancelPartDemandId').value = partDemandId;
+    modal.querySelector('#cancelPartName').textContent = partName;
+    modal.querySelector('#cancelQuantity').textContent = quantity;
+    
+    const form = modal.querySelector('#cancelPartDemandForm');
+    form.action = `/maintenance/part-demand/${partDemandId}/cancel`;
+});
+
+// Initialize Bootstrap tooltips
+document.addEventListener('DOMContentLoaded', function () {
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // Set blocked status start time to now when create blocked modal opens
+    const createBlockedModal = document.getElementById('createBlockedModal');
+    if (createBlockedModal) {
+        createBlockedModal.addEventListener('show.bs.modal', function () {
+            const blockerStartTimeInput = document.getElementById('blockerStartTime');
+            if (blockerStartTimeInput) {
+                const now = new Date();
+                // Format as YYYY-MM-DDTHH:mm for datetime-local input
+                const year = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                blockerStartTimeInput.value = `${year}-${month}-${day}T${hours}:${minutes}`;
+            }
+        });
+    }
+    
+    // Handle Create Limitation Modal
+    const createLimitationModal = document.getElementById('createLimitationModal');
+    if (createLimitationModal) {
+        createLimitationModal.addEventListener('show.bs.modal', function () {
+            // Set start time to now
+            const limitationStartTimeInput = document.getElementById('limitationStartTime');
+            if (limitationStartTimeInput) {
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                limitationStartTimeInput.value = `${year}-${month}-${day}T${hours}:${minutes}`;
+            }
+        });
+        
+        // Handle status change to show/hide temporary modifications field
+        const statusSelect = document.getElementById('limitationStatus');
+        const modificationsSection = document.getElementById('temporaryModificationsSection');
+        const modificationsInput = document.getElementById('temporaryModifications');
+        const modificationsRequired = document.getElementById('modificationsRequired');
+        
+        if (statusSelect && modificationsSection) {
+            statusSelect.addEventListener('change', function() {
+                const selectedStatus = this.value;
+                const compensationStatuses = [
+                    'Partially Mission Capable - Temporary Compensation',
+                    'Fully Mission Capable - Temporary Compensation'
+                ];
+                
+                if (compensationStatuses.includes(selectedStatus)) {
+                    modificationsSection.style.display = 'block';
+                    modificationsInput.required = true;
+                    modificationsRequired.style.display = 'inline';
+                } else {
+                    modificationsSection.style.display = 'none';
+                    modificationsInput.required = false;
+                    modificationsRequired.style.display = 'none';
+                    modificationsInput.value = '';  // Clear value when hidden
+                }
+            });
+        }
+    }
+});
+
+// Set end time to current time on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const limitationEndTimeInput = document.getElementById('limitationEndTime');
+    if (limitationEndTimeInput) {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        limitationEndTimeInput.value = `${year}-${month}-${day}T${hours}:${minutes}`;
+    }
+});
+</script>

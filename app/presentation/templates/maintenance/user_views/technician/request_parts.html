@@ -29,6 +29,7 @@
                 </div>
                 <div class="card-body">
                     <form method="POST" action="{{ url_for('technician_portal.request_parts', action_set_id=action_set_id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                         {% if action_set_id %}
                         <input type="hidden" name="action_set_id" value="{{ action_set_id }}">
                         {% endif %}

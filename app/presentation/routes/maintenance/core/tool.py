@@ -34,7 +34,7 @@ def update_action_tool(action_id, tool_id):
             maintenance_context = MaintenanceContext.from_maintenance_action_set(action.maintenance_action_set_id)
             struct: MaintenanceActionSetStruct = maintenance_context.struct
             if struct.event_id:
-                return redirect(url_for('maintenance_event.render_edit_page', event_id=struct.event_id))
+                return redirect(url_for('maintenance_event_edit.render_edit_page', event_id=struct.event_id))
             abort(404)
         
         # Create MaintenanceContext from action's maintenance_action_set_id
@@ -58,7 +58,7 @@ def update_action_tool(action_id, tool_id):
         valid_statuses = ['Planned', 'Assigned', 'Returned', 'Missing']
         if status and status not in valid_statuses:
             flash('Invalid status', 'error')
-            return redirect(url_for('maintenance_event.render_edit_page', event_id=event_id))
+            return redirect(url_for('maintenance_event_edit.render_edit_page', event_id=event_id))
         
         valid_priorities = ['Low', 'Medium', 'High', 'Critical']
         if priority and priority not in valid_priorities:
@@ -74,10 +74,10 @@ def update_action_tool(action_id, tool_id):
                 tool = ToolDefinition.query.get(tool_id_new)
                 if not tool:
                     flash('Tool not found', 'error')
-                    return redirect(url_for('maintenance_event.render_edit_page', event_id=event_id))
+                    return redirect(url_for('maintenance_event_edit.render_edit_page', event_id=event_id))
             except ValueError:
                 flash('Invalid tool ID', 'error')
-                return redirect(url_for('maintenance_event.render_edit_page', event_id=event_id))
+                return redirect(url_for('maintenance_event_edit.render_edit_page', event_id=event_id))
         
         quantity_required = None
         if quantity_required_str:
@@ -85,10 +85,10 @@ def update_action_tool(action_id, tool_id):
                 quantity_required = int(quantity_required_str)
                 if quantity_required < 1:
                     flash('Quantity must be at least 1', 'error')
-                    return redirect(url_for('maintenance_event.render_edit_page', event_id=event_id))
+                    return redirect(url_for('maintenance_event_edit.render_edit_page', event_id=event_id))
             except ValueError:
                 flash('Invalid quantity value', 'error')
-                return redirect(url_for('maintenance_event.render_edit_page', event_id=event_id))
+                return redirect(url_for('maintenance_event_edit.render_edit_page', event_id=event_id))
         
         # Convert empty strings to None
         status = status if status else None
@@ -128,7 +128,7 @@ def update_action_tool(action_id, tool_id):
             db.session.commit()
         
         flash('Tool requirement updated successfully', 'success')
-        return redirect(url_for('maintenance_event.render_edit_page', event_id=event_id))
+        return redirect(url_for('maintenance_event_edit.render_edit_page', event_id=event_id))
         
     except Exception as e:
         logger.error(f"Error updating tool requirement: {e}")
@@ -142,7 +142,7 @@ def update_action_tool(action_id, tool_id):
                 maintenance_context = MaintenanceContext.from_maintenance_action_set(action.maintenance_action_set_id)
                 struct: MaintenanceActionSetStruct = maintenance_context.struct
                 if struct.event_id:
-                    return redirect(url_for('maintenance_event.render_edit_page', event_id=struct.event_id))
+                    return redirect(url_for('maintenance_event_edit.render_edit_page', event_id=struct.event_id))
         except:
             pass
         abort(404)
@@ -165,7 +165,7 @@ def delete_action_tool(action_id, tool_id):
             maintenance_context = MaintenanceContext.from_maintenance_action_set(action.maintenance_action_set_id)
             struct: MaintenanceActionSetStruct = maintenance_context.struct
             if struct.event_id:
-                return redirect(url_for('maintenance_event.render_edit_page', event_id=struct.event_id))
+                return redirect(url_for('maintenance_event_edit.render_edit_page', event_id=struct.event_id))
             abort(404)
         
         # Create MaintenanceContext from action's maintenance_action_set_id
@@ -199,7 +199,7 @@ def delete_action_tool(action_id, tool_id):
             db.session.commit()
         
         flash('Tool requirement deleted successfully', 'success')
-        return redirect(url_for('maintenance_event.render_edit_page', event_id=event_id))
+        return redirect(url_for('maintenance_event_edit.render_edit_page', event_id=event_id))
         
     except Exception as e:
         logger.error(f"Error deleting tool requirement: {e}")
@@ -213,7 +213,7 @@ def delete_action_tool(action_id, tool_id):
                 maintenance_context = MaintenanceContext.from_maintenance_action_set(action.maintenance_action_set_id)
                 struct: MaintenanceActionSetStruct = maintenance_context.struct
                 if struct.event_id:
-                    return redirect(url_for('maintenance_event.render_edit_page', event_id=struct.event_id))
+                    return redirect(url_for('maintenance_event_edit.render_edit_page', event_id=struct.event_id))
         except:
             pass
         abort(404)

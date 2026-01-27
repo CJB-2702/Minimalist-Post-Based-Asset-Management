@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% block title %}Visual Dispatch Selector - WIP{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <!-- Breadcrumb -->
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{{ url_for('dispatching.requests_list') }}">Requests</a></li>
+      <li class="breadcrumb-item"><a href="{{ url_for('dispatching.requests_detail', item_id=request_id) }}">Request #{{ request_id }}</a></li>
+      <li class="breadcrumb-item"><a href="{{ url_for('dispatching.outcome_create', request_id=request_id, outcome_type='dispatch') }}">Create Dispatch</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Visual Dispatch Selector</li>
+    </ol>
+  </nav>
+
+  <!-- WIP Notice Card -->
+  <div class="card mb-4 border-warning">
+    <div class="card-header bg-warning text-dark">
+      <h4 class="mb-0">
+        <i class="bi bi-exclamation-triangle"></i> Work In Progress
+      </h4>
+    </div>
+    <div class="card-body">
+      <h5>Visual Dispatch Selector - Timeline View</h5>
+      <p class="mb-3">
+        This page will provide a visual timeline/calendar view for selecting assets based on their dispatch schedules.
+      </p>
+      
+      <h6>Planned Features:</h6>
+      <ul>
+        <li><i class="bi bi-calendar3"></i> Interactive timeline view showing all assets and their dispatch schedules</li>
+        <li><i class="bi bi-clock"></i> Visual representation of time conflicts and availability</li>
+        <li><i class="bi bi-funnel"></i> Drag-and-drop interface for adjusting dispatch times</li>
+        <li><i class="bi bi-eye"></i> Color-coded status indicators (planned, active, completed)</li>
+        <li><i class="bi bi-search"></i> Quick filtering and search capabilities</li>
+        <li><i class="bi bi-zoom-in"></i> Zoom in/out on timeline (hour/day/week/month views)</li>
+      </ul>
+      
+      <hr>
+      
+      <h6>Request Information:</h6>
+      <div class="row">
+        <div class="col-md-6">
+          <strong>Request ID:</strong> #{{ request.id }}<br>
+          <strong>Asset Type:</strong> {{ request.asset_type.name if request.asset_type else 'N/A' }}<br>
+          <strong>Location:</strong> {{ request.major_location.name if request.major_location else 'N/A' }}
+        </div>
+        <div class="col-md-6">
+          <strong>Desired Start:</strong> 
+          {% if request.desired_start %}
+            {{ request.desired_start.strftime('%Y-%m-%d %H:%M') }}
+          {% else %}
+            N/A
+          {% endif %}
+          <br>
+          <strong>Desired End:</strong> 
+          {% if request.desired_end %}
+            {{ request.desired_end.strftime('%Y-%m-%d %H:%M') }}
+          {% else %}
+            N/A
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Placeholder for Future Timeline Component -->
+  <div class="card">
+    <div class="card-header bg-secondary text-white">
+      <h5 class="mb-0">
+        <i class="bi bi-calendar3-week"></i> Timeline Placeholder
+      </h5>
+    </div>
+    <div class="card-body text-center py-5" style="min-height: 400px; background-color: #f8f9fa;">
+      <div class="py-5">
+        <i class="bi bi-calendar3-week" style="font-size: 5rem; color: #adb5bd;"></i>
+        <h3 class="mt-3 text-muted">Timeline View Coming Soon</h3>
+        <p class="text-muted">This area will display an interactive timeline showing asset availability and dispatch schedules.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="mt-4 d-flex justify-content-between">
+    <a href="{{ url_for('dispatching.outcome_create', request_id=request_id, outcome_type='dispatch') }}" 
+       class="btn btn-secondary">
+      <i class="bi bi-arrow-left"></i> Back to Dispatch Form
+    </a>
+    <a href="{{ url_for('dispatching.requests_detail', item_id=request_id) }}" 
+       class="btn btn-outline-secondary">
+      <i class="bi bi-x-circle"></i> Cancel
+    </a>
+  </div>
+</div>
+{% endblock %}

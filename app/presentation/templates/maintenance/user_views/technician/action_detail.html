@@ -200,6 +200,7 @@
                 <div class="card-body">
                     {% if action.status == 'Not Started' %}
                     <form method="POST" action="{{ url_for('technician_portal.start_action', action_id=action.id) }}" class="mb-3">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                         <button type="submit" class="btn btn-success w-100">
                             <i class="bi bi-play-circle"></i> Start Action
                         </button>
@@ -264,6 +265,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <form method="POST" action="{{ url_for('technician_portal.complete_action', action_id=action.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 <div class="modal-header">
                     <h5 class="modal-title" id="completeModalLabel">Complete Action</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -293,6 +295,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <form method="POST" action="{{ url_for('technician_portal.skip_action', action_id=action.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 <div class="modal-header">
                     <h5 class="modal-title" id="skipModalLabel">Skip Action</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>

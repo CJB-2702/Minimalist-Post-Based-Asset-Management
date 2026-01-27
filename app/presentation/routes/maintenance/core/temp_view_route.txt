@@ -1,0 +1,72 @@
+@maintenance_event_bp.route('/<int:event_id>')
+@maintenance_event_bp.route('/<int:event_id>/')
+@maintenance_event_bp.route('/<int:event_id>/view')
+@login_required
+def view_maintenance_event(event_id):
+    """View detailed information about a maintenance event"""
+    logger.info(f"Viewing maintenance event for event_id={event_id}")
+    
+    try:
+        # Get the event
+        event = Event.query.get(event_id)
+        if not event:
+            logger.warning(f"Event {event_id} not found")
+            abort(404)
+        
+        # Get the maintenance action set by event_id (ONE-TO-ONE relationship)
+        maintenance_context = MaintenanceContext.from_event(event_id)
+        if not maintenance_context:
+            logger.warning(f"No maintenance action set found for event_id={event_id}")
+            abort(404)
+        maintenance_struct = maintenance_context.struct
+        if not maintenance_struct:
+            logger.warning(f"No maintenance action set found for event_id={event_id}")
+            abort(404)
+        
+        # Get actions with their structs for convenient access
+        action_structs = [ActionStruct(action) for action in maintenance_struct.actions]
+        
+        # Calculate action status counts
+        completed_count = sum(1 for a in action_structs if a.action.status == 'Complete')
+        in_progress_count = sum(1 for a in action_structs if a.action.status == 'In Progress')
+        
+        # Get blockers for display
+        blockers = maintenance_struct.blockers if hasattr(maintenance_struct, 'blockers') else []
+        active_blockers = [d for d in blockers if d.end_date is None]
+        
+        # Get limitation records for display
+        limitation_records = maintenance_struct.limitation_records if hasattr(maintenance_struct, 'limitation_records') else []
+        active_limitations = [lr for lr in limitation_records if lr.is_active]
+        
+        # Get asset for capability status display
+        asset = maintenance_struct.asset
+        
+        # Get meter reading if available
+        meter_reading = None
+        if maintenance_struct.maintenance_action_set and maintenance_struct.maintenance_action_set.meter_reading_id:
+            from app.data.core.asset_info.meter_history import MeterHistory
+            meter_reading = MeterHistory.query.get(maintenance_struct.maintenance_action_set.meter_reading_id)
+        
+        return render_template(
+            'maintenance/base/view_maintenance_event.html',
+            maintenance=maintenance_struct,
+            maintenance_context=maintenance_context,
+            event=event,
+            actions=action_structs,
+            completed_count=completed_count,
+            in_progress_count=in_progress_count,
+            blockers=blockers,
+            active_blockers=active_blockers,
+            limitation_records=limitation_records,
+            active_limitations=active_limitations,
+            asset=asset,
+            meter_reading=meter_reading,
+        )
+        
+    except ImportError as e:
+        logger.error(f"Could not import maintenance modules: {e}")
+        abort(500)
+    except Exception as e:
+        logger.error(f"Error viewing maintenance event {event_id}: {e}")
+        abort(500)
+

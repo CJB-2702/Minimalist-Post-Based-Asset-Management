@@ -278,7 +278,7 @@ def most_recent_event():
         ).order_by(desc(MaintenanceActionSet.updated_at)).first()
         
         if most_recent_assigned and most_recent_assigned.event_id:
-            return redirect(url_for('maintenance_event.view_maintenance_event', event_id=most_recent_assigned.event_id))
+            return redirect(url_for('maintenance_event_view.view_maintenance_event', event_id=most_recent_assigned.event_id))
         else:
             flash("No assigned events found.", "info")
             return redirect(url_for('technician_portal.dashboard'))
@@ -316,7 +316,7 @@ def continue_discussion():
         ).order_by(desc(Comment.created_at)).first()
         
         if most_recent_comment and most_recent_comment.event_id:
-            return redirect(url_for('maintenance_event.view_maintenance_event', event_id=most_recent_comment.event_id))
+            return redirect(url_for('maintenance_event_view.view_maintenance_event', event_id=most_recent_comment.event_id))
         else:
             flash("No commented events found.", "info")
             return redirect(url_for('technician_portal.dashboard'))

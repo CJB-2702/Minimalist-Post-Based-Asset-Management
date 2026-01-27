@@ -367,7 +367,8 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form method="POST" action="{{ url_for('maintenance_event.create_from_template_action', event_id=event_id) if event_id else '#' }}">
+                    <form method="POST" action="{{ url_for('maintenance_event_edit.create_from_template_action', event_id=event_id) if event_id else '#' }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                         <input type="hidden" name="template_action_item_id" value="{{ template_item.id }}">
                         <input type="hidden" name="insertPosition" value="end" id="insertPosition{{ template_item.id }}">
                         <input type="hidden" name="afterActionId" value="" id="afterActionId{{ template_item.id }}">
@@ -523,7 +524,8 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form method="POST" action="{% if event_id %}{{ url_for('maintenance_event.create_from_proto_action', event_id=event_id) }}{% else %}#{% endif %}" onsubmit="{% if not event_id %}alert('Error: Event ID is missing. Cannot create action.'); return false;{% endif %}">
+                    <form method="POST" action="{% if event_id %}{{ url_for('maintenance_event_edit.create_from_proto_action', event_id=event_id) }}{% else %}#{% endif %}" onsubmit="{% if not event_id %}alert('Error: Event ID is missing. Cannot create action.'); return false;{% endif %}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                         <input type="hidden" name="proto_action_item_id" value="{{ proto_action.id }}">
                         <input type="hidden" name="insertPosition" value="end" id="insertPositionProto{{ proto_action.id }}">
                         <input type="hidden" name="afterActionId" value="" id="afterActionIdProto{{ proto_action.id }}">
@@ -679,7 +681,8 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form method="POST" action="{{ url_for('maintenance_event.create_from_current_action', event_id=event_id) if event_id else '#' }}">
+                    <form method="POST" action="{{ url_for('maintenance_event_edit.create_from_current_action', event_id=event_id) if event_id else '#' }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                         <input type="hidden" name="source_action_id" value="{{ action_struct.action_id }}">
                         <input type="hidden" name="insertPosition" value="end" id="insertPositionCurrent{{ action_struct.action_id }}">
                         <input type="hidden" name="afterActionId" value="" id="afterActionIdCurrent{{ action_struct.action_id }}">
@@ -833,7 +836,8 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form method="POST" action="{{ url_for('maintenance_event.create_blank_action', event_id=event_id) if event_id else '#' }}">
+                <form method="POST" action="{{ url_for('maintenance_event_edit.create_blank_action', event_id=event_id) if event_id else '#' }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <input type="hidden" name="insertPosition" value="end" id="insertPositionBlank">
                     <input type="hidden" name="afterActionId" value="" id="afterActionIdBlank">
                     

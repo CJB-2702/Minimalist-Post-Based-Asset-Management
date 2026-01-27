@@ -1,0 +1,113 @@
+<!-- Work Order Specific Capability Limitations Card -->
+<div class="card mb-4 {% if active_limitations %}border-danger{% else %}border-secondary{% endif %}">
+    <div class="card-header {% if active_limitations %}bg-danger bg-opacity-10{% else %}bg-secondary bg-opacity-10{% endif %}">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="bi bi-exclamation-diamond {% if active_limitations %}text-danger{% else %}text-secondary{% endif %}"></i> 
+                Work Order Specific Capability Limitations
+                {% if limitation_records %}
+                <span class="badge {% if active_limitations %}bg-danger{% else %}bg-secondary{% endif %} ms-2">{{ limitation_records|length }}</span>
+                {% endif %}
+            </h5>
+            {% if not active_limitations %}
+            <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#createLimitationModal">
+                <i class="bi bi-plus-circle"></i> Add Limitation
+            </button>
+            {% endif %}
+        </div>
+    </div>
+    <div class="card-body">
+        {% if limitation_records %}
+        {% for limitation in limitation_records %}
+        <div class="{% if not loop.last %}mb-3 pb-3 border-bottom{% else %}mb-3{% endif %}"
+             data-limitation-id="{{ limitation.id }}">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                    <span class="badge {% if 'Compensation' in limitation.status %}bg-warning{% else %}bg-danger{% endif %} me-2">
+                        {{ limitation.status }}
+                    </span>
+                    <span class="badge {% if limitation.is_active %}bg-danger{% else %}bg-success{% endif %}">
+                        {% if limitation.is_active %}Active{% else %}Closed{% endif %}
+                    </span>
+                </div>
+                {% if limitation.is_active %}
+                <div class="d-flex gap-1">
+                    <button type="button" 
+                            class="btn btn-sm btn-link p-0 edit-limitation-btn"
+                            data-limitation-id="{{ limitation.id }}"
+                            data-action="toggle-edit"
+                            style="color: #dc3545;">
+                        <i class="bi bi-pencil-fill"></i>
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+            <div class="small">
+                {% if limitation.limitation_description %}
+                <p class="mb-1"><strong>Limitation:</strong> {{ limitation.limitation_description }}</p>
+                {% endif %}
+                {% if limitation.temporary_modifications %}
+                <p class="mb-1"><strong>Compensations:</strong> {{ limitation.temporary_modifications }}</p>
+                {% endif %}
+                {% if limitation.start_time %}
+                <p class="mb-1 text-muted">
+                    <i class="bi bi-calendar"></i> Started: {{ limitation.start_time.strftime('%Y-%m-%d %H:%M') }}
+                </p>
+                {% endif %}
+                {% if limitation.end_time %}
+                <p class="mb-1 text-muted">
+                    <i class="bi bi-calendar-check"></i> Ended: {{ limitation.end_time.strftime('%Y-%m-%d %H:%M') }}
+                </p>
+                {% endif %}
+                {% if limitation.maintenance_blocker_id %}
+                <p class="mb-0 text-muted small">
+                    <i class="bi bi-link-45deg"></i> Linked to blocker
+                </p>
+                {% endif %}
+            </div>
+            
+            <!-- Inline Edit Panel for Active Limitations -->
+            {% if limitation.is_active %}
+            <div class="edit-panel mt-2 p-2 border rounded"
+                 data-edit-panel="limitation-{{ limitation.id }}"
+                 style="display: none; background-color: #ffe0e0;">
+                <form method="POST" action="{{ url_for('maintenance.close_limitation', limitation_id=limitation.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <div class="mb-2">
+                        <label class="form-label small">Status</label>
+                        <input type="text" class="form-control form-control-sm" value="{{ limitation.status }}" disabled>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">Start Time <span class="text-danger">*</span></label>
+                        <input type="datetime-local" class="form-control form-control-sm" name="start_time" 
+                               value="{{ limitation.start_time.strftime('%Y-%m-%dT%H:%M') if limitation.start_time else '' }}" required>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">End Time <span class="text-danger">*</span></label>
+                        <input type="datetime-local" class="form-control form-control-sm" name="end_time" required>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">Comment</label>
+                        <textarea class="form-control form-control-sm" name="comment" rows="2"></textarea>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-sm btn-success">
+                            <i class="bi bi-check-circle"></i> Close Limitation
+                        </button>
+                        <button type="button" 
+                                class="btn btn-sm btn-outline-secondary cancel-edit-btn"
+                                data-limitation-id="{{ limitation.id }}"
+                                data-action="cancel-edit">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+        {% else %}
+        <p class="text-muted mb-0 small">No limitations recorded.</p>
+        {% endif %}
+    </div>
+</div>

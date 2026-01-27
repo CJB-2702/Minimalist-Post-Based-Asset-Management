@@ -337,6 +337,7 @@
                                 <i class="bi bi-info-circle"></i> <strong>Note:</strong> A blank action will be created with a default name. You can edit all details on the next page.
                             </div>
                             <form method="POST" action="{{ url_for('template_builder.add_blank_action', builder_id=builder_id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                 <button type="submit" class="btn btn-primary">
                                     <i class="bi bi-plus-circle"></i> Create Blank Action
                                 </button>
@@ -364,6 +365,7 @@
                 </div>
                 <div class="modal-body">
                     <form method="POST" action="{{ url_for('template_builder.add_action_from_template_action', builder_id=builder_id, template_action_id=template_item.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                         
                         <!-- Action Details -->
                         <div class="card mb-3 border-primary">
@@ -517,6 +519,7 @@
                 </div>
                 <div class="modal-body">
                     <form method="POST" action="{{ url_for('template_builder.add_action_from_proto', builder_id=builder_id, proto_id=proto_action.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                         
                         <!-- Action Details -->
                         <div class="card mb-3 border-primary">
@@ -737,10 +740,12 @@ function selectCurrentBuildAction(actionIndex, builderId) {
             }
             
             // Submit via add_action_from_json endpoint
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
             return fetch(`/maintenance/manager/template-builder/${builderId}/add-action-from-json`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
                 },
                 body: JSON.stringify({
                     action: data.action_dict

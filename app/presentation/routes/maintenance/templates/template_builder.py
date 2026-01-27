@@ -535,16 +535,11 @@ def move_action(builder_id, action_index):
 @login_required
 def add_part_demand(builder_id, action_index):
     """Add a part demand to an action."""
-    print(f"\n\n=== ADD PART DEMAND ROUTE CALLED ===")
-    print(f"builder_id: {builder_id}, action_index: {action_index}")
-    print(f"request.form: {request.form}")
-    print(f"request.method: {request.method}")
-    print(f"request.headers.get('HX-Request'): {request.headers.get('HX-Request')}")
+    logger.debug(f"ADD PART DEMAND - builder_id: {builder_id}, action_index: {action_index}")
     try:
         context = TemplateBuilderContext(builder_id)
         part_dict = TemplateBuilderService.convert_form_to_part_dict(request.form)
         context.add_part_demand_to_action(action_index, part_dict)
-        print(f"context: {context.to_dict()}")
         flash('Part demand added successfully', 'success')
     except Exception as e:
         logger.error(f"Error adding part demand to builder {builder_id}: {e}")
@@ -593,20 +588,15 @@ def update_part_demand(builder_id, action_index, part_index):
 @login_required
 def add_tool(builder_id, action_index):
     """Add a tool to an action."""
-    # Debug: Print to console first to verify route is being called
-    print(f"\n\n=== ADD TOOL ROUTE CALLED ===")
-    print(f"builder_id: {builder_id}, action_index: {action_index}")
-    print(f"request.form: {request.form}")
-    print(f"request.method: {request.method}")
-    print(f"request.headers.get('HX-Request'): {request.headers.get('HX-Request')}")
+    from app.utils.logging_sanitizer import sanitize_form_data
     
     try:
         context = TemplateBuilderContext(builder_id)
-        logger.info(f"ADD TOOL - request.form: {request.form}")
         logger.debug(f"ADD TOOL - builder_id: {builder_id}, action_index: {action_index}")
+        logger.debug(f"ADD TOOL - request.form: {sanitize_form_data(request.form)}")
         
         tool_dict = TemplateBuilderService.convert_form_to_tool_dict(request.form)
-        logger.info(f"ADD TOOL - tool_dict: {tool_dict}")
+        logger.debug(f"ADD TOOL - tool_dict: {tool_dict}")
         print(f"tool_dict: {tool_dict}")
         
         context.add_tool_to_action(action_index, tool_dict)

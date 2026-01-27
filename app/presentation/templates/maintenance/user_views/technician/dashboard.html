@@ -175,7 +175,7 @@
                     <p class="text-muted small mb-2">
                         <i class="bi bi-calendar"></i> Updated: {{ quick_access.most_recently_assigned_event.updated_at.strftime('%Y-%m-%d %H:%M') }}
                     </p>
-                    <a href="{{ url_for('maintenance_event.view_maintenance_event', event_id=quick_access.most_recently_assigned_event.event_id) }}" 
+                    <a href="{{ url_for('maintenance_event_view.view_maintenance_event', event_id=quick_access.most_recently_assigned_event.event_id) }}" 
                        class="btn btn-primary btn-sm">
                         <i class="bi bi-arrow-right-circle"></i> Go to Latest Assignment
                     </a>
@@ -196,7 +196,7 @@
                         <i class="bi bi-calendar"></i> Last commented: {{ quick_access.most_recently_commented_event.comment_created_at.strftime('%Y-%m-%d %H:%M') }}
                     </p>
                     <p class="text-muted small mb-2">{{ quick_access.most_recently_commented_event.comment_preview }}</p>
-                    <a href="{{ url_for('maintenance_event.view_maintenance_event', event_id=quick_access.most_recently_commented_event.event_id) }}" 
+                    <a href="{{ url_for('maintenance_event_view.view_maintenance_event', event_id=quick_access.most_recently_commented_event.event_id) }}" 
                        class="btn btn-info btn-sm">
                         <i class="bi bi-arrow-right-circle"></i> Continue Discussion
                     </a>
@@ -335,7 +335,7 @@
                                     </small>
                                 </div>
                                 {% if pd.event_id %}
-                                <a href="{{ url_for('maintenance_event.view_maintenance_event', event_id=pd.event_id) }}" 
+                                <a href="{{ url_for('maintenance_event_view.view_maintenance_event', event_id=pd.event_id) }}" 
                                    class="btn btn-sm btn-outline-primary">
                                     View Event
                                 </a>
@@ -375,7 +375,7 @@
                                     </small>
                                 </div>
                                 {% if pd.event_id %}
-                                <a href="{{ url_for('maintenance_event.view_maintenance_event', event_id=pd.event_id) }}" 
+                                <a href="{{ url_for('maintenance_event_view.view_maintenance_event', event_id=pd.event_id) }}" 
                                    class="btn btn-sm btn-outline-primary">
                                     View Event
                                 </a>
@@ -415,7 +415,7 @@
                                     </small>
                                 </div>
                                 {% if pd.event_id %}
-                                <a href="{{ url_for('maintenance_event.view_maintenance_event', event_id=pd.event_id) }}" 
+                                <a href="{{ url_for('maintenance_event_view.view_maintenance_event', event_id=pd.event_id) }}" 
                                    class="btn btn-sm btn-outline-primary">
                                     View Event
                                 </a>

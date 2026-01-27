@@ -59,7 +59,7 @@
                     <h5 class="mb-0"><i class="bi bi-funnel"></i> Filters</h5>
                 </div>
                 <div class="card-body">
-                    <form method="GET" action="{{ url_for('inventory.issue_parts') }}" class="row g-3">
+                    <form method="GET" action="{{ url_for('inventory.issue_parts') }}" class="issue-parts-filter-form row g-3">
                         <div class="col-md-3">
                             <label class="form-label">Part Number</label>
                             <input type="text" class="form-control" name="part_number" value="{{ current_filters.part_number }}" placeholder="Part number">
@@ -70,10 +70,12 @@
                         </div>
                         <div class="col-md-2">
                             <label class="form-label">Location</label>
-                            <select class="form-select" name="location_id">
+                            <select class="form-select" name="location_id"
+                                    onchange="filter_storeroom_dropdowns_by_major_location_id(this.value, 'issue-parts-filter-form')">
                                 <option value="">All Locations</option>
                                 {% for loc in locations %}
-                                <option value="{{ loc.id }}" {% if current_filters.location_id == loc.id %}selected{% endif %}>{{ loc.name }}</option>
+                                <option value="{{ loc.id }}" {% if current_filters.location_id == loc.id %}selected{% endif %}
+                                        data-location-id="{{ loc.id }}" data-major-location-name="{{ loc.name }}">{{ loc.name }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -82,7 +84,12 @@
                             <select class="form-select" name="storeroom_id">
                                 <option value="">All Storerooms</option>
                                 {% for s in storerooms %}
-                                <option value="{{ s.id }}" {% if current_filters.storeroom_id == s.id %}selected{% endif %}>{{ s.room_name }}</option>
+                                <option value="{{ s.id }}" {% if current_filters.storeroom_id == s.id %}selected{% endif %}
+                                        class="storeroom-dropdown-item"
+                                        data-storeroom-id="{{ s.id }}"
+                                        data-storeroom-name="{{ s.room_name }}"
+                                        data-major-location-id="{{ s.major_location_id }}"
+                                        data-major-location-name="{% if s.major_location %}{{ s.major_location.name }}{% endif %}">{{ s.room_name }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -353,7 +360,8 @@
                                 <!-- Side-by-side lists -->
                                 <div class="col-md-6">
                                     <label class="form-label fw-bold">List of Maintenance Events</label>
-                                    <div class="list-group" style="max-height: 400px; overflow-y: auto;" id="maintenance-events-list">
+                                    <div class="list-group" style="max-height: 400px; overflow-y: auto;" 
+                                         id="maintenance-events-list">
                                         <div class="list-group-item">
                                             <p class="text-muted mb-0"><i class="bi bi-arrow-up"></i> Select a queue item above to load matching maintenance events</p>
                                         </div>
@@ -388,7 +396,8 @@
                                     </div>
                                     
                                     <h6 class="fw-bold mb-3">Unlinked Part Demands</h6>
-                                    <div class="list-group" style="max-height: 400px; overflow-y: auto;" id="part-demands-list">
+                                    <div class="list-group" style="max-height: 400px; overflow-y: auto;" 
+                                         id="part-demands-list">
                                         <div class="list-group-item">
                                             <p class="text-muted mb-0"><i class="bi bi-arrow-up"></i> Select a queue item above to view unlinked demands for that part</p>
                                         </div>
@@ -407,6 +416,7 @@
                 </div>
                 <div class="card-body">
                     <form id="issue-form" method="POST" action="{{ url_for('inventory.submit_issue') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                         <!-- Inline fields for full screen -->
                         <div class="row mb-3">
                             <div class="col-md-4">
@@ -471,504 +481,8 @@
     </div>
 </div>
 
-<script>
-let issueQueue = [];
-let selectedQueueItem = null;
-let selectedPartId = null;
-let selectedPartNumber = null;
-let currentEvents = [];
-
-// Set default date issued to now
-document.addEventListener('DOMContentLoaded', function() {
-    const dateIssuedInput = document.getElementById('date_issued');
-    if (dateIssuedInput) {
-        const now = new Date();
-        // Format as YYYY-MM-DDTHH:mm for datetime-local input
-        const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-        const day = String(now.getDate()).padStart(2, '0');
-        const hours = String(now.getHours()).padStart(2, '0');
-        const minutes = String(now.getMinutes()).padStart(2, '0');
-        dateIssuedInput.value = `${year}-${month}-${day}T${hours}:${minutes}`;
-    }
-    
-    // Initialize demand linkage handlers
-    initializeDemandLinkage();
-});
-
-// Enable/disable add to queue based on checkbox
-document.querySelectorAll('.inventory-checkbox').forEach(checkbox => {
-    checkbox.addEventListener('change', function() {
-        const inventoryId = this.dataset.inventoryId;
-        
-        if (this.checked) {
-            addToQueue(this);
-        } else {
-            removeFromQueue(inventoryId);
-        }
-    });
-});
-
-function addToQueue(checkbox) {
-    const inventoryId = checkbox.dataset.inventoryId;
-    const quantity = 1.00; // Default quantity
-    
-    const item = {
-        inventory_id: inventoryId,
-        part_id: checkbox.dataset.partId,
-        part_number: checkbox.dataset.partNumber,
-        part_name: checkbox.dataset.partName,
-        quantity: quantity,
-        available_qty: parseFloat(checkbox.dataset.availableQty),
-        storeroom_id: checkbox.dataset.storeroomId,
-        storeroom_name: checkbox.dataset.storeroomName,
-        major_location_id: checkbox.dataset.majorLocationId,
-        location_id: checkbox.dataset.locationId || null,
-        bin_id: checkbox.dataset.binId || null
-    };
-    
-    issueQueue.push(item);
-    renderQueue();
-}
-
-function removeFromQueue(inventoryId) {
-    issueQueue = issueQueue.filter(item => item.inventory_id !== inventoryId);
-    renderQueue();
-}
-
-function updateQueueItem(inventoryId, quantity) {
-    const item = issueQueue.find(item => item.inventory_id === inventoryId);
-    if (item) {
-        item.quantity = quantity;
-        renderQueue();
-    }
-}
-
-function renderQueue() {
-    const queueDiv = document.getElementById('issue-queue');
-    const queueCount = document.getElementById('queue-count');
-    const submitBtn = document.getElementById('submit-btn');
-    const queueDataInput = document.getElementById('queue_data');
-    
-    queueCount.textContent = issueQueue.length;
-    
-    if (issueQueue.length === 0) {
-        queueDiv.innerHTML = `
-            <div class="text-muted text-center py-3">
-                <i class="bi bi-inbox"></i><br>
-                No items in queue. Check boxes to add items.
-            </div>
-        `;
-        submitBtn.disabled = true;
-        queueDataInput.value = '';
-        // Clear selection if queue is empty
-        selectedQueueItem = null;
-        updateSelectedQueueItemSummary();
-    } else {
-        let html = '';
-        issueQueue.forEach(item => {
-            const isSelected = selectedQueueItem && selectedQueueItem.inventory_id === item.inventory_id;
-            const hasLinkedDemand = item.part_demand_id ? 'linked-demand' : '';
-            const selectedClass = isSelected ? 'selected-item' : '';
-            html += `
-                <div class="queue-item clickable-queue-item ${selectedClass} ${hasLinkedDemand}" 
-                     data-inventory-id="${item.inventory_id}" 
-                     data-part-id="${item.part_id}"
-                     data-part-number="${item.part_number}">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div class="flex-grow-1">
-                            <strong>${item.part_number}</strong><br>
-                            <small class="text-muted">${item.part_name}</small><br>
-                            <small class="text-muted">${item.storeroom_name}</small><br>
-                            <div class="mt-2 d-flex align-items-center gap-2">
-                                <label class="form-label small mb-0">Quantity:</label>
-                                <input type="number" 
-                                       class="form-control form-control-sm queue-qty-input" 
-                                       data-inventory-id="${item.inventory_id}"
-                                       min="0.01" 
-                                       max="${item.available_qty}" 
-                                       step="0.01" 
-                                       value="${item.quantity.toFixed(2)}"
-                                       style="width: 100px;"
-                                       ${item.part_demand_id ? 'readonly' : ''}
-                                       onclick="event.stopPropagation();">
-                                <small class="text-muted">(Available: ${item.available_qty.toFixed(2)})</small>
-                                ${item.part_demand_id ? '<small class="text-success"><i class="bi bi-lock"></i> Locked to demand</small>' : ''}
-                            </div>
-                            ${item.part_demand_id ? `<br><span class="badge bg-success mt-1"><i class="bi bi-link-45deg"></i> Linked to Demand #${item.part_demand_id}</span>` : ''}
-                        </div>
-                        <button type="button" class="btn btn-sm btn-danger" onclick="event.stopPropagation(); removeFromQueueByButton('${item.inventory_id}')">
-                            <i class="bi bi-x"></i>
-                        </button>
-                    </div>
-                </div>
-            `;
-        });
-        queueDiv.innerHTML = html;
-        submitBtn.disabled = false;
-        queueDataInput.value = JSON.stringify(issueQueue);
-        
-        // Re-attach click handlers for queue items
-        document.querySelectorAll('.clickable-queue-item').forEach(item => {
-            item.addEventListener('click', function() {
-                selectQueueItem(this.dataset.inventoryId);
-            });
-        });
-        
-        // Attach quantity change handlers
-        document.querySelectorAll('.queue-qty-input').forEach(input => {
-            input.addEventListener('change', function() {
-                const inventoryId = this.dataset.inventoryId;
-                const newQty = parseFloat(this.value);
-                const item = issueQueue.find(i => i.inventory_id === inventoryId);
-                if (item) {
-                    if (newQty > item.available_qty) {
-                        showToast(`Quantity exceeds available stock (${item.available_qty.toFixed(2)})`, false);
-                        this.value = item.quantity.toFixed(2);
-                        return;
-                    }
-                    if (newQty < 0.01) {
-                        showToast('Quantity must be at least 0.01', false);
-                        this.value = item.quantity.toFixed(2);
-                        return;
-                    }
-                    item.quantity = newQty;
-                    queueDataInput.value = JSON.stringify(issueQueue);
-                }
-            });
-        });
-    }
-}
-
-function removeFromQueueByButton(inventoryId) {
-    const checkbox = document.querySelector(`.inventory-checkbox[data-inventory-id="${inventoryId}"]`);
-    if (checkbox) {
-        checkbox.checked = false;
-    }
-    removeFromQueue(inventoryId);
-}
-
-// Demand Linkage Functions
-function selectQueueItem(inventoryId) {
-    const item = issueQueue.find(i => i.inventory_id === inventoryId);
-    if (!item) return;
-    
-    selectedQueueItem = item;
-    selectedPartId = item.part_id;
-    selectedPartNumber = item.part_number;
-    
-    // Update UI
-    document.querySelectorAll('.clickable-queue-item').forEach(i => i.classList.remove('selected-item'));
-    document.querySelector(`.clickable-queue-item[data-inventory-id="${inventoryId}"]`)?.classList.add('selected-item');
-    
-    updateSelectedQueueItemSummary();
-    loadMaintenanceEvents();
-    loadPartDemands();
-}
-
-function updateSelectedQueueItemSummary() {
-    const textEl = document.getElementById('selectedQueueItemText');
-    const clearBtn = document.getElementById('clearSelectedQueueItemBtn');
-    
-    if (!selectedQueueItem || !selectedPartId) {
-        textEl.textContent = 'None selected. Click a queue item above to link to part demands.';
-        clearBtn.disabled = true;
-        return;
-    }
-    
-    textEl.textContent = `${selectedPartNumber} - Qty: ${selectedQueueItem.quantity}`;
-    clearBtn.disabled = false;
-}
-
-function buildEventsQueryParams() {
-    const params = new URLSearchParams();
-    if (selectedPartId) params.set('part_id', selectedPartId);
-
-    const assetId = document.getElementById('filterAssetId')?.value;
-    const assignedUserId = document.getElementById('filterAssignedUserId')?.value;
-    const majorLocationId = document.getElementById('filterMajorLocationId')?.value;
-    const assetTypeId = document.getElementById('filterAssetTypeId')?.value;
-    const make = document.getElementById('filterMake')?.value;
-    const model = document.getElementById('filterModel')?.value;
-    const createdFrom = document.getElementById('filterCreatedFrom')?.value;
-    const createdTo = document.getElementById('filterCreatedTo')?.value;
-
-    if (assetId) params.set('asset_id', assetId);
-    if (assignedUserId) params.set('assigned_user_id', assignedUserId);
-    if (majorLocationId) params.set('major_location_id', majorLocationId);
-    if (assetTypeId) params.set('asset_type_id', assetTypeId);
-    if (make) params.set('make', make);
-    if (model) params.set('model', model);
-    if (createdFrom) params.set('created_from', createdFrom);
-    if (createdTo) params.set('created_to', createdTo);
-
-    return params;
-}
-
-function loadMaintenanceEvents() {
-    const eventsList = document.getElementById('maintenance-events-list');
-    const demandsList = document.getElementById('event-demands-list');
-    
-    if (!selectedPartId) {
-        eventsList.innerHTML = '<div class="list-group-item"><p class="text-muted mb-0"><i class="bi bi-arrow-up"></i> Select a queue item above to load matching maintenance events</p></div>';
-        demandsList.innerHTML = '<div class="list-group-item"><p class="text-muted mb-0"><i class="bi bi-info-circle"></i> Select a maintenance event to view its part demands</p></div>';
-        return;
-    }
-    
-    eventsList.innerHTML = '<div class="list-group-item"><p class="text-muted mb-0"><i class="bi bi-hourglass-split"></i> Loading...</p></div>';
-
-    const params = buildEventsQueryParams();
-    fetch(`/inventory/issue-parts/api/events?${params.toString()}`)
-        .then(r => r.json())
-        .then(events => {
-            currentEvents = events;
-            
-            if (events.length === 0) {
-                eventsList.innerHTML = '<div class="list-group-item"><p class="text-muted mb-0">No maintenance events with unlinked demands for this part.</p></div>';
-                return;
-            }
-            
-            let html = '';
-            events.forEach(ev => {
-                html += `
-                    <a href="#" class="list-group-item list-group-item-action event-item" data-event-id="${ev.event_id}">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <h6 class="mb-1">${ev.task_name}</h6>
-                                <small class="text-muted">Asset: ${ev.asset_name || 'N/A'}</small><br>
-                                <small class="text-muted">Start: ${ev.planned_start || 'TBD'}</small>
-                            </div>
-                            <div class="text-end">
-                                <span class="badge bg-warning">${ev.status}</span><br>
-                                <small class="text-muted">${ev.demands.length} demands</small>
-                            </div>
-                        </div>
-                    </a>
-                `;
-            });
-            
-            eventsList.innerHTML = html;
-            
-            // Add click handlers
-            document.querySelectorAll('.event-item').forEach(item => {
-                item.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const eventId = parseInt(this.dataset.eventId);
-                    loadEventDemands(eventId);
-                });
-            });
-        })
-        .catch(err => {
-            console.error('Failed to load events:', err);
-            eventsList.innerHTML = '<div class="list-group-item"><p class="text-danger mb-0">Error loading events</p></div>';
-        });
-}
-
-function loadEventDemands(eventId) {
-    const demandsList = document.getElementById('event-demands-list');
-    const event = currentEvents.find(e => e.event_id === eventId);
-    
-    if (!event || event.demands.length === 0) {
-        demandsList.innerHTML = '<div class="list-group-item"><p class="text-muted mb-0">No demands found for this event</p></div>';
-        return;
-    }
-    
-    let html = '';
-    event.demands.forEach(d => {
-        html += `
-            <div class="list-group-item">
-                <div class="d-flex justify-content-between align-items-start">
-                    <div>
-                        <h6 class="mb-1">${d.part_number} - ${d.part_name}</h6>
-                        <small class="text-muted">Action: ${d.action_name}</small><br>
-                        <small class="text-muted">Required: ${d.quantity_required}</small>
-                    </div>
-                    <div class="text-end">
-                        <span class="badge bg-${d.status === 'Approved' ? 'warning' : 'secondary'}">${d.status}</span><br>
-                        <span class="badge bg-info">${d.priority}</span>
-                    </div>
-                </div>
-                <div class="mt-2">
-                    <button class="btn btn-sm btn-success tool-link-btn" data-demand-id="${d.id}" data-qty="${d.quantity_required}">
-                        <i class="bi bi-link-45deg"></i> Link to selected queue item
-                    </button>
-                </div>
-            </div>
-        `;
-    });
-    
-    demandsList.innerHTML = html;
-    
-    // Add click handlers
-    document.querySelectorAll('.tool-link-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            if (!selectedQueueItem) {
-                showToast('Please select a queue item first', false);
-                return;
-            }
-            const demandQty = parseFloat(this.dataset.qty || '0');
-            linkDemandToQueueItem(parseInt(this.dataset.demandId), demandQty);
-        });
-    });
-}
-
-function loadPartDemands() {
-    const demandsList = document.getElementById('part-demands-list');
-    const partTextEl = document.getElementById('selectedPartIdText');
-    
-    if (!selectedPartId) {
-        demandsList.innerHTML = '<div class="list-group-item"><p class="text-muted mb-0"><i class="bi bi-arrow-up"></i> Select a queue item above to view unlinked demands for that part</p></div>';
-        partTextEl.textContent = 'None selected';
-        return;
-    }
-    
-    partTextEl.textContent = selectedPartNumber || selectedPartId;
-    demandsList.innerHTML = '<div class="list-group-item"><p class="text-muted mb-0"><i class="bi bi-hourglass-split"></i> Loading...</p></div>';
-
-    const params = buildEventsQueryParams();
-    fetch(`/inventory/issue-parts/api/events?${params.toString()}`)
-        .then(r => r.json())
-        .then(events => {
-            const allDemands = [];
-            events.forEach(ev => {
-                ev.demands.forEach(d => {
-                    d.event_name = ev.task_name;
-                    allDemands.push(d);
-                });
-            });
-            
-            if (allDemands.length === 0) {
-                demandsList.innerHTML = '<div class="list-group-item"><p class="text-muted mb-0">No unlinked demands for this part.</p></div>';
-                return;
-            }
-            
-            let html = '';
-            allDemands.forEach(d => {
-                html += `
-                    <div class="list-group-item">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <h6 class="mb-1">Demand #${d.id} - ${d.event_name}</h6>
-                                <small class="text-muted">Action: ${d.action_name}</small><br>
-                                <small class="text-muted">Required: ${d.quantity_required}</small>
-                            </div>
-                            <span class="badge bg-${d.status === 'Approved' ? 'warning' : 'secondary'}">${d.status}</span>
-                        </div>
-                        <div class="mt-2">
-                            <button class="btn btn-sm btn-success tool-link-btn" data-demand-id="${d.id}" data-qty="${d.quantity_required}">
-                                <i class="bi bi-link-45deg"></i> Link to selected queue item
-                            </button>
-                        </div>
-                    </div>
-                `;
-            });
-            
-            demandsList.innerHTML = html;
-            
-            // Add click handlers
-            document.querySelectorAll('.tool-link-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    if (!selectedQueueItem) {
-                        showToast('Please select a queue item first', false);
-                        return;
-                    }
-                    const demandQty = parseFloat(this.dataset.qty || '0');
-                    linkDemandToQueueItem(parseInt(this.dataset.demandId), demandQty);
-                });
-            });
-        })
-        .catch(err => {
-            console.error('Failed to load demands:', err);
-            demandsList.innerHTML = '<div class="list-group-item"><p class="text-danger mb-0">Error loading demands</p></div>';
-        });
-}
-
-function linkDemandToQueueItem(demandId, requiredQuantity) {
-    if (!selectedQueueItem) {
-        showToast('Please select a queue item first', false);
-        return;
-    }
-    
-    // Validate available stock
-    if (requiredQuantity > selectedQueueItem.available_qty) {
-        showToast(`Insufficient stock! Required: ${requiredQuantity.toFixed(2)}, Available: ${selectedQueueItem.available_qty.toFixed(2)}`, false);
-        return;
-    }
-    
-    // Update the queue item with the demand ID and set quantity to match demand
-    selectedQueueItem.part_demand_id = demandId;
-    selectedQueueItem.quantity = requiredQuantity;
-    renderQueue();
-    showToast(`Linked demand #${demandId} to queue item. Quantity set to ${requiredQuantity.toFixed(2)}`, true);
-}
-
-function showToast(message, isSuccess = true) {
-    // Simple alert for now - can be replaced with Bootstrap toast if available
-    const alertClass = isSuccess ? 'alert-success' : 'alert-danger';
-    const alertDiv = document.createElement('div');
-    alertDiv.className = `alert ${alertClass} alert-dismissible fade show position-fixed top-0 end-0 m-3`;
-    alertDiv.style.zIndex = '9999';
-    alertDiv.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-    document.body.appendChild(alertDiv);
-    setTimeout(() => {
-        alertDiv.remove();
-    }, 3000);
-}
-
-function initializeDemandLinkage() {
-    // Clear selection button
-    document.getElementById('clearSelectedQueueItemBtn')?.addEventListener('click', function() {
-        document.querySelectorAll('.clickable-queue-item').forEach(i => i.classList.remove('selected-item'));
-        selectedQueueItem = null;
-        selectedPartId = null;
-        selectedPartNumber = null;
-        
-        updateSelectedQueueItemSummary();
-        loadMaintenanceEvents();
-        loadPartDemands();
-        
-        document.getElementById('event-demands-list').innerHTML = '<div class="list-group-item"><p class="text-muted mb-0"><i class="bi bi-info-circle"></i> Select a maintenance event to view its part demands</p></div>';
-    });
-    
-    // Filter buttons
-    document.getElementById('applyEventFiltersBtn')?.addEventListener('click', function() {
-        loadMaintenanceEvents();
-        loadPartDemands();
-    });
-
-    document.getElementById('clearEventFiltersBtn')?.addEventListener('click', function() {
-        const ids = [
-            'filterAssetId',
-            'filterAssignedUserId',
-            'filterMajorLocationId',
-            'filterAssetTypeId',
-            'filterMake',
-            'filterModel',
-            'filterCreatedFrom',
-            'filterCreatedTo'
-        ];
-        ids.forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.value = '';
-        });
-        loadMaintenanceEvents();
-        loadPartDemands();
-    });
-    
-    updateSelectedQueueItemSummary();
-}
-
-// Form validation
-document.getElementById('issue-form').addEventListener('submit', function(e) {
-    if (issueQueue.length === 0) {
-        e.preventDefault();
-        alert('Please add at least one item to the issue queue.');
-        return false;
-    }
-});
-</script>
+<script src="{{ url_for('static', filename='js/inventory/storeroom_filter.js') }}"></script>
+<script src="{{ url_for('static', filename='inventory/common/queue-manager.js') }}"></script>
+<script src="{{ url_for('static', filename='inventory/inventory/issue-parts.js') }}"></script>
 {% endblock %}
 

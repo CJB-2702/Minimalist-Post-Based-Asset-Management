@@ -378,7 +378,7 @@
                         <div class="flex-grow-1">
                             <h6 class="mb-1">
                                 {% if event.event_id %}
-                                <a href="{{ url_for('maintenance_event.view_maintenance_event', event_id=event.event_id) }}" 
+                                <a href="{{ url_for('maintenance_event_view.view_maintenance_event', event_id=event.event_id) }}" 
                                    class="text-decoration-none">
                                     {{ event.task_name or 'Untitled Maintenance' }}
                                 </a>
@@ -460,7 +460,7 @@
                         
                         <div class="ms-3">
                             {% if event.event_id %}
-                            <a href="{{ url_for('maintenance_event.view_maintenance_event', event_id=event.event_id) }}" 
+                            <a href="{{ url_for('maintenance_event_view.view_maintenance_event', event_id=event.event_id) }}" 
                                class="btn btn-sm btn-outline-primary">
                                 <i class="bi bi-eye"></i> View
                             </a>

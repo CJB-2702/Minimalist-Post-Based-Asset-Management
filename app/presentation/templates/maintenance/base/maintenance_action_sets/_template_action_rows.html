@@ -12,6 +12,7 @@
               hx-target="#actions-card"
               hx-select="#actions-card"
               hx-swap="outerHTML">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <input type="hidden" name="template_action_item_id" value="{{ t.id }}">
             <button type="submit" class="btn btn-sm btn-outline-primary">
                 Add

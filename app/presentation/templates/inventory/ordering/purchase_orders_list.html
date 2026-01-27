@@ -15,8 +15,8 @@
                     <p class="text-muted mb-0">View and manage purchase orders</p>
                 </div>
                 <div>
-                    <a href="{{ url_for('inventory.create_po_from_single_maintenance') }}" class="btn btn-primary me-2">
-                        <i class="bi bi-plus-circle"></i> Create PO (Single Maintenance)
+                    <a href="{{ url_for('inventory.create_po') }}" class="btn btn-primary me-2">
+                        <i class="bi bi-plus-circle"></i> Create PO from Part Demands
                     </a>
                     <a href="{{ url_for('inventory.index') }}" class="btn btn-outline-secondary">
                         <i class="bi bi-arrow-left"></i> Back to Inventory Portal
@@ -36,40 +36,11 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    <form method="GET" action="{{ url_for('inventory.purchase_orders_list') }}" class="row g-3">
-                        <div class="col-md-3">
-                            <label for="status" class="form-label">Status</label>
-                            <select class="form-select" id="status" name="status">
-                                <option value="">All Statuses</option>
-                                <option value="Draft" {% if current_status == 'Draft' %}selected{% endif %}>Draft</option>
-                                <option value="Ordered" {% if current_status == 'Ordered' %}selected{% endif %}>Ordered</option>
-                                <option value="Shipped" {% if current_status == 'Shipped' %}selected{% endif %}>Shipped</option>
-                                <option value="Arrived" {% if current_status == 'Arrived' %}selected{% endif %}>Arrived</option>
-                                <option value="Cancelled" {% if current_status == 'Cancelled' %}selected{% endif %}>Cancelled</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label for="location_id" class="form-label">Location</label>
-                            <select class="form-select" id="location_id" name="location_id">
-                                <option value="">All Locations</option>
-                                {% for location in locations %}
-                                <option value="{{ location.id }}" {% if current_location_id == location.id %}selected{% endif %}>
-                                    {{ location.name }}
-                                </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                            <label for="search" class="form-label">Search</label>
-                            <input type="text" class="form-control" id="search" name="search" 
-                                   placeholder="PO number or vendor name..." value="{{ current_search }}">
-                        </div>
-                        <div class="col-md-2 d-flex align-items-end">
-                            <button type="submit" class="btn btn-primary w-100">
-                                <i class="bi bi-search"></i> Filter
-                            </button>
-                        </div>
-                    </form>
+                    {% set action_url = url_for('inventory.purchase_orders_list') %}
+                    {% set clear_url = url_for('inventory.purchase_orders_list') %}
+                    {% set show_location = true %}
+                    {% set status_label = 'PO Status' %}
+                    {% include 'inventory/purchase_orders/components/po_search_form.html' %}
                 </div>
             </div>
         </div>
@@ -94,6 +65,7 @@
                                     <th>Vendor</th>
                                     <th>Order Date</th>
                                     <th>Status</th>
+                                    <th>Linkage</th>
                                     <th>Total Cost</th>
                                     <th>Lines</th>
                                     <th>Location</th>
@@ -110,6 +82,22 @@
                                         <span class="badge {% if po.status == 'Arrived' %}bg-success{% elif po.status == 'Shipped' %}bg-info{% elif po.status == 'Ordered' %}bg-primary{% elif po.status == 'Cancelled' %}bg-danger{% else %}bg-secondary{% endif %}">
                                             {{ po.status }}
                                         </span>
+                                    </td>
+                                    <td>
+                                        {% set linkage = (po_linkage_status_by_id.get(po.id, 'unlinked') if po_linkage_status_by_id is defined else 'unlinked') %}
+                                        {% if linkage == 'fully_linked' %}
+                                            <span class="badge bg-secondary">
+                                                <i class="bi bi-link-45deg"></i> Fully linked
+                                            </span>
+                                        {% elif linkage == 'partially_linked' %}
+                                            <span class="badge bg-warning text-dark">
+                                                <i class="bi bi-link"></i> Partially linked
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-danger">
+                                                <i class="bi bi-unlink"></i> Unlinked
+                                            </span>
+                                        {% endif %}
                                     </td>
                                     <td>${{ "%.2f"|format(po.total_cost or 0) }}</td>
                                     <td>{{ po.purchase_order_lines.count() }}</td>

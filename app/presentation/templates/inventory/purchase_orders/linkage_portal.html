@@ -3,7 +3,7 @@
 {% block title %}PO Linkage Portal - {{ purchase_order.po_number }}{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
+<div class="container-fluid" data-po-id="{{ purchase_order.id }}">
     <!-- Header -->
     <div class="mb-4">
         <nav aria-label="breadcrumb">
@@ -28,111 +28,126 @@
         </div>
         <div class="card-body">
             {% for line_data in lines_with_demands %}
+            {% set ordered_qty = (line_data.po_line.quantity_ordered or 0.0) %}
+            {% set unlinked_qty = (line_data.quantity_available or 0.0) %}
+            {% set allocated_qty = ordered_qty - unlinked_qty %}
+            {% set linked_pct = ((allocated_qty / ordered_qty) * 100.0) if ordered_qty else 0.0 %}
+            {# "Fully linked" when allocated equals ordered (allow tiny float noise) #}
+            {% set fully_linked = (ordered_qty > 0.0) and ((unlinked_qty|float) <= 0.00001 or (allocated_qty|float) >= ((ordered_qty|float) - 0.00001)) %}
             <!-- SECTION: PO LINE {{ loop.index }} -->
-            <div class="row g-3 align-items-stretch" data-po-line-id="{{ line_data.po_line.id }}">
-                <div class="col-md-6">
-                    <h6 class="fw-bold mb-2"><i class="bi bi-receipt"></i> PO Line and Summary</h6>
-                    <div class="card po-line-item clickable-po-line" data-part-id="{{ line_data.po_line.part.id }}" data-part-number="{{ line_data.po_line.part.part_number }}">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <div>
-                                    <h6 class="mb-1">{{ purchase_order.po_number }} - Line {{ line_data.po_line.line_number }}</h6>
-                                    <small class="text-muted">Vendor: {{ purchase_order.vendor_name }}</small>
+            <div class="row g-3" data-po-line-id="{{ line_data.po_line.id }}">
+                <div class="col-12">
+                    <div class="card po-line-item clickable-po-line po-line-condensed {% if not fully_linked %}po-line-needs-linking{% endif %}"
+                         data-part-id="{{ line_data.po_line.part.id }}"
+                         data-part-number="{{ line_data.po_line.part.part_number }}">
+                        <div class="card-body py-2">
+                            <!-- Header row (condensed) -->
+                            <div class="d-flex justify-content-between align-items-start gap-2">
+                                <div class="flex-grow-1">
+                                    <div class="d-flex flex-wrap align-items-center gap-2">
+                                        <span class="fw-bold">{{ purchase_order.po_number }} - Line {{ line_data.po_line.line_number }}</span>
+                                        <span class="text-muted small">Vendor: {{ purchase_order.vendor_name }}</span>
+                                        <span class="text-muted small">|</span>
+                                        <span class="fw-semibold">{{ line_data.po_line.part.part_number }}</span>
+                                        <span class="text-muted small">{{ line_data.po_line.part.part_name }}</span>
+                                    </div>
                                 </div>
-                                <span class="badge bg-info">{{ line_data.po_line.status }}</span>
-                            </div>
-                            <hr class="my-2">
-                            <div class="row">
-                                <div class="col-6">
-                                    <small class="text-muted">Part:</small><br>
-                                    <strong>{{ line_data.po_line.part.part_number }}</strong> - {{ line_data.po_line.part.part_name }}
-                                </div>
-                                <div class="col-6">
-                                    <small class="text-muted">Quantity:</small><br>
-                                    <strong>{{ line_data.po_line.quantity_ordered }} {{ line_data.po_line.part.unit_of_measure or 'units' }}</strong>
-                                </div>
-                            </div>
-                            <div class="row mt-2">
-                                <div class="col-6">
-                                    <small class="text-muted">Unit Cost:</small> <strong>${{ "%.2f"|format(line_data.po_line.unit_cost) }}</strong>
-                                </div>
-                                <div class="col-6">
-                                    <small class="text-muted">Line Total:</small> <strong>${{ "%.2f"|format(line_data.po_line.line_total) }}</strong>
+                                <div class="d-flex gap-2 align-items-center flex-shrink-0">
+                                    {% if fully_linked %}
+                                        <span class="badge bg-success">Fully linked</span>
+                                    {% endif %}
+                                    <span class="badge bg-info">{{ line_data.po_line.status }}</span>
                                 </div>
                             </div>
-                            <div class="row mt-2">
-                                <div class="col-6">
-                                    <small class="text-muted">Ordered:</small> <strong class="text-success">{{ line_data.po_line.quantity_ordered }}</strong>
+
+                            <!-- Details row (single row, wraps on small screens) -->
+                            <div class="po-line-details-row mt-2">
+                                <div class="po-kv">
+                                    <span class="po-k">Qty</span>
+                                    <span class="po-v fw-semibold">{{ ordered_qty }} {{ line_data.po_line.part.unit_of_measure or 'units' }}</span>
                                 </div>
-                                <div class="col-6">
-                                    <small class="text-muted">Allocated:</small> <strong class="text-warning allocated-qty">{{ line_data.po_line.quantity_ordered - line_data.quantity_available }}</strong>
+                                <div class="po-kv">
+                                    <span class="po-k">Unit cost</span>
+                                    <span class="po-v fw-semibold">${{ "%.2f"|format(line_data.po_line.unit_cost) }}</span>
                                 </div>
-                            </div>
-                            <div class="row mt-2">
-                                <div class="col-12">
-                                    <small class="text-muted">Available:</small>
-                                    <strong class="text-primary available-qty">{{ line_data.quantity_available }} {{ line_data.po_line.part.unit_of_measure or 'units' }}</strong>
-                                    <span class="badge bg-{% if line_data.allocation_percentage >= 75 %}danger{% elif line_data.allocation_percentage >= 50 %}warning{% else %}success{% endif %} allocation-badge ms-2 availability-pct">{{ "%.1f"|format(100 - line_data.allocation_percentage) }}% Available</span>
+                                <div class="po-kv">
+                                    <span class="po-k">Line total</span>
+                                    <span class="po-v fw-semibold">${{ "%.2f"|format(line_data.po_line.line_total) }}</span>
                                 </div>
+                                <div class="po-kv">
+                                    <span class="po-k">Expected</span>
+                                    <span class="po-v fw-semibold">{{ line_data.po_line.expected_delivery_date or 'TBD' }}</span>
+                                </div>
+                                <div class="po-kv">
+                                    <span class="po-k">Allocated</span>
+                                    <span class="po-v fw-semibold {% if fully_linked %}text-success{% elif ordered_qty and (allocated_qty|float) <= 0.00001 %}text-danger{% else %}text-warning{% endif %} allocated-qty">
+                                        {{ allocated_qty }}/{{ ordered_qty }}
+                                    </span>
+                                    <span class="badge bg-{% if fully_linked or linked_pct >= 99.99 %}success{% elif linked_pct >= 50 %}warning{% else %}danger{% endif %} allocation-badge ms-1">
+                                        {{ "%.0f"|format(linked_pct) }}% Linked
+                                    </span>
+                                </div>
+                                {% if not fully_linked %}
+                                <div class="po-kv">
+                                    <span class="po-k">Qty Pending</span>
+                                    <span class="po-v fw-semibold text-success available-qty">{{ unlinked_qty }} {{ line_data.po_line.part.unit_of_measure or 'units' }}</span>
+                                </div>
+                                {% endif %}
                             </div>
-                            <div class="mt-2">
-                                <small class="text-muted">Expected Delivery:</small> <strong>{{ line_data.po_line.expected_delivery_date or 'TBD' }}</strong>
-                            </div>
+
                             {% if line_data.po_line.notes %}
-                            <div class="mt-2">
-                                <small class="text-muted">Notes:</small><br>
-                                <small>{{ line_data.po_line.notes }}</small>
-                            </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-6">
-                    <h6 class="fw-bold mb-2"><i class="bi bi-wrench"></i> Part Demands (for this PO line)</h6>
-                    <div class="card border-0">
-                        <div class="list-group demands-list" data-po-line-id="{{ line_data.po_line.id }}">
-                            {% if line_data.linked_demands %}
-                                {% for demand in line_data.linked_demands %}
-                                <div class="list-group-item part-demand-item border-success" data-demand-id="{{ demand.id }}">
-                                    <div class="d-flex justify-content-between align-items-start mb-2">
-                                        <div>
-                                            <h6 class="mb-1">Part Demand #{{ demand.id }}</h6>
-                                            <small class="text-muted">Action: {{ demand.action.action_name if demand.action else 'N/A' }}</small>
-                                        </div>
-                                        <span class="badge bg-success">Linked</span>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-6">
-                                            <small class="text-muted">Part:</small><br>
-                                            <strong>{{ demand.part.part_number }}</strong> - {{ demand.part.part_name }}
-                                        </div>
-                                        <div class="col-6">
-                                            <small class="text-muted">Required:</small><br>
-                                            <strong>{{ demand.quantity_required }}</strong>
-                                        </div>
-                                    </div>
-                                    <div class="mt-2">
-                                        <small class="text-muted">Maintenance Event:</small>
-                                        <strong>{{ demand.action.maintenance_action_set.task_name if (demand.action and demand.action.maintenance_action_set) else 'N/A' }}</strong>
-                                    </div>
-                                    <div class="mt-2">
-                                        <button class="btn btn-sm btn-outline-danger unlink-btn" data-demand-id="{{ demand.id }}">
-                                            <i class="bi bi-unlink"></i> Unlink
-                                        </button>
-                                    </div>
+                                <div class="mt-2 small text-muted">
+                                    <span class="fw-semibold">Notes:</span> {{ line_data.po_line.notes }}
                                 </div>
-                                {% endfor %}
                             {% endif %}
 
-                            {% if not line_data.linked_demands %}
-                            <div class="list-group-item">
-                                <small class="text-muted">
-                                    <i class="bi bi-info-circle"></i>
-                                    No linked demands for this PO line yet. Use the <span class="fw-bold">PO Linkage Tool</span> below to find and link matching demands.
-                                </small>
-                            </div>
-                            {% endif %}
+                            <!-- Demands (collapsible) -->
+                            <details class="mt-2 po-demands">
+                                <summary class="po-demands-summary">
+                                    <span class="fw-semibold"><i class="bi bi-wrench"></i> Part Demands</span>
+                                    <span class="text-muted small">
+                                        ({{ (line_data.linked_demands|length) if line_data.linked_demands else 0 }} linked)
+                                    </span>
+                                </summary>
+
+                                <div class="mt-2 demands-list" data-po-line-id="{{ line_data.po_line.id }}">
+                                    {% if line_data.linked_demands %}
+                                        {% for demand in line_data.linked_demands %}
+                                            <div class="card part-demand-card border-success mb-2" data-demand-id="{{ demand.id }}">
+                                                <div class="card-body py-2">
+                                                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                                                        <div class="d-flex flex-wrap align-items-center gap-2">
+                                                            <span class="badge bg-success">Linked</span>
+                                                            <span class="fw-semibold">Demand #{{ demand.id }}</span>
+                                                            <span class="text-muted small">Action: {{ demand.action.action_name if demand.action else 'N/A' }}</span>
+                                                            <span class="text-muted small">|</span>
+                                                            <span class="text-muted small">Event:</span>
+                                                            <span class="fw-semibold small">{{ demand.action.maintenance_action_set.task_name if (demand.action and demand.action.maintenance_action_set) else 'N/A' }}</span>
+                                                            <span class="text-muted small">|</span>
+                                                            <span class="text-muted small">Required:</span>
+                                                            <span class="fw-semibold">{{ demand.quantity_required }}</span>
+                                                        </div>
+                                                        <div class="d-flex gap-2 align-items-center">
+                                                            <button class="btn btn-sm btn-outline-danger unlink-btn" data-demand-id="{{ demand.id }}">
+                                                                <i class="bi bi-unlink"></i> Unlink
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <div class="card border-0">
+                                            <div class="card-body py-2">
+                                                <small class="text-muted">
+                                                    <i class="bi bi-info-circle"></i>
+                                                    No linked demands for this PO line yet. Use the <span class="fw-bold">PO Linkage Tool</span> below to find and link matching demands.
+                                                </small>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </details>
                         </div>
                     </div>
                 </div>
@@ -321,6 +336,44 @@
     .clickable-po-line:hover {
         background-color: #e9ecef;
     }
+    .po-line-needs-linking {
+        background-color: #fff8db;
+    }
+    .po-line-condensed .card-body {
+        font-size: 0.95rem;
+    }
+    .po-line-details-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem 1.25rem;
+        align-items: baseline;
+    }
+    .po-kv {
+        display: inline-flex;
+        gap: 0.4rem;
+        align-items: baseline;
+        white-space: nowrap;
+    }
+    .po-k {
+        color: #6c757d;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+    }
+    .po-v {
+        line-height: 1.1;
+    }
+    .po-demands summary {
+        cursor: pointer;
+        user-select: none;
+        color: #0d6efd;
+    }
+    .po-demands summary:hover {
+        text-decoration: underline;
+    }
+    .part-demand-card .card-body {
+        font-size: 0.9rem;
+    }
     .clickable-po-line.selected-item {
         background-color: #cfe2ff !important;
         border-color: #0d6efd !important;
@@ -331,7 +384,37 @@
 </style>
 
 <script>
-    const poId = {{ purchase_order.id }};
+    // Get PO ID from data attribute - use more specific selector and add validation
+    function getPoId() {
+        // Try data attribute first
+        const containerEl = document.querySelector('.container-fluid[data-po-id]');
+        if (containerEl && containerEl.dataset.poId) {
+            const id = Number(containerEl.dataset.poId);
+            if (!isNaN(id)) {
+                return id;
+            }
+        }
+        
+        // Fallback: extract from URL
+        const urlMatch = window.location.pathname.match(/\/purchase-order\/(\d+)\//);
+        if (urlMatch) {
+            const id = Number(urlMatch[1]);
+            if (!isNaN(id)) {
+                console.warn('Using PO ID from URL:', id);
+                return id;
+            }
+        }
+        
+        console.error('Failed to get PO ID from data attribute or URL');
+        return null;
+    }
+    
+    const poId = getPoId();
+    
+    if (!poId || isNaN(poId)) {
+        console.error('PO ID is invalid. Linking operations will fail.');
+    }
+    
     let selectedPoLineId = null;
     let selectedPartId = null;
     let selectedPartNumber = null;
@@ -400,7 +483,8 @@
         eventsList.innerHTML = '<div class="list-group-item"><p class="text-muted mb-0"><i class="bi bi-hourglass-split"></i> Loading...</p></div>';
 
         const params = buildEventsQueryParams();
-        fetch(`/inventory/purchase-orders/${poId}/link/api/events?${params.toString()}`)
+        if (poId) params.set('po_id', poId);
+        fetch(`/inventory/purchase-order/api/events?${params.toString()}`)
             .then(r => r.json())
             .then(events => {
                 currentEvents = events;
@@ -509,7 +593,8 @@
         demandsList.innerHTML = '<div class="list-group-item"><p class="text-muted mb-0"><i class="bi bi-hourglass-split"></i> Loading...</p></div>';
 
         const params = buildEventsQueryParams();
-        fetch(`/inventory/purchase-orders/${poId}/link/api/events?${params.toString()}`)
+        if (poId) params.set('po_id', poId);
+        fetch(`/inventory/purchase-order/api/events?${params.toString()}`)
             .then(r => r.json())
             .then(events => {
                 const allDemands = [];
@@ -567,9 +652,19 @@
     
     // Link demand to PO line
     function linkDemandToPoLine(poLineId, demandId) {
-        fetch(`/inventory/purchase-orders/${poId}/link/api/link`, {
+        if (!poId || isNaN(poId)) {
+            showToast('Error: Invalid purchase order ID. Please refresh the page.', false);
+            console.error('Cannot link demand: poId is', poId);
+            return;
+        }
+        
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        fetch(`/inventory/purchase-order/${poId}/link/api/link`, {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
             body: JSON.stringify({po_line_id: poLineId, part_demand_id: demandId})
         })
         .then(r => r.json())
@@ -592,9 +687,19 @@
     function unlinkDemand(demandId) {
         if (!confirm('Are you sure you want to unlink this demand?')) return;
         
-        fetch(`/inventory/purchase-orders/${poId}/link/api/unlink`, {
+        if (!poId || isNaN(poId)) {
+            showToast('Error: Invalid purchase order ID. Please refresh the page.', false);
+            console.error('Cannot unlink demand: poId is', poId);
+            return;
+        }
+        
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        fetch(`/inventory/purchase-order/${poId}/link/api/unlink`, {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
             body: JSON.stringify({part_demand_id: demandId})
         })
         .then(r => r.json())

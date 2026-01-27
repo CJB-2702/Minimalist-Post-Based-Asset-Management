@@ -25,6 +25,7 @@
             <div class="card shadow-sm">
                 <div class="card-body">
                     <form method="POST" action="{{ url_for('inventory.storeroom_create') }}" enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                         <div class="mb-3">
                             <label for="room_name" class="form-label">
                                 Storeroom Name <span class="text-danger">*</span>

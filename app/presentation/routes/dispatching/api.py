@@ -61,8 +61,8 @@ def api_timeline():
     items = []
     for d in dispatches:
         # Use context to access event data
-        from app.buisness.dispatching.dispatch import DispatchContext
-        ctx = DispatchContext.from_request_id(d.request_id)
+        from app.buisness.dispatching.context import DispatchContext
+        ctx = DispatchContext.load(d.request_id)
         
         if ctx.event and ctx.event.asset_id:
             asset_id = ctx.event.asset_id

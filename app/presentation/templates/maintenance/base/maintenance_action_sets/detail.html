@@ -187,18 +187,21 @@
 
                 {% if action_set.status == 'Planned' %}
                 <form method="POST" action="{{ url_for('maintenance_action_sets.start', action_set_id=action_set.id) }}" class="mb-2">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <button type="submit" class="btn btn-success w-100">Start Work</button>
                 </form>
                 {% endif %}
 
                 {% if action_set.status == 'In Progress' %}
                 <form method="POST" action="{{ url_for('maintenance_action_sets.complete', action_set_id=action_set.id) }}" class="mb-2">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <button type="submit" class="btn btn-primary w-100">Complete</button>
                 </form>
                 {% endif %}
 
                 {% if action_set.status != 'Cancelled' and action_set.status != 'Completed' %}
                 <form method="POST" action="{{ url_for('maintenance_action_sets.cancel', action_set_id=action_set.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <button type="submit" class="btn btn-danger w-100" 
                             onclick="return confirm('Are you sure you want to cancel this maintenance action set?')">
                         Cancel

@@ -1,0 +1,296 @@
+{% extends 'base.html' %}
+{% block title %}My Dispatch Requests{% endblock %}
+
+{% block content %}
+<div class="container mt-3">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2><i class="bi bi-person-circle"></i> My Dispatch Requests</h2>
+    <div>
+      <a class="btn btn-primary" href="{{ url_for('dispatching.requests_new') }}">
+        <i class="bi bi-plus-circle"></i> New Request
+      </a>
+      <a href="{{ url_for('dispatching.index') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Dispatching
+      </a>
+    </div>
+  </div>
+
+  <!-- Filters Card -->
+  <div class="card mb-3">
+    <div class="card-header">
+      <h5 class="mb-0"><i class="bi bi-funnel"></i> Filters & Search</h5>
+    </div>
+    <div class="card-body">
+      <form method="GET" action="{{ url_for('dispatching.user_portal') }}">
+        <div class="row">
+          <div class="col-md-3">
+            <label for="status" class="form-label">Status</label>
+            <select class="form-select form-select-sm" id="status" name="status">
+              <option value="">All Statuses</option>
+              {% for status in filter_options['statuses'] %}
+              <option value="{{ status }}" {% if request.args.get('status') == status %}selected{% endif %}>
+                {{ status }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          
+          <div class="col-md-3">
+            <label for="asset_type_id" class="form-label">Asset Type</label>
+            <select class="form-select form-select-sm" id="asset_type_id" name="asset_type_id">
+              <option value="">All Asset Types</option>
+              {% for asset_type in filter_options['asset_types'] %}
+              <option value="{{ asset_type.id }}" {% if request.args.get('asset_type_id')|int == asset_type.id %}selected{% endif %}>
+                {{ asset_type.name }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          
+          <div class="col-md-2">
+            <label for="dispatch_scope" class="form-label">Scope</label>
+            <select class="form-select form-select-sm" id="dispatch_scope" name="dispatch_scope">
+              <option value="">All Scopes</option>
+              {% for scope in filter_options['scopes'] %}
+              <option value="{{ scope }}" {% if request.args.get('dispatch_scope') == scope %}selected{% endif %}>
+                {{ scope }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          
+          <div class="col-md-2">
+            <label for="outcome_type" class="form-label">Outcome Type</label>
+            <select class="form-select form-select-sm" id="outcome_type" name="outcome_type">
+              <option value="">All Outcomes</option>
+              <option value="none" {% if request.args.get('outcome_type') == 'none' %}selected{% endif %}>No Outcome</option>
+              <option value="dispatch" {% if request.args.get('outcome_type') == 'dispatch' %}selected{% endif %}>Dispatch</option>
+              <option value="contract" {% if request.args.get('outcome_type') == 'contract' %}selected{% endif %}>Contract</option>
+              <option value="reimbursement" {% if request.args.get('outcome_type') == 'reimbursement' %}selected{% endif %}>Reimbursement</option>
+              <option value="reject" {% if request.args.get('outcome_type') == 'reject' %}selected{% endif %}>Rejection</option>
+            </select>
+          </div>
+          
+          <div class="col-md-2">
+            <label for="search" class="form-label">Search</label>
+            <input type="text" class="form-control form-control-sm" id="search" name="search" 
+                   value="{{ request.args.get('search', '') }}" placeholder="Notes, location...">
+          </div>
+        </div>
+        
+        <div class="row mt-2">
+          <div class="col-12">
+            <button type="submit" class="btn btn-primary btn-sm">
+              <i class="bi bi-search"></i> Apply Filters
+            </button>
+            <a href="{{ url_for('dispatching.user_portal') }}" class="btn btn-outline-secondary btn-sm">
+              <i class="bi bi-x-circle"></i> Clear Filters
+            </a>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Results Summary -->
+  <div class="mb-3">
+    <h5>{{ requests_page.total }} Request{{ 's' if requests_page.total != 1 else '' }}</h5>
+  </div>
+
+  <!-- Request Cards -->
+  {% if contexts %}
+    {% for ctx in contexts %}
+      {% set request = ctx.request %}
+      {% set outcome_type = ctx.active_outcome_type %}
+      
+      {# Determine card background color based on outcome type #}
+      {% if outcome_type == 'reject' %}
+        {% set card_bg = 'bg-danger bg-opacity-10' %}
+        {% set border_class = 'border-danger' %}
+      {% elif outcome_type == 'contract' or outcome_type == 'reimbursement' %}
+        {% set card_bg = 'bg-info bg-opacity-10' %}
+        {% set border_class = 'border-info' %}
+      {% else %}
+        {% set card_bg = '' %}
+        {% set border_class = '' %}
+      {% endif %}
+      
+      <div class="card mb-2 {{ card_bg }} {{ border_class }}">
+        <div class="card-body py-2">
+          <div class="row align-items-center">
+            <!-- Request Header Info -->
+            <div class="col-md-2">
+              <h6 class="mb-0">
+                <a href="{{ url_for('dispatching.requests_detail', item_id=request.id) }}" 
+                   class="text-decoration-none">
+                  Request #{{ request.id }}
+                </a>
+              </h6>
+              <small class="text-muted">
+                {{ request.desired_start.strftime('%b %d, %Y') if request.desired_start else 'N/A' }}
+              </small>
+            </div>
+            
+            <!-- Asset Type -->
+            <div class="col-md-2">
+              <small class="text-muted d-block"><i class="bi bi-wrench"></i> Asset Type</small>
+              <strong>{{ request.asset_type.name if request.asset_type else 'N/A' }}</strong>
+              {% if request.asset_subclass_text %}
+                <br><small class="text-muted">{{ request.asset_subclass_text }}</small>
+              {% endif %}
+            </div>
+            
+            <!-- Duration -->
+            <div class="col-md-2">
+              <small class="text-muted d-block"><i class="bi bi-calendar-range"></i> Duration</small>
+              <small>
+                {% if request.desired_start and request.desired_end %}
+                  {{ request.desired_start.strftime('%m/%d %H:%M') }} - {{ request.desired_end.strftime('%m/%d %H:%M') }}
+                {% else %}
+                  N/A
+                {% endif %}
+              </small>
+            </div>
+            
+            <!-- Location -->
+            <div class="col-md-2">
+              <small class="text-muted d-block"><i class="bi bi-geo-alt"></i> Location</small>
+              <strong>{{ request.major_location.name if request.major_location else 'N/A' }}</strong>
+              {% if request.activity_location %}
+                <br><small class="text-muted">{{ request.activity_location[:30] }}{% if request.activity_location|length > 30 %}...{% endif %}</small>
+              {% endif %}
+            </div>
+            
+            <!-- Outcome Information -->
+            <div class="col-md-3">
+              {% if ctx.has_active_outcome %}
+                {% if outcome_type == 'dispatch' and ctx.dispatch %}
+                  <small class="text-muted d-block"><i class="bi bi-calendar-event"></i> Dispatch</small>
+                  {% if ctx.dispatch.asset_dispatched %}
+                    <strong>{{ ctx.dispatch.asset_dispatched.name }}</strong><br>
+                  {% endif %}
+                  {% if ctx.dispatch.scheduled_start %}
+                    <small class="text-muted">
+                      {{ ctx.dispatch.scheduled_start.strftime('%m/%d %H:%M') }}
+                      {% if ctx.dispatch.scheduled_end %} - {{ ctx.dispatch.scheduled_end.strftime('%H:%M') }}{% endif %}
+                    </small><br>
+                  {% endif %}
+                  <span class="badge 
+                    {% if ctx.dispatch.status == 'Completed' %}bg-success
+                    {% elif ctx.dispatch.status == 'Active' or ctx.dispatch.status == 'Dispatched' %}bg-primary
+                    {% elif ctx.dispatch.status == 'Planned' %}bg-info
+                    {% elif ctx.dispatch.status == 'Cancelled' %}bg-danger
+                    {% else %}bg-secondary{% endif %}">
+                    {{ ctx.dispatch.status }}
+                  </span>
+                {% elif outcome_type == 'contract' and ctx.contract %}
+                  <small class="text-muted d-block"><i class="bi bi-file-earmark-text text-info"></i> Contract</small>
+                  <strong>{{ ctx.contract.company_name }}</strong><br>
+                  <span class="badge bg-success">
+                    {{ ctx.contract.cost_currency }} {{ "{:,.2f}".format(ctx.contract.cost_amount) }}
+                  </span>
+                {% elif outcome_type == 'reimbursement' and ctx.reimbursement %}
+                  <small class="text-muted d-block"><i class="bi bi-currency-exchange text-info"></i> Reimbursement</small>
+                  <strong>{{ ctx.reimbursement.reason[:40] }}{% if ctx.reimbursement.reason|length > 40 %}...{% endif %}</strong><br>
+                  <span class="badge bg-success">
+                    ${{ "{:,.2f}".format(ctx.reimbursement.amount) }}
+                  </span>
+                {% elif outcome_type == 'reject' and ctx.reject %}
+                  <small class="text-muted d-block"><i class="bi bi-x-circle text-danger"></i> Rejected</small>
+                  {% if ctx.reject.rejection_category %}
+                    <span class="badge bg-danger">{{ ctx.reject.rejection_category }}</span><br>
+                  {% endif %}
+                  <small class="text-muted">{{ ctx.reject.reason[:50] }}{% if ctx.reject.reason|length > 50 %}...{% endif %}</small>
+                  {% if ctx.reject.can_resubmit %}
+                    <br><span class="badge bg-warning mt-1">Can Resubmit</span>
+                  {% endif %}
+                {% endif %}
+              {% else %}
+                <small class="text-muted d-block">Outcome</small>
+                <span class="badge bg-secondary"><i class="bi bi-hourglass-split"></i> No Outcome</span>
+              {% endif %}
+            </div>
+            
+            <!-- Status & Actions -->
+            <div class="col-md-1 text-end">
+              <span class="badge mb-1
+                {% if request.status == 'Completed' or request.status == 'Contracted' or request.status == 'Reimbursed' or request.status == 'Resolved' %}bg-success
+                {% elif request.status == 'Submitted' or request.status == 'UnderReview' %}bg-primary
+                {% elif request.status == 'Planned' %}bg-info
+                {% elif request.status == 'Rejected' or request.status == 'Cancelled' %}bg-danger
+                {% elif request.status == 'FixesRequested' %}bg-warning
+                {% else %}bg-secondary{% endif %}">
+                {{ request.status }}
+              </span>
+              <br>
+              <a href="{{ url_for('dispatching.requests_detail', item_id=request.id) }}" 
+                 class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-arrow-right"></i>
+              </a>
+            </div>
+          </div>
+          
+          <!-- Notes row (if exists) -->
+          {% if request.notes %}
+          <div class="row mt-2">
+            <div class="col-12">
+              <small class="text-muted"><i class="bi bi-sticky"></i> {{ request.notes[:150] }}{% if request.notes|length > 150 %}...{% endif %}</small>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+    
+    <!-- Pagination -->
+    {% if requests_page.pages > 1 %}
+    <nav aria-label="Requests pagination">
+      <ul class="pagination justify-content-center">
+        {% if requests_page.has_prev %}
+        <li class="page-item">
+          <a class="page-link" href="{{ url_for('dispatching.user_portal', page=requests_page.prev_num, **request.args) }}">Previous</a>
+        </li>
+        {% endif %}
+        
+        {% for page_num in requests_page.iter_pages() %}
+          {% if page_num %}
+            {% if page_num != requests_page.page %}
+            <li class="page-item">
+              <a class="page-link" href="{{ url_for('dispatching.user_portal', page=page_num, **request.args) }}">{{ page_num }}</a>
+            </li>
+            {% else %}
+            <li class="page-item active">
+              <span class="page-link">{{ page_num }}</span>
+            </li>
+            {% endif %}
+          {% else %}
+          <li class="page-item disabled">
+            <span class="page-link">...</span>
+          </li>
+          {% endif %}
+        {% endfor %}
+        
+        {% if requests_page.has_next %}
+        <li class="page-item">
+          <a class="page-link" href="{{ url_for('dispatching.user_portal', page=requests_page.next_num, **request.args) }}">Next</a>
+        </li>
+        {% endif %}
+      </ul>
+    </nav>
+    {% endif %}
+    
+  {% else %}
+    <div class="card">
+      <div class="card-body text-center py-5">
+        <i class="bi bi-inbox display-1 text-muted"></i>
+        <h3 class="mt-3">No Requests Found</h3>
+        <p class="text-muted">You don't have any dispatch requests matching the current filters.</p>
+        <a href="{{ url_for('dispatching.requests_new') }}" class="btn btn-primary">
+          <i class="bi bi-plus-circle"></i> Create New Request
+        </a>
+      </div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
+

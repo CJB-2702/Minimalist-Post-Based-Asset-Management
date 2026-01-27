@@ -13,14 +13,14 @@ Architecture:
 - inventory/ - Inventory tracking data models
 """
 
-from app.data.inventory.ordering import (
+from app.data.inventory.purchasing import (
     PurchaseOrderHeader,
     PurchaseOrderLine,
     PartDemandPurchaseOrderLink
 )
 from app.data.inventory.arrivals import (
-    PackageHeader,
-    PartArrival
+    ArrivalHeader,
+    ArrivalLine
 )
 from app.data.inventory.inventory import (
     Storeroom,
@@ -39,8 +39,8 @@ __all__ = [
     'PurchaseOrderHeader',
     'PurchaseOrderLine',
     'PartDemandPurchaseOrderLink',
-    'PackageHeader',
-    'PartArrival',
+    'ArrivalHeader',
+    'ArrivalLine',
     'Storeroom',
     'BinPrototype',
     'ActiveInventory',

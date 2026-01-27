@@ -1,0 +1,21 @@
+<a href="{{ url_for('inventory.move_inventory_gui', initial_active_inventory_id=active_inventory.id, major_location_id=major_location_id, storeroom=storeroom_id, location=location_id, bin=bin.id) }}"
+   class="text-decoration-none">
+    <div class="card bin-card {% if bin_id and bin_id == bin.id %}selected{% endif %}"
+         id="bin-card-{{ bin.id }}"
+         data-bin-id="{{ bin.id }}"
+         data-bin-tag="{{ bin.bin_tag }}"
+         data-bin-display-name="{{ bin.display_name }}"
+         data-location-id="{{ location_id }}">
+        <div class="card-body py-2">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <strong data-bin-name>{{ bin.display_name }}</strong>
+                    {% if bin.display_name != bin.bin_tag %}
+                    <div class="text-muted small" data-bin-tag-display>Tag: {{ bin.bin_tag }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</a>
+

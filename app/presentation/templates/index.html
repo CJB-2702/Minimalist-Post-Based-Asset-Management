@@ -259,9 +259,6 @@
                         <a href="{{ url_for('inventory.purchase_orders_list') }}" class="btn btn-outline-danger btn-sm">
                             <i class="bi bi-receipt"></i> Purchase Order Portal
                         </a>
-                        <a href="{{ url_for('inventory.create_po_from_single_maintenance') }}" class="btn btn-outline-danger btn-sm">
-                            <i class="bi bi-cart-plus"></i> Create PO (Single Maintenance)
-                        </a>
                         <a href="{{ url_for('inventory.arrivals_index') }}" class="btn btn-outline-danger btn-sm">
                             <i class="bi bi-box-arrow-in-down"></i> Arrivals
                         </a>
@@ -289,7 +286,7 @@
                         <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-secondary btn-sm">
                             <i class="bi bi-graph-up"></i> Dashboard
                         </a>
-                        <a href="{{ url_for('main.search') }}" class="btn btn-outline-secondary btn-sm">
+                        <a href="{{ url_for('searchbar.search') }}" class="btn btn-outline-secondary btn-sm">
                             <i class="bi bi-search"></i> Search
                         </a>
                         <a href="{{ url_for('main.help') }}" class="btn btn-outline-secondary btn-sm">

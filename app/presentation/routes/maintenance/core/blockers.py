@@ -30,7 +30,7 @@ def end_blocked_status(blocked_status_id):
             maintenance_context = MaintenanceContext.from_maintenance_action_set(blocked_status.maintenance_action_set_id)
             struct: MaintenanceActionSetStruct = maintenance_context.struct
             if struct.event_id:
-                return redirect(url_for('maintenance_event.view_maintenance_event', event_id=struct.event_id))
+                return redirect(url_for('maintenance_event_view.view_maintenance_event', event_id=struct.event_id))
             abort(404)
         
         # Get form data (all required fields)
@@ -46,7 +46,7 @@ def end_blocked_status(blocked_status_id):
             maintenance_context = MaintenanceContext.from_maintenance_action_set(blocked_status.maintenance_action_set_id)
             struct: MaintenanceActionSetStruct = maintenance_context.struct
             if struct.event_id:
-                return redirect(url_for('maintenance_event.view_maintenance_event', event_id=struct.event_id))
+                return redirect(url_for('maintenance_event_view.view_maintenance_event', event_id=struct.event_id))
             abort(404)
         
         if not blocked_status_end_date_str:
@@ -54,7 +54,7 @@ def end_blocked_status(blocked_status_id):
             maintenance_context = MaintenanceContext.from_maintenance_action_set(blocked_status.maintenance_action_set_id)
             struct: MaintenanceActionSetStruct = maintenance_context.struct
             if struct.event_id:
-                return redirect(url_for('maintenance_event.view_maintenance_event', event_id=struct.event_id))
+                return redirect(url_for('maintenance_event_view.view_maintenance_event', event_id=struct.event_id))
             abort(404)
         
         if not blocked_status_billable_hours_str:
@@ -62,7 +62,7 @@ def end_blocked_status(blocked_status_id):
             maintenance_context = MaintenanceContext.from_maintenance_action_set(blocked_status.maintenance_action_set_id)
             struct: MaintenanceActionSetStruct = maintenance_context.struct
             if struct.event_id:
-                return redirect(url_for('maintenance_event.view_maintenance_event', event_id=struct.event_id))
+                return redirect(url_for('maintenance_event_view.view_maintenance_event', event_id=struct.event_id))
             abort(404)
         
         # Parse dates
@@ -73,7 +73,7 @@ def end_blocked_status(blocked_status_id):
             maintenance_context = MaintenanceContext.from_maintenance_action_set(blocked_status.maintenance_action_set_id)
             struct: MaintenanceActionSetStruct = maintenance_context.struct
             if struct.event_id:
-                return redirect(url_for('maintenance_event.view_maintenance_event', event_id=struct.event_id))
+                return redirect(url_for('maintenance_event_view.view_maintenance_event', event_id=struct.event_id))
             abort(404)
         
         try:
@@ -83,7 +83,7 @@ def end_blocked_status(blocked_status_id):
             maintenance_context = MaintenanceContext.from_maintenance_action_set(blocked_status.maintenance_action_set_id)
             struct: MaintenanceActionSetStruct = maintenance_context.struct
             if struct.event_id:
-                return redirect(url_for('maintenance_event.view_maintenance_event', event_id=struct.event_id))
+                return redirect(url_for('maintenance_event_view.view_maintenance_event', event_id=struct.event_id))
             abort(404)
         
         # Parse billable hours (required, allows 0)
@@ -94,14 +94,14 @@ def end_blocked_status(blocked_status_id):
                 maintenance_context = MaintenanceContext.from_maintenance_action_set(blocked_status.maintenance_action_set_id)
                 struct: MaintenanceActionSetStruct = maintenance_context.struct
                 if struct.event_id:
-                    return redirect(url_for('maintenance_event.view_maintenance_event', event_id=struct.event_id))
+                    return redirect(url_for('maintenance_event_view.view_maintenance_event', event_id=struct.event_id))
                 abort(404)
         except ValueError:
             flash('Invalid billable hours format', 'error')
             maintenance_context = MaintenanceContext.from_maintenance_action_set(blocked_status.maintenance_action_set_id)
             struct: MaintenanceActionSetStruct = maintenance_context.struct
             if struct.event_id:
-                return redirect(url_for('maintenance_event.view_maintenance_event', event_id=struct.event_id))
+                return redirect(url_for('maintenance_event_view.view_maintenance_event', event_id=struct.event_id))
             abort(404)
         
         # Create MaintenanceContext from blocked_status's maintenance_action_set_id
@@ -151,7 +151,7 @@ def end_blocked_status(blocked_status_id):
         blocker_manager.update_asset_blocked_status()
         
         flash('Blocked status ended successfully. Work can now continue.', 'success')
-        return redirect(url_for('maintenance_event.view_maintenance_event', event_id=struct.event_id))
+        return redirect(url_for('maintenance_event_view.view_maintenance_event', event_id=struct.event_id))
         
     except Exception as e:
         logger.error(f"Error ending blocked status: {e}")
@@ -163,7 +163,7 @@ def end_blocked_status(blocked_status_id):
                 maintenance_context = MaintenanceContext.from_maintenance_action_set(blocked_status.maintenance_action_set_id)
                 struct: MaintenanceActionSetStruct = maintenance_context.struct
                 if struct.event_id:
-                    return redirect(url_for('maintenance_event.view_maintenance_event', event_id=struct.event_id))
+                    return redirect(url_for('maintenance_event_view.view_maintenance_event', event_id=struct.event_id))
         except:
             pass
         abort(404)
@@ -191,7 +191,6 @@ def update_blocked_status(blocked_status_id):
             abort(404)
         
         # ===== FORM PARSING SECTION =====
-        blocked_status_type = request.form.get('blocked_status_type', '').strip()
         blocked_status_reason = request.form.get('blocked_status_reason', '').strip()
         blocked_status_start_date_str = request.form.get('blocked_status_start_date', '').strip()
         blocked_status_end_date_str = request.form.get('blocked_status_end_date', '').strip()
@@ -199,14 +198,9 @@ def update_blocked_status(blocked_status_id):
         blocked_status_notes = request.form.get('blocked_status_notes', '').strip()
         priority = request.form.get('priority', '').strip()
         
-        # ===== LIGHT VALIDATION SECTION =====
-        if blocked_status_type and blocked_status_type not in ['Work in blocked_status', 'Cancellation Requested']:
-            flash('Invalid blocked_status type', 'error')
-            return redirect(url_for('maintenance_event.render_edit_page', event_id=event_id))
-        
         if blocked_status_reason and not blocked_status_reason:
             flash('blocked_status reason cannot be empty', 'error')
-            return redirect(url_for('maintenance_event.render_edit_page', event_id=event_id))
+            return redirect(url_for('maintenance_event_edit.render_edit_page', event_id=event_id))
         
         # ===== DATA TYPE CONVERSION SECTION =====
         blocked_status_start_date = None
@@ -215,7 +209,7 @@ def update_blocked_status(blocked_status_id):
                 blocked_status_start_date = datetime.strptime(blocked_status_start_date_str, '%Y-%m-%dT%H:%M')
             except ValueError:
                 flash('Invalid blocked_status start date format', 'error')
-                return redirect(url_for('maintenance_event.render_edit_page', event_id=event_id))
+                return redirect(url_for('maintenance_event_edit.render_edit_page', event_id=event_id))
         
         blocked_status_end_date = None
         if blocked_status_end_date_str:
@@ -223,7 +217,7 @@ def update_blocked_status(blocked_status_id):
                 blocked_status_end_date = datetime.strptime(blocked_status_end_date_str, '%Y-%m-%dT%H:%M')
             except ValueError:
                 flash('Invalid blocked_status end date format', 'error')
-                return redirect(url_for('maintenance_event.render_edit_page', event_id=event_id))
+                return redirect(url_for('maintenance_event_edit.render_edit_page', event_id=event_id))
         
         blocked_status_billable_hours = None
         if blocked_status_billable_hours_str:
@@ -231,7 +225,7 @@ def update_blocked_status(blocked_status_id):
                 blocked_status_billable_hours = float(blocked_status_billable_hours_str)
                 if blocked_status_billable_hours < 0:
                     flash('Billable hours must be non-negative', 'error')
-                    return redirect(url_for('maintenance_event.render_edit_page', event_id=event_id))
+                    return redirect(url_for('maintenance_event_edit.render_edit_page', event_id=event_id))
             except ValueError:
                 pass  # Ignore invalid values
         
@@ -239,7 +233,6 @@ def update_blocked_status(blocked_status_id):
             priority = None  # Use existing value if invalid
         
         # Convert empty strings to None
-        blocked_status_type = blocked_status_type if blocked_status_type else None
         blocked_status_reason = blocked_status_reason if blocked_status_reason else None
         blocked_status_notes = blocked_status_notes if blocked_status_notes else None
         priority = priority if priority else None
@@ -248,7 +241,6 @@ def update_blocked_status(blocked_status_id):
         try:
             blocker_manager.update_blocker(
                 blocker_id=blocked_status_id,
-                mission_capability_status=blocked_status_type,
                 reason=blocked_status_reason,
                 start_date=blocked_status_start_date,
                 end_date=blocked_status_end_date,
@@ -261,7 +253,7 @@ def update_blocked_status(blocked_status_id):
                 maintenance_context._sync_event_status()
         except ValueError as e:
             flash(str(e), 'error')
-            return redirect(url_for('maintenance_event.render_edit_page', event_id=event_id))
+            return redirect(url_for('maintenance_event_edit.render_edit_page', event_id=event_id))
         
         # Generate automated comment
         if struct.event_id:
@@ -277,7 +269,7 @@ def update_blocked_status(blocked_status_id):
             db.session.commit()
         
         flash('blocked_status updated successfully', 'success')
-        return redirect(url_for('maintenance_event.render_edit_page', event_id=event_id))
+        return redirect(url_for('maintenance_event_edit.render_edit_page', event_id=event_id))
         
     except Exception as e:
         logger.error(f"Error updating blocked_status: {e}")
@@ -291,7 +283,7 @@ def update_blocked_status(blocked_status_id):
                 maintenance_context = MaintenanceContext.from_maintenance_action_set(blocked_status.maintenance_action_set_id)
                 struct: MaintenanceActionSetStruct = maintenance_context.struct
                 if struct.event_id:
-                    return redirect(url_for('maintenance_event.render_edit_page', event_id=struct.event_id))
+                    return redirect(url_for('maintenance_event_edit.render_edit_page', event_id=struct.event_id))
         except:
             pass
         abort(404)

@@ -70,6 +70,7 @@
                     </div>
                     {% if action_set.status == 'In Progress' %}
                     <form method="POST" action="{{ url_for('technician_portal.complete_action_set', action_set_id=action_set.id) }}" class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                         <button type="submit" class="btn btn-success" onclick="return confirm('Mark this maintenance as complete?')">
                             <i class="bi bi-check-circle"></i> Complete Maintenance
                         </button>
@@ -312,6 +313,7 @@
                 <div class="card-body">
                     {% if action_set.status != 'In Progress' and action_set.status != 'Completed' %}
                     <form method="POST" action="{{ url_for('technician_portal.start_work', action_set_id=action_set.id) }}" class="mb-2">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                         <button type="submit" class="btn btn-primary w-100" onclick="return confirm('Start this maintenance work?')">
                             <i class="bi bi-play-circle"></i> Start Work
                         </button>

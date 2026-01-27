@@ -76,12 +76,12 @@ class InventoryMovement(UserCreatedBase):
     location = db.relationship('Location', foreign_keys=[to_location_id], viewonly=True)
     
     # Direct movement references
-    part_arrival = db.relationship('PartArrival', foreign_keys=[part_arrival_id], back_populates='inventory_movements')
+    part_arrival = db.relationship('ArrivalLine', foreign_keys=[part_arrival_id], back_populates='inventory_movements')
     part_issue_ref = db.relationship('PartIssue', foreign_keys=[part_issue_id])
     
     # Traceability chain relationships
     initial_arrival = db.relationship(
-        'PartArrival',
+        'ArrivalLine',
         foreign_keys=[initial_arrival_id],
         back_populates='initial_movements'
     )

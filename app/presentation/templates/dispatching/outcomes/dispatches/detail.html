@@ -1,0 +1,238 @@
+{% extends 'base.html' %}
+{% block title %}Dispatch {{ item.id }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .info-card {
+        border-left: 4px solid;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .info-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .info-card.primary { border-left-color: #0d6efd; }
+    .info-card.success { border-left-color: #198754; }
+    .info-card.warning { border-left-color: #ffc107; }
+    .info-card.danger { border-left-color: #dc3545; }
+    .info-card.info { border-left-color: #0dcaf0; }
+    .info-card.secondary { border-left-color: #6c757d; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-3">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="bi bi-calendar-event text-primary"></i> Dispatch #{{ item.id }}
+                    </h1>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="{{ url_for('dispatching.index') }}">Dispatching</a></li>
+                            <li class="breadcrumb-item"><a href="{{ url_for('dispatching.dispatches_list') }}">Dispatches</a></li>
+                            <li class="breadcrumb-item active">Dispatch #{{ item.id }}</li>
+                        </ol>
+                    </nav>
+                </div>
+                <div>
+                    <a href="{{ url_for('dispatching.dispatches_list') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Dispatches
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-lg-8">
+            <!-- Current Dispatch Information Card -->
+            {% include 'dispatching/outcomes/dispatch_card.html' %}
+
+            <!-- Request Information Card -->
+            {% set request = ctx.request %}
+            {% include 'dispatching/outcomes/request_card.html' %}
+
+            <!-- All Outcomes Section -->
+            {% if other_outcomes|length > 0 %}
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-list-ul"></i> Other Outcomes for Request #{{ ctx.request_id }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">
+                        This request has {{ other_outcomes|length }} additional outcome(s) associated with it:
+                    </p>
+                    <div class="row">
+                        {% for outcome_type, outcome_obj in other_outcomes %}
+                        <div class="col-md-6 mb-3">
+                            {% if outcome_type == 'dispatch' %}
+                                {% with dispatch=outcome_obj %}
+                                    {% include 'dispatching/outcomes/dispatches/dispatch_view_page_card.html' %}
+                                {% endwith %}
+                            {% elif outcome_type == 'contract' %}
+                                {% with contract=outcome_obj %}
+                                    {% include 'dispatching/outcomes/contracts/dispatch_view_page_card.html' %}
+                                {% endwith %}
+                            {% elif outcome_type == 'reimbursement' %}
+                                {% with reimbursement=outcome_obj %}
+                                    {% include 'dispatching/outcomes/reimbursements/dispatch_view_page_card.html' %}
+                                {% endwith %}
+                            {% elif outcome_type == 'reject' %}
+                                {% with reject=outcome_obj %}
+                                    {% include 'dispatching/outcomes/rejects/dispatch_view_page_card.html' %}
+                                {% endwith %}
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Event Activity Widget -->
+            {% if ctx.event and ctx.event.id %}
+            <div id="event-widget-container"
+                 hx-get="{{ url_for('comments.event_widget', event_id=ctx.event.id) }}"
+                 hx-trigger="load"
+                 hx-target="#event-widget-container"
+                 hx-swap="outerHTML">
+                <div class="card mb-4">
+                    <div class="card-body text-center text-muted">
+                        <i class="bi bi-hourglass-split"></i> Loading event activity...
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Quick Actions Card -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-lightning-charge"></i> Quick Actions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        {% if can_edit %}
+                        <a class="btn btn-primary" href="{{ url_for('dispatching.dispatches_edit', item_id=item.id) }}">
+                            <i class="bi bi-pencil"></i> Edit Dispatch
+                        </a>
+                        {% else %}
+                        <button class="btn btn-secondary" disabled title="Cannot edit cancelled dispatch with another active outcome">
+                            <i class="bi bi-pencil"></i> Edit Dispatch (Disabled)
+                        </button>
+                        {% endif %}
+                        <a class="btn btn-outline-primary" href="{{ url_for('dispatching.requests_detail', item_id=ctx.request_id) }}">
+                            <i class="bi bi-file-text"></i> View Request
+                        </a>
+                        <a class="btn btn-outline-secondary" href="{{ url_for('dispatching.dispatches_list') }}">
+                            <i class="bi bi-arrow-left"></i> Back to Dispatches
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Event Information Card -->
+            {% if ctx.event %}
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-clock-history"></i> Event Information</h6>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-5">Event ID</dt>
+                        <dd class="col-sm-7">
+                            <a href="{{ url_for('events.detail', event_id=ctx.event.id) }}" class="text-decoration-none">
+                                #{{ ctx.event.id }}
+                            </a>
+                        </dd>
+                        
+                        <dt class="col-sm-5">Event Type</dt>
+                        <dd class="col-sm-7">{{ ctx.event.event_type }}</dd>
+                        
+                        <dt class="col-sm-5">Event Status</dt>
+                        <dd class="col-sm-7">
+                            <span class="badge bg-info">{{ ctx.event.status }}</span>
+                        </dd>
+                        
+                        <dt class="col-sm-5">Created</dt>
+                        <dd class="col-sm-7">
+                            <small>{{ ctx.event.created_at.strftime('%Y-%m-%d %H:%M') if ctx.event.created_at else 'N/A' }}</small>
+                        </dd>
+                        
+                        {% if ctx.event.description %}
+                        <dt class="col-sm-12 mt-2">Description</dt>
+                        <dd class="col-sm-12">
+                            <small class="text-muted">{{ ctx.event.description }}</small>
+                        </dd>
+                        {% endif %}
+                    </dl>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Request Summary Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-info-circle"></i> Request Summary</h6>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-5">Request ID</dt>
+                        <dd class="col-sm-7">
+                            <a href="{{ url_for('dispatching.requests_detail', item_id=ctx.request_id) }}" class="text-decoration-none">
+                                #{{ ctx.request_id }}
+                            </a>
+                        </dd>
+                        
+                        <dt class="col-sm-5">Request Status</dt>
+                        <dd class="col-sm-7">
+                            <span class="badge bg-secondary">{{ ctx.request.status }}</span>
+                        </dd>
+                        
+                        <dt class="col-sm-5">Asset Type</dt>
+                        <dd class="col-sm-7">{{ ctx.request.asset_type.name if ctx.request.asset_type else 'N/A' }}</dd>
+                        
+                        <dt class="col-sm-5">Scope</dt>
+                        <dd class="col-sm-7">
+                            <span class="badge bg-info">{{ ctx.request.dispatch_scope }}</span>
+                        </dd>
+                        
+                        <dt class="col-sm-5">Desired Times</dt>
+                        <dd class="col-sm-7">
+                            <small>
+                                {% if ctx.request.desired_start %}
+                                    {{ ctx.request.desired_start.strftime('%Y-%m-%d %H:%M') if ctx.request.desired_start else '' }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                                {% if ctx.request.desired_end %}
+                                    <br>→ {{ ctx.request.desired_end.strftime('%Y-%m-%d %H:%M') if ctx.request.desired_end else '' }}
+                                {% endif %}
+                            </small>
+                        </dd>
+                        
+                        {% if ctx.request.num_people %}
+                        <dt class="col-sm-5">Number of People</dt>
+                        <dd class="col-sm-7">{{ ctx.request.num_people }}</dd>
+                        {% endif %}
+                        
+                        {% if ctx.request.estimated_meter_usage %}
+                        <dt class="col-sm-5">Est. Meter Usage</dt>
+                        <dd class="col-sm-7">{{ ctx.request.estimated_meter_usage }}</dd>
+                        {% endif %}
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -22,9 +22,6 @@
                        class="btn btn-primary me-2">
                         <i class="bi bi-link-45deg"></i> Link to PO Lines
                     </a>
-                    <a href="{{ url_for('inventory.package_arrival_edit', id=package.id) }}" class="btn btn-success me-2">
-                        <i class="bi bi-clipboard-check"></i> Inspect / Accept
-                    </a>
                     <a href="{{ url_for('inventory.po_arrivals') }}" class="btn btn-outline-secondary">
                         <i class="bi bi-arrow-left"></i> Back to Arrivals List
                     </a>
@@ -52,46 +49,108 @@
         </div>
     </div>
 
-    <div class="row">
+    <div class="row mb-4">
         <div class="col-12">
             <div class="card">
                 <div class="card-header">
-                    <h5 class="mb-0"><i class="bi bi-list-check"></i> Part Arrivals</h5>
+                    <h5 class="mb-0"><i class="bi bi-basket"></i> Arrival Lines</h5>
                 </div>
                 <div class="card-body">
-                    {% if part_arrivals %}
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle">
-                            <thead>
-                                <tr>
-                                    <th>Part</th>
-                                    <th>PO</th>
-                                    <th>Qty</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for a in part_arrivals %}
-                                <tr>
-                                    <td>
-                                        <div><strong>{{ a.part.part_number if a.part else a.part_id }}</strong></div>
-                                        <div class="text-muted small">{{ a.part.part_name if a.part else '' }}</div>
-                                    </td>
-                                    <td>
-                                        {% if a.purchase_order_line and a.purchase_order_line.purchase_order %}
-                                            <a href="{{ url_for('inventory.purchase_order_view', po_id=a.purchase_order_line.purchase_order.id) }}">
-                                                {{ a.purchase_order_line.purchase_order.po_number }}
-                                            </a>
-                                        {% else %}
-                                            N/A
+                    {% if arrival_summary %}
+                    <div class="d-flex flex-column gap-2">
+                        {% for item in arrival_summary %}
+                        <div class="card" data-part-id="{{ item.part_id }}">
+                            <div class="card-body py-3">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="fw-semibold">
+                                            <strong>{{ item.part_number }}</strong>
+                                            <span class="text-muted small ms-2">{{ item.part_name }}</span>
+                                        </div>
+                                        <div class="mt-2">
+                                            <span class="badge bg-{{ 'success' if item.status == 'Accepted' else 'warning' if item.status == 'Pending' else 'danger' if item.status == 'Rejected' else 'info' }}">
+                                                {{ item.status }}
+                                            </span>
+                                            {% if item.condition %}
+                                            <span class="badge bg-secondary ms-1">{{ item.condition }}</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="small text-muted mb-1">Quantity Received</div>
+                                        <div class="fs-5 fw-semibold text-primary">{{ '%.1f'|format(item.total_received) }}</div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="small text-muted mb-1">Linked Qty</div>
+                                        <div class="fs-5 fw-semibold text-success">{{ '%.1f'|format(item.total_linked) }}</div>
+                                        {% if item.total_unlinked > 0 %}
+                                        <div class="small text-muted mt-1">Unlinked: {{ '%.1f'|format(item.total_unlinked) }}</div>
                                         {% endif %}
-                                    </td>
-                                    <td>{{ a.quantity_received }}</td>
-                                    <td>{{ a.status }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                                    </div>
+                                </div>
+                                <hr class="my-2">
+                                <div class="row g-2 small text-muted">
+                                    <div class="col-sm-3"><span class="fw-semibold">Date:</span> {{ item.received_date.strftime('%Y-%m-%d') if item.received_date else 'N/A' }}</div>
+                                    <div class="col-sm-3"><span class="fw-semibold">Location:</span> {{ item.location }}</div>
+                                    <div class="col-sm-3"><span class="fw-semibold">Storeroom:</span> {{ item.storeroom }}</div>
+                                    <div class="col-sm-3"><span class="fw-semibold">Arrival Lines:</span> {{ item.arrival_lines|length }}</div>
+                                </div>
+
+                                {% if item.po_line_details %}
+                                <details class="mt-3">
+                                    <summary class="fw-semibold text-primary">PO line details</summary>
+                                    <div class="mt-2">
+                                        <div class="list-group">
+                                            {% for po_detail in item.po_line_details %}
+                                            <div class="list-group-item">
+                                                <div class="d-flex justify-content-between align-items-start gap-3">
+                                                    <div>
+                                                        <div class="fw-semibold">
+                                                            <span class="text-muted">PO Line</span> #{{ po_detail.po_line_id }}
+                                                            <span class="text-muted ms-2">PO</span> {{ po_detail.po_number }}
+                                                            <span class="text-muted ms-2">Line</span> {{ po_detail.line_number }}
+                                                        </div>
+                                                        <div class="small text-muted">
+                                                            Vendor: {{ po_detail.vendor_name }},
+                                                            Ordered {{ '%.1f'|format(po_detail.quantity_ordered) }},
+                                                            Status {{ po_detail.status }}
+                                                        </div>
+                                                        {% if po_detail.link_notes %}
+                                                        <div class="small text-muted mt-1">
+                                                            <i class="bi bi-sticky"></i> {{ po_detail.link_notes }}
+                                                        </div>
+                                                        {% endif %}
+                                                    </div>
+                                                    <div class="text-end">
+                                                        <div class="small text-muted">Linked</div>
+                                                        <div class="fw-semibold text-success">{{ '%.1f'|format(po_detail.quantity_linked) }}</div>
+                                                        <div class="small text-muted mt-1">${{ '%.2f'|format(po_detail.unit_cost) }}</div>
+                                                    </div>
+                                                </div>
+                                                <div class="d-flex justify-content-end mt-2">
+                                                    <a href="{{ url_for('inventory.purchase_order_view', po_id=po_detail.po_id) }}" 
+                                                       class="btn btn-sm btn-outline-primary">
+                                                        <i class="bi bi-arrow-right-circle"></i> View PO
+                                                    </a>
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </details>
+                                {% elif item.total_received > 0 %}
+                                <div class="mt-3">
+                                    <div class="alert alert-warning mb-0">
+                                        <i class="bi bi-exclamation-triangle"></i> This part is not linked to any PO line.
+                                        <a href="{{ url_for('inventory.arrival_linkage_portal', package_id=package.id) }}" class="alert-link">
+                                            Link to PO Lines
+                                        </a>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
                     </div>
                     {% else %}
                     <div class="alert alert-info mb-0">
@@ -102,6 +161,330 @@
             </div>
         </div>
     </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-file-earmark-text"></i> Purchase Order Headers</h5>
+                </div>
+                <div class="card-body">
+                    {% if po_headers %}
+                    <div class="accordion" id="poHeadersAccordion">
+                        {% for po_header in po_headers %}
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="poHeader{{ po_header.id }}">
+                                <button class="accordion-button {% if not loop.first %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePoHeader{{ po_header.id }}" aria-expanded="{% if loop.first %}true{% else %}false{% endif %}" aria-controls="collapsePoHeader{{ po_header.id }}">
+                                    <strong>{{ po_header.po_number }}</strong>
+                                    <span class="ms-3 text-muted">{{ po_header.vendor_name }}</span>
+                                    <span class="badge bg-{{ 'success' if po_header.status == 'Arrived' else 'warning' if po_header.status == 'Shipped' else 'info' if po_header.status == 'Ordered' else 'secondary' }} ms-3">{{ po_header.status }}</span>
+                                </button>
+                            </h2>
+                            <div id="collapsePoHeader{{ po_header.id }}" class="accordion-collapse collapse {% if loop.first %}show{% endif %}" aria-labelledby="poHeader{{ po_header.id }}" data-bs-parent="#poHeadersAccordion">
+                                <div class="accordion-body">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <table class="table table-sm table-borderless">
+                                                <tr>
+                                                    <th width="40%">PO Number:</th>
+                                                    <td><strong>{{ po_header.po_number }}</strong></td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Vendor Name:</th>
+                                                    <td>{{ po_header.vendor_name }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Vendor Contact:</th>
+                                                    <td>{{ po_header.vendor_contact or 'N/A' }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Status:</th>
+                                                    <td>
+                                                        <span class="badge bg-{{ 'success' if po_header.status == 'Arrived' else 'warning' if po_header.status == 'Shipped' else 'info' if po_header.status == 'Ordered' else 'secondary' }}">
+                                                            {{ po_header.status }}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Order Date:</th>
+                                                    <td>{{ po_header.order_date.strftime('%Y-%m-%d') if po_header.order_date else 'N/A' }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Expected Delivery:</th>
+                                                    <td>{{ po_header.expected_delivery_date.strftime('%Y-%m-%d') if po_header.expected_delivery_date else 'N/A' }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Location:</th>
+                                                    <td>{{ po_header.major_location or 'N/A' }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Storeroom:</th>
+                                                    <td>{{ po_header.storeroom or 'N/A' }}</td>
+                                                </tr>
+                                                {% if po_header.event %}
+                                                <tr>
+                                                    <th>Event:</th>
+                                                    <td>{{ po_header.event }}</td>
+                                                </tr>
+                                                {% endif %}
+                                            </table>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <table class="table table-sm table-borderless">
+                                                <tr>
+                                                    <th width="40%">Subtotal:</th>
+                                                    <td>${{ '%.2f'|format((po_header.total_cost or 0) - ((po_header.shipping_cost or 0) + (po_header.tax_amount or 0) + (po_header.other_amount or 0))) }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Shipping Cost:</th>
+                                                    <td>${{ '%.2f'|format(po_header.shipping_cost) }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Tax Amount:</th>
+                                                    <td>${{ '%.2f'|format(po_header.tax_amount) }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Other Amount:</th>
+                                                    <td>${{ '%.2f'|format(po_header.other_amount) }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <th><strong>Total Cost:</strong></th>
+                                                    <td><strong>${{ '%.2f'|format(po_header.total_cost) }}</strong></td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Created By:</th>
+                                                    <td>{{ po_header.created_by or 'N/A' }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Created Date:</th>
+                                                    <td>{{ po_header.created_date.strftime('%Y-%m-%d %H:%M:%S') if po_header.created_date else 'N/A' }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Updated By:</th>
+                                                    <td>{{ po_header.updated_by or 'N/A' }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Updated Date:</th>
+                                                    <td>{{ po_header.updated_date.strftime('%Y-%m-%d %H:%M:%S') if po_header.updated_date else 'N/A' }}</td>
+                                                </tr>
+                                            </table>
+                                        </div>
+                                        {% if po_header.notes %}
+                                        <div class="col-12">
+                                            <strong>Notes:</strong>
+                                            <div class="mt-1 p-2 bg-light rounded">{{ po_header.notes }}</div>
+                                        </div>
+                                        {% endif %}
+                                        <div class="col-12">
+                                            <a href="{{ url_for('inventory.purchase_order_view', po_id=po_header.id) }}" 
+                                               class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-arrow-right-circle"></i> View Full PO
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-info-circle"></i> No purchase order headers are linked to this arrival package.
+                        {% if po_link_count == 0 %}
+                        <a href="{{ url_for('inventory.arrival_linkage_portal', package_id=package.id) }}" class="alert-link">
+                            Link arrival lines to PO lines
+                        </a> to see purchase order information here.
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-list-ul"></i> Purchase Order Lines</h5>
+                </div>
+                <div class="card-body">
+                    {% if po_lines %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>PO</th>
+                                    <th>Line #</th>
+                                    <th>Part Number</th>
+                                    <th>Part Name</th>
+                                    <th>Qty Ordered</th>
+                                    <th>Qty Received</th>
+                                    <th>Unit Cost</th>
+                                    <th>Line Total</th>
+                                    <th>Status</th>
+                                    <th>Expected Delivery</th>
+                                    <th>Notes</th>
+                                    <th>Created</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for po_line in po_lines %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ url_for('inventory.purchase_order_view', po_id=po_line.po_id) }}" class="text-decoration-none">
+                                            {{ po_line.po_id }}
+                                        </a>
+                                    </td>
+                                    <td><strong>{{ po_line.line_number }}</strong></td>
+                                    <td><code>{{ po_line.part_number or 'N/A' }}</code></td>
+                                    <td>{{ po_line.part_name or 'N/A' }}</td>
+                                    <td>{{ '%.1f'|format(po_line.quantity_ordered) }}</td>
+                                    <td>
+                                        <span class="text-{{ 'success' if po_line.quantity_received_total > 0 else 'muted' }}">
+                                            {{ '%.1f'|format(po_line.quantity_received_total) }}
+                                        </span>
+                                    </td>
+                                    <td>${{ '%.2f'|format(po_line.unit_cost) }}</td>
+                                    <td><strong>${{ '%.2f'|format(po_line.line_total) }}</strong></td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if po_line.status == 'Complete' else 'warning' if po_line.status == 'Shipped' else 'info' if po_line.status == 'Ordered' else 'secondary' }}">
+                                            {{ po_line.status }}
+                                        </span>
+                                    </td>
+                                    <td>{{ po_line.expected_delivery_date.strftime('%Y-%m-%d') if po_line.expected_delivery_date else 'N/A' }}</td>
+                                    <td>
+                                        {% if po_line.notes %}
+                                        <span class="text-muted small" title="{{ po_line.notes }}">
+                                            <i class="bi bi-sticky"></i>
+                                        </span>
+                                        {% else %}
+                                        <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="small text-muted">
+                                            {{ po_line.created_by or 'N/A' }}<br>
+                                            {{ po_line.created_date.strftime('%Y-%m-%d') if po_line.created_date else 'N/A' }}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    {% if po_lines|length > 0 %}
+                    <div class="mt-3">
+                        <details>
+                            <summary class="fw-semibold text-muted">Extended Line Details</summary>
+                            <div class="mt-3">
+                                <div class="row g-3">
+                                    {% for po_line in po_lines %}
+                                    <div class="col-md-6">
+                                        <div class="card">
+                                            <div class="card-header py-2">
+                                                <strong>Line #{{ po_line.line_number }}</strong> - {{ po_line.part_number }}
+                                            </div>
+                                            <div class="card-body">
+                                                <table class="table table-sm table-borderless mb-0">
+                                                    <tr>
+                                                        <th width="50%">PO ID:</th>
+                                                        <td>{{ po_line.po_id }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>Part ID:</th>
+                                                        <td>{{ po_line.part_id }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>Quantity Ordered:</th>
+                                                        <td><strong>{{ '%.1f'|format(po_line.quantity_ordered) }}</strong></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>Quantity Received:</th>
+                                                        <td class="text-success">{{ '%.1f'|format(po_line.quantity_received_total) }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>Total Linked from Arrivals:</th>
+                                                        <td>{{ '%.1f'|format(po_line.total_quantity_linked_from_arrivals) }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>Unit Cost:</th>
+                                                        <td>${{ '%.2f'|format(po_line.unit_cost) }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>Line Total:</th>
+                                                        <td><strong>${{ '%.2f'|format(po_line.line_total) }}</strong></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>Status:</th>
+                                                        <td>
+                                                            <span class="badge bg-{{ 'success' if po_line.status == 'Complete' else 'warning' if po_line.status == 'Shipped' else 'info' if po_line.status == 'Ordered' else 'secondary' }}">
+                                                                {{ po_line.status }}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>Expected Delivery:</th>
+                                                        <td>{{ po_line.expected_delivery_date.strftime('%Y-%m-%d') if po_line.expected_delivery_date else 'N/A' }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>Fake for Adjustments:</th>
+                                                        <td>
+                                                            {% if po_line.is_fake_for_inventory_adjustments %}
+                                                            <span class="badge bg-warning">Yes</span>
+                                                            {% else %}
+                                                            <span class="text-muted">No</span>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>Created By:</th>
+                                                        <td>{{ po_line.created_by or 'N/A' }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>Created Date:</th>
+                                                        <td>{{ po_line.created_date.strftime('%Y-%m-%d %H:%M:%S') if po_line.created_date else 'N/A' }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>Updated By:</th>
+                                                        <td>{{ po_line.updated_by or 'N/A' }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>Updated Date:</th>
+                                                        <td>{{ po_line.updated_date.strftime('%Y-%m-%d %H:%M:%S') if po_line.updated_date else 'N/A' }}</td>
+                                                    </tr>
+                                                    {% if po_line.notes %}
+                                                    <tr>
+                                                        <th>Notes:</th>
+                                                        <td><div class="p-2 bg-light rounded small">{{ po_line.notes }}</div></td>
+                                                    </tr>
+                                                    {% endif %}
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </details>
+                    </div>
+                    {% endif %}
+                    {% else %}
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-info-circle"></i> No purchase order lines are linked to this arrival package.
+                        {% if po_link_count == 0 %}
+                        <a href="{{ url_for('inventory.arrival_linkage_portal', package_id=package.id) }}" class="alert-link">
+                            Link arrival lines to PO lines
+                        </a> to see purchase order line information here.
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 {% endblock %}
 

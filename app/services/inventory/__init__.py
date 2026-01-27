@@ -11,8 +11,7 @@ from .part_demand_service import PartDemandInventoryService
 # Sub-modules
 from .purchasing import (
     PurchaseOrderLineService,
-    InventoryPartDemandSelectionService,
-    POPartDemandSelectionService,  # Alias
+    PartDemandSearchService,
     PartPickerService,
 )
 from .arrivals import (
@@ -35,8 +34,7 @@ __all__ = [
     'PartDemandInventoryService',
     # Purchasing services
     'PurchaseOrderLineService',
-    'InventoryPartDemandSelectionService',
-    'POPartDemandSelectionService',  # Alias for backward compatibility
+    'PartDemandSearchService',
     'PartPickerService',
     # Arrival services
     'ArrivalLinkagePortal',
@@ -49,6 +47,5 @@ __all__ = [
     'MajorLocationInventoryView',
     'StoreroomInventoryView',
 ]
-
 
 

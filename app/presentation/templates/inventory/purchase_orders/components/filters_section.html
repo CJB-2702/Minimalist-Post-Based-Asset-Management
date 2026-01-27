@@ -1,0 +1,180 @@
+<!-- Filters and Search Results - Combined in Collapsible Card -->
+<div class="card mb-4">
+  <div class="card-header">
+    <div class="d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">
+        <i class="bi bi-funnel"></i> Filters & Search Results
+      </h5>
+      <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#filtersSearchCollapse" aria-expanded="true" aria-controls="filtersSearchCollapse">
+        <i class="bi bi-chevron-down" id="collapseIcon"></i>
+      </button>
+    </div>
+  </div>
+  <div class="collapse show" id="filtersSearchCollapse">
+    <div class="card-body">
+      <!-- Filters -->
+      <form method="GET" 
+            action="{{ url_for('inventory.create_po') }}"
+            hx-get="{{ url_for('inventory.create_po') }}"
+            hx-target="#search-results-container"
+            hx-swap="innerHTML"
+            hx-push-url="false"
+            hx-indicator="#search-results-loading"
+            class="row g-3 mb-4" 
+            style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px;">
+        <!-- Part Filters -->
+        <div class="col-md-4">
+          <label for="part_id" class="form-label">Part ID</label>
+          <input type="number" class="form-control" id="part_id" name="part_id" 
+                 value="{{ filters.part_id or '' }}" placeholder="Part ID">
+        </div>
+        <div class="col-md-4">
+          <label for="part_description" class="form-label">Part Description</label>
+          <input type="text" class="form-control" id="part_description" name="part_description" 
+                 value="{{ filters.part_description or '' }}" placeholder="Part name or description">
+        </div>
+        <div class="col-md-4">
+          <label for="status" class="form-label">Status</label>
+          <select class="form-select" id="status" name="status">
+            <option value="">(Default: orderable)</option>
+            {% for status_option in status_options %}
+            <option value="{{ status_option }}" {% if filters.status == status_option %}selected{% endif %}>
+              {{ status_option }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <!-- Part Demand Date Range Filters -->
+        <div class="col-md-3">
+          <label for="created_from" class="form-label">Created From</label>
+          <input type="date" class="form-control" id="created_from" name="created_from" 
+                 value="{{ filters.created_from or '' }}">
+        </div>
+        <div class="col-md-3">
+          <label for="created_to" class="form-label">Created To</label>
+          <input type="date" class="form-control" id="created_to" name="created_to" 
+                 value="{{ filters.created_to or '' }}">
+        </div>
+        <div class="col-md-3">
+          <label for="updated_from" class="form-label">Last Updated From</label>
+          <input type="date" class="form-control" id="updated_from" name="updated_from" 
+                 value="{{ filters.updated_from or '' }}">
+        </div>
+        <div class="col-md-3">
+          <label for="updated_to" class="form-label">Last Updated To</label>
+          <input type="date" class="form-control" id="updated_to" name="updated_to" 
+                 value="{{ filters.updated_to or '' }}">
+        </div>
+        
+        <!-- Maintenance Event Filters -->
+        <div class="col-12">
+          <hr class="my-2">
+          <details>
+            <summary class="h6 text-muted mb-3" style="cursor: pointer;">
+              <i class="bi bi-tools"></i> Maintenance Event Filters
+            </summary>
+            <div class="row g-3 mt-2">
+              <div class="col-md-3">
+                <label for="maintenance_event_id" class="form-label">Maintenance Event ID</label>
+                <input type="number" class="form-control" id="maintenance_event_id" name="maintenance_event_id" 
+                       value="{{ filters.maintenance_event_id or '' }}" placeholder="Event ID">
+              </div>
+              <div class="col-md-3">
+                <label for="asset_id" class="form-label">Asset ID</label>
+                <input type="number" class="form-control" id="asset_id" name="asset_id" 
+                       value="{{ filters.asset_id or '' }}" placeholder="Asset ID">
+              </div>
+              <div class="col-md-3">
+                <label for="assigned_to_id" class="form-label">Assigned To</label>
+                <select class="form-select" id="assigned_to_id" name="assigned_to_id">
+                  <option value="">All Users</option>
+                  {% for user in users %}
+                  <option value="{{ user.id }}" {% if filters.assigned_to_id == user.id %}selected{% endif %}>
+                    {{ user.username }}
+                  </option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label for="major_location_id" class="form-label">Major Location</label>
+                <select class="form-select" id="major_location_id" name="major_location_id">
+                  <option value="">All Locations</option>
+                  {% for location in major_locations %}
+                  <option value="{{ location.id }}" {% if filters.major_location_id == location.id %}selected{% endif %}>
+                    {{ location.name }}
+                  </option>
+                  {% endfor %}
+                </select>
+              </div>
+              <!-- Maintenance Event Date Range Filters -->
+              <div class="col-md-3">
+                <label for="maintenance_event_created_from" class="form-label">Event Created From</label>
+                <input type="date" class="form-control" id="maintenance_event_created_from" name="maintenance_event_created_from" 
+                       value="{{ filters.maintenance_event_created_from or '' }}">
+              </div>
+              <div class="col-md-3">
+                <label for="maintenance_event_created_to" class="form-label">Event Created To</label>
+                <input type="date" class="form-control" id="maintenance_event_created_to" name="maintenance_event_created_to" 
+                       value="{{ filters.maintenance_event_created_to or '' }}">
+              </div>
+              <div class="col-md-3">
+                <label for="maintenance_event_updated_from" class="form-label">Event Last Updated From</label>
+                <input type="date" class="form-control" id="maintenance_event_updated_from" name="maintenance_event_updated_from" 
+                       value="{{ filters.maintenance_event_updated_from or '' }}">
+              </div>
+              <div class="col-md-3">
+                <label for="maintenance_event_updated_to" class="form-label">Event Last Updated To</label>
+                <input type="date" class="form-control" id="maintenance_event_updated_to" name="maintenance_event_updated_to" 
+                       value="{{ filters.maintenance_event_updated_to or '' }}">
+              </div>
+            </div>
+          </details>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="col-12">
+          <hr class="my-2">
+          <div class="d-flex align-items-end justify-content-between">
+            <div>
+              <label for="sort_by" class="form-label">Sort By</label>
+              <select class="form-select" id="sort_by" name="sort_by">
+                <option value="">Default</option>
+                <option value="price_asc" {% if filters.sort_by == 'price_asc' %}selected{% endif %}>
+                  Price (Low to High)
+                </option>
+                <option value="price_desc" {% if filters.sort_by == 'price_desc' %}selected{% endif %}>
+                  Price (High to Low)
+                </option>
+                <option value="date_asc" {% if filters.sort_by == 'date_asc' %}selected{% endif %}>
+                  Creation Date (Oldest First)
+                </option>
+                <option value="date_desc" {% if filters.sort_by == 'date_desc' %}selected{% endif %}>
+                  Creation Date (Newest First)
+                </option>
+              </select>
+            </div>
+            <div class="d-flex gap-2">
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-search"></i> Apply Filters
+              </button>
+              <a href="{{ url_for('inventory.create_po') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-x-circle"></i> Clear
+              </a>
+            </div>
+          </div>
+        </div>
+      </form>
+
+      <!-- Search Results -->
+      <div id="search-results-loading" class="htmx-indicator text-center py-3">
+        <div class="spinner-border spinner-border-sm text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <small class="text-muted d-block mt-2">Loading search results...</small>
+      </div>
+      <div id="search-results-container">
+        {% include 'inventory/purchase_orders/components/search_results_table.html' %}
+      </div>
+    </div>
+  </div>
+</div>

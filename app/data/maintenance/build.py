@@ -25,6 +25,7 @@ def build_models():
     import app.data.maintenance.base.maintenance_action_sets
     import app.data.maintenance.planning.maintenance_plans
     import app.data.maintenance.base.maintenance_blockers
+    import app.data.maintenance.base.asset_limitation_records
     import app.data.maintenance.base.part_demands
     import app.data.maintenance.base.action_tools
     

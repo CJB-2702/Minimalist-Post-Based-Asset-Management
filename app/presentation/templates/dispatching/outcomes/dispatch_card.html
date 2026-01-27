@@ -1,7 +1,7 @@
 <div class="card mb-3 info-card {% if dispatch.status == 'Completed' %}success{% elif dispatch.status == 'Active' or dispatch.status == 'Dispatched' %}primary{% elif dispatch.status == 'Planned' %}info{% elif dispatch.status == 'Cancelled' %}danger{% else %}secondary{% endif %}">
     <div class="card-header">
         <h5 class="mb-0">
-            <i class="bi bi-calendar-event"></i> Dispatch Outcome
+            <i class="bi bi-calendar-event"></i> Dispatch Information
             <a href="{{ url_for('dispatching.dispatches_detail', item_id=dispatch.id) }}" class="text-decoration-none float-end">
                 <small>View Details <i class="bi bi-arrow-right"></i></small>
             </a>
@@ -65,15 +65,15 @@
             </dd>
             {% endif %}
             
-            {% if dispatch.assett_dispatched_id %}
+            {% if dispatch.asset_dispatched_id %}
             <dt class="col-sm-4">Asset Dispatched</dt>
             <dd class="col-sm-8">
-                {% if dispatch.assett_dispatched %}
-                    <a href="{{ url_for('core_assets.detail', asset_id=dispatch.assett_dispatched.id) }}" class="text-decoration-none">
-                        {{ dispatch.assett_dispatched.name }}
+                {% if dispatch.asset_dispatched %}
+                    <a href="{{ url_for('core_assets.detail', asset_id=dispatch.asset_dispatched.id) }}" class="text-decoration-none">
+                        {{ dispatch.asset_dispatched.name }}
                     </a>
                 {% else %}
-                    Asset ID: {{ dispatch.assett_dispatched_id }}
+                    Asset ID: {{ dispatch.asset_dispatched_id }}
                 {% endif %}
             </dd>
             {% endif %}
@@ -83,9 +83,9 @@
             <dd class="col-sm-8">{{ dispatch.assigned_by.username if dispatch.assigned_by else 'N/A' }}</dd>
             {% endif %}
             
-            {% if dispatch.assigned_to %}
-            <dt class="col-sm-4">Assigned To</dt>
-            <dd class="col-sm-8">{{ dispatch.assigned_to.username if dispatch.assigned_to else 'N/A' }}</dd>
+            {% if dispatch.assigned_person %}
+            <dt class="col-sm-4">Assigned Person</dt>
+            <dd class="col-sm-8">{{ dispatch.assigned_person.username if dispatch.assigned_person else 'N/A' }}</dd>
             {% endif %}
             
             {% if dispatch.location_from_id or dispatch.location_to_id %}

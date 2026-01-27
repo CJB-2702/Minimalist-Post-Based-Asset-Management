@@ -10,6 +10,7 @@ from app.data.maintenance.base.actions import Action
 from app.data.maintenance.base.part_demands import PartDemand
 from app.data.maintenance.base.action_tools import ActionTool
 from app.data.maintenance.base.maintenance_blockers import MaintenanceBlocker
+from app.data.maintenance.base.asset_limitation_records import AssetLimitationRecord
 from app.data.core.event_info.event import Event
 
 
@@ -39,6 +40,7 @@ class MaintenanceActionSetStruct:
         self._part_demands = None
         self._action_tools = None
         self._blockers = None
+        self._limitation_records = None
         self._event = None
         
     @classmethod
@@ -158,6 +160,18 @@ class MaintenanceActionSetStruct:
             self._blockers = list(self._maintenance_action_set.blockers)
         return self._blockers
     
+    @property
+    def limitation_records(self) -> List[AssetLimitationRecord]:
+        """
+        Get all asset limitation records for this maintenance action set.
+        
+        Returns:
+            List of AssetLimitationRecord instances
+        """
+        if self._limitation_records is None:
+            self._limitation_records = list(self._maintenance_action_set.limitation_records)
+        return self._limitation_records
+    
     # Convenience properties for common fields
     @property
     def task_name(self) -> str:
@@ -250,6 +264,7 @@ class MaintenanceActionSetStruct:
         self._part_demands = None
         self._action_tools = None
         self._blockers = None
+        self._limitation_records = None
         self._event = None
     
     def __repr__(self):

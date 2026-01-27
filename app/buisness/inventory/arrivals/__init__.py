@@ -1,9 +1,9 @@
-from app.buisness.inventory.arrivals.package_arrival_context import PackageArrivalContext
-from app.buisness.inventory.arrivals.part_arrival_context import PartArrivalContext
+from app.buisness.inventory.arrivals.arrival_context import ArrivalContext
+from app.buisness.inventory.arrivals.arrival_line_context import ArrivalLineContext
 
 __all__ = [
-    "PackageArrivalContext",
-    "PartArrivalContext",
+    "ArrivalContext",
+    "ArrivalLineContext",
 ]
 
 

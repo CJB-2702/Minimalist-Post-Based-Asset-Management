@@ -11,7 +11,7 @@
             <!-- Search Form -->
             <div class="card mb-4">
                 <div class="card-body">
-                    <form method="GET" action="{{ url_for('main.search') }}">
+                    <form method="GET" action="{{ url_for('searchbar.search') }}">
                         <div class="input-group">
                             <input type="text" class="form-control form-control-lg" name="q" 
                                    value="{{ query or '' }}" placeholder="Search assets, locations, users, make/models...">
@@ -138,6 +138,96 @@
                 {% if not results or (not results.assets and not results.locations and not results.make_models and not results.users) %}
                 <div class="alert alert-info">
                     <i class="bi bi-info-circle"></i> No results found for "{{ query }}"
+                </div>
+                {% endif %}
+
+                <!-- Potential Routes Card -->
+                {% if potential_routes %}
+                <div class="card mt-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-compass"></i> Potential Routes
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted mb-3">Found matching routes and portals:</p>
+                        {% for category, category_routes in potential_routes.items() %}
+                            <div class="mb-4">
+                                <h6 class="text-muted mb-3">
+                                    <i class="bi bi-folder"></i> {{ category }}
+                                </h6>
+                                <div class="row g-3">
+                                    {% for route_key, route_info in category_routes.items() %}
+                                        <div class="col-md-6 col-lg-4">
+                                            <div class="card h-100 border shadow-sm">
+                                                <div class="card-body">
+                                                    <div class="d-flex align-items-center mb-2">
+                                                        <i class="bi {{ route_info.icon or 'bi-link-45deg' }} text-primary me-2" style="font-size: 1.5rem;"></i>
+                                                        <h6 class="card-title mb-0">{{ route_info.name }}</h6>
+                                                    </div>
+                                                    <p class="card-text text-muted small mb-3">
+                                                        {{ route_info.description or 'No description available' }}
+                                                    </p>
+                                                    <a href="{{ url_for(route_info.route) }}" 
+                                                       class="btn btn-sm btn-outline-primary w-100">
+                                                        <i class="bi bi-arrow-right"></i> Go to Route
+                                                    </a>
+                                                    <small class="text-muted d-block mt-2">
+                                                        <code class="small">{{ route_info.route }}</code>
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            {% else %}
+                <!-- Show all potential routes when no query -->
+                {% if potential_routes %}
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-list-ul"></i> All Available Routes
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted mb-3">Browse all available portals and routes below, or use the search above to filter.</p>
+                        {% for category, category_routes in potential_routes.items() %}
+                            <div class="mb-4">
+                                <h6 class="text-muted mb-3">
+                                    <i class="bi bi-folder"></i> {{ category }}
+                                </h6>
+                                <div class="row g-3">
+                                    {% for route_key, route_info in category_routes.items() %}
+                                        <div class="col-md-6 col-lg-4">
+                                            <div class="card h-100 border shadow-sm">
+                                                <div class="card-body">
+                                                    <div class="d-flex align-items-center mb-2">
+                                                        <i class="bi {{ route_info.icon or 'bi-link-45deg' }} text-primary me-2" style="font-size: 1.5rem;"></i>
+                                                        <h6 class="card-title mb-0">{{ route_info.name }}</h6>
+                                                    </div>
+                                                    <p class="card-text text-muted small mb-3">
+                                                        {{ route_info.description or 'No description available' }}
+                                                    </p>
+                                                    <a href="{{ url_for(route_info.route) }}" 
+                                                       class="btn btn-sm btn-outline-primary w-100">
+                                                        <i class="bi bi-arrow-right"></i> Go to Route
+                                                    </a>
+                                                    <small class="text-muted d-block mt-2">
+                                                        <code class="small">{{ route_info.route }}</code>
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
                 </div>
                 {% endif %}
             {% endif %}

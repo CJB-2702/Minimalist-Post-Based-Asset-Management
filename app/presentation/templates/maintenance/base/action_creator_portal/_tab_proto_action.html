@@ -1,0 +1,68 @@
+                <div class="tab-pane fade" id="creator-proto-pane" role="tabpanel">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-box"></i> Select Proto Action
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <!-- Search -->
+                            <div class="mb-3">
+                                <label for="protoSearch" class="form-label">Search Proto Actions</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="protoSearch" 
+                                       placeholder="Type to filter by action name or description..." 
+                                       value=""
+                                       hx-get="{{ url_for('action_creator_portal.search_proto_actions') }}"
+                                       hx-trigger="input changed delay:300ms, focus"
+                                       hx-target="#proto-actions-results"
+                                       hx-swap="innerHTML"
+                                       hx-include="[name='maintenance_action_set_id']"
+                                       name="search">
+                                <input type="hidden" name="maintenance_action_set_id" value="{{ maintenance_action_set_id }}">
+                                <small class="text-muted">Searching reusable proto action library</small>
+                            </div>
+
+                            <!-- Proto Actions List -->
+                            <div class="list-group" style="max-height: 600px; overflow-y: auto;" id="proto-actions-results">
+                                {% if proto_actions %}
+                                    {% for proto_action in proto_actions %}
+                                    <div class="list-group-item action-item" 
+                                         data-proto-action-id="{{ proto_action.id }}" 
+                                         style="cursor: pointer;"
+                                         onclick="selectProtoAction({{ proto_action.id }}, {{ maintenance_action_set_id }})">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div class="flex-grow-1">
+                                                <h6 class="mb-1">{{ proto_action.action_name }}</h6>
+                                                <small class="text-muted">{{ proto_action.description or 'No description' }}</small>
+                                                <div class="mt-1">
+                                                    {% if proto_action.estimated_duration %}
+                                                        <span class="badge bg-info">Est: {{ proto_action.estimated_duration }}h</span>
+                                                    {% endif %}
+                                                    {% if proto_action.safety_notes %}
+                                                        <span class="badge bg-warning ms-1">Safety Notes</span>
+                                                    {% endif %}
+                                                    {% if proto_action.proto_part_demands %}
+                                                        <span class="badge bg-success ms-1">{{ proto_action.proto_part_demands|length }} Parts</span>
+                                                    {% endif %}
+                                                    {% if proto_action.proto_action_tools %}
+                                                        <span class="badge bg-primary ms-1">{{ proto_action.proto_action_tools|length }} Tools</span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-outline-primary ms-2" onclick="event.stopPropagation(); selectProtoAction({{ proto_action.id }}, {{ maintenance_action_set_id }})">
+                                                <i class="bi bi-check-circle"></i> Select
+                                            </button>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="list-group-item">
+                                        <p class="text-muted mb-0">No proto actions found.</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>

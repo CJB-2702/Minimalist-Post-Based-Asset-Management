@@ -1,0 +1,34 @@
+{% if not demands or demands|length == 0 %}
+<div class="list-group-item">
+    <p class="text-muted mb-0">No unlinked demands found.</p>
+</div>
+{% else %}
+    {% for demand in demands %}
+    <div class="list-group-item">
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                {% if demand.event_name %}
+                <h6 class="mb-1">Demand #{{ demand.id }} - {{ demand.event_name }}</h6>
+                {% else %}
+                <h6 class="mb-1">{{ demand.part_number }} - {{ demand.part_name }}</h6>
+                {% endif %}
+                {% if demand.action_name %}
+                <small class="text-muted">Action: {{ demand.action_name }}</small><br>
+                {% endif %}
+                <small class="text-muted">Required: {{ demand.quantity_required }}</small>
+            </div>
+            <span class="badge bg-{{ 'warning' if demand.status == 'Approved' else 'secondary' }}">{{ demand.status }}</span>
+        </div>
+        <div class="mt-2">
+            <button class="btn btn-sm btn-success tool-link-btn" 
+                    data-demand-id="{{ demand.id }}" 
+                    data-qty="{{ demand.quantity_required }}"
+                    onclick="linkDemandToQueueItem({{ demand.id }}, {{ demand.quantity_required }})">
+                <i class="bi bi-link-45deg"></i> Link to selected queue item
+            </button>
+        </div>
+    </div>
+    {% endfor %}
+{% endif %}
+
+

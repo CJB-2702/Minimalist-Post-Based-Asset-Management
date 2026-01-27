@@ -1,0 +1,264 @@
+{% extends "public/base.html" %}
+
+{% block title %}Modules - EBAMS{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="hero-section">
+    <div class="container">
+        <h1 class="hero-title">EBAMS Modules</h1>
+        <p class="hero-subtitle">Integrated modules working together for complete asset management</p>
+    </div>
+</div>
+
+<!-- Modules Section -->
+<div class="content-section">
+    <div class="container">
+        <!-- Core Module -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="feature-card">
+                    <div class="row">
+                        <div class="col-md-2 text-center">
+                            <div class="feature-icon blue">
+                                <i class="bi bi-gear-fill"></i>
+                            </div>
+                        </div>
+                        <div class="col-md-10">
+                            <h2 class="mb-3">Core Module</h2>
+                            <p class="lead">Foundation for all asset management operations</p>
+                            <p class="text-muted">
+                                The Core Module provides the foundational data models and business logic for users, 
+                                locations, asset types, make/models, assets, and events. It handles user management 
+                                with role-based access control, location hierarchy management, asset type and make/model 
+                                categorization, asset lifecycle tracking, and comprehensive event logging with audit trails.
+                            </p>
+                            <h5 class="mt-3">Key Features:</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <ul>
+                                        <li>User management and authentication</li>
+                                        <li>Role-based access control</li>
+                                        <li>Location hierarchy management</li>
+                                        <li>Asset type categorization</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <ul>
+                                        <li>Make and model tracking</li>
+                                        <li>Asset lifecycle management</li>
+                                        <li>Event logging and audit trails</li>
+                                        <li>Comments and attachments</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Assets Module -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="feature-card">
+                    <div class="row">
+                        <div class="col-md-2 text-center">
+                            <div class="feature-icon blue">
+                                <i class="bi bi-file-earmark-text"></i>
+                            </div>
+                        </div>
+                        <div class="col-md-10">
+                            <h2 class="mb-3">Assets Module</h2>
+                            <p class="lead">Flexible detail management for asset-specific information</p>
+                            <p class="text-muted">
+                                Extends core assets with a flexible detail table system for asset-specific and 
+                                model-specific information. Create dynamic detail tables, automatically populate 
+                                detail rows on asset creation, and configure detail table assignments based on 
+                                asset types and models. Supports both asset-level and model-level details with 
+                                factory-based creation patterns.
+                            </p>
+                            <h5 class="mt-3">Key Features:</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <ul>
+                                        <li>Dynamic detail table creation</li>
+                                        <li>Automatic detail row generation</li>
+                                        <li>Configuration-driven assignments</li>
+                                        <li>Asset-level detail tracking</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <ul>
+                                        <li>Model-level detail templates</li>
+                                        <li>Factory-based creation</li>
+                                        <li>Custom field definitions</li>
+                                        <li>SQLAlchemy event listeners</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Maintenance Module -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="feature-card">
+                    <div class="row">
+                        <div class="col-md-2 text-center">
+                            <div class="feature-icon yellow">
+                                <i class="bi bi-wrench"></i>
+                            </div>
+                        </div>
+                        <div class="col-md-10">
+                            <h2 class="mb-3">Maintenance Module</h2>
+                            <p class="lead">Comprehensive maintenance management with template-based workflows</p>
+                            <p class="text-muted">
+                                Provides complete maintenance event management with template-based workflows and 
+                                three role-based portals. The module follows a three-tier hierarchy: Base Items 
+                                (actual work), Template Items (reusable blueprints), and Proto Templates (generic 
+                                action library). Features include maintenance event tracking, template versioning, 
+                                action item management, part demand tracking, and specialized portals for technicians, 
+                                managers, and fleet administrators.
+                            </p>
+                            <h5 class="mt-3">Key Features:</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <ul>
+                                        <li>Template-based maintenance procedures</li>
+                                        <li>Action item checklists</li>
+                                        <li>Part demand tracking and approval</li>
+                                        <li>Tool requirement management</li>
+                                        <li>Maintenance scheduling</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <ul>
+                                        <li>Technician workflow portal</li>
+                                        <li>Manager planning portal</li>
+                                        <li>Fleet administrator dashboard</li>
+                                        <li>Template versioning</li>
+                                        <li>Maintenance history tracking</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Inventory Module -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="feature-card">
+                    <div class="row">
+                        <div class="col-md-2 text-center">
+                            <div class="feature-icon green">
+                                <i class="bi bi-boxes"></i>
+                            </div>
+                        </div>
+                        <div class="col-md-10">
+                            <h2 class="mb-3">Inventory Module</h2>
+                            <p class="lead">Manage parts, stock levels, and procurement with demand planning</p>
+                            <p class="text-muted">
+                                Comprehensive inventory management for parts, tools, stock levels, and procurement 
+                                processes with demand-driven purchasing. Track inventory across multiple locations, 
+                                manage purchase orders, process arrivals and receiving, link parts to maintenance 
+                                events, and optimize stock levels. Includes supplier management, movement tracking, 
+                                and relocation request workflows.
+                            </p>
+                            <h5 class="mt-3">Key Features:</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <ul>
+                                        <li>Multi-location inventory tracking</li>
+                                        <li>Part and tool management</li>
+                                        <li>Stock level optimization</li>
+                                        <li>Purchase order management</li>
+                                        <li>Arrival processing</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <ul>
+                                        <li>Movement tracking</li>
+                                        <li>Supplier management</li>
+                                        <li>Part demand viewing</li>
+                                        <li>PO-to-demand linking</li>
+                                        <li>Relocation request workflow</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dispatching Module -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="feature-card">
+                    <div class="row">
+                        <div class="col-md-2 text-center">
+                            <div class="feature-icon purple">
+                                <i class="bi bi-truck"></i>
+                            </div>
+                        </div>
+                        <div class="col-md-10">
+                            <h2 class="mb-3">Dispatching Module</h2>
+                            <p class="lead">Vehicle dispatch management through dual-portal workflow</p>
+                            <p class="text-muted">
+                                Manage vehicle dispatch requests and assignments through a dual-portal workflow system. 
+                                The Request Portal allows end users to create vehicle requests with detailed specifications 
+                                and track approval status. The Dispatch Portal enables dispatchers to view all requests, 
+                                visualize available assets matching criteria, and assign dispatch outcomes including 
+                                approvals, denials, contracts, and reimbursements.
+                            </p>
+                            <h5 class="mt-3">Key Features:</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <ul>
+                                        <li>Request creation with specifications</li>
+                                        <li>Approval status tracking</li>
+                                        <li>Outcome form management</li>
+                                        <li>Dispatch request viewing</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <ul>
+                                        <li>Asset availability visualization</li>
+                                        <li>Multiple outcome types</li>
+                                        <li>Status tracking and updates</li>
+                                        <li>Multi-level approval workflows</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Call to Action -->
+        <div class="row mt-5">
+            <div class="col-12 text-center">
+                <h2 class="section-title">See EBAMS in Action</h2>
+                <p class="lead mb-4">Ready to streamline your asset management operations?</p>
+                <a href="{{ url_for('public.get_started') }}" class="btn btn-primary btn-lg me-3">
+                    <i class="bi bi-rocket"></i> Get Started
+                </a>
+                <a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary btn-lg">
+                    <i class="bi bi-box-arrow-in-right"></i> Login
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+

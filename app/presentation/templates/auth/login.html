@@ -229,29 +229,20 @@
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container-fluid">
-            <a class="navbar-brand" href="#">EBAMS</a>
+            <a class="navbar-brand" href="{{ url_for('auth.login') }}">EBAMS</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="#">Home</a>
+                        <a class="nav-link" href="{{ url_for('public.features') }}">Features</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">Features</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">Modules</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">Support</a>
+                        <a class="nav-link" href="{{ url_for('public.modules') }}">Modules</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link active" href="{{ url_for('auth.login') }}">Login</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">Register</a>
                     </li>
                 </ul>
             </div>
@@ -264,14 +255,14 @@
             <!-- Left Side - Information -->
             <div class="hero-left">
                 <h1 class="hero-title">Event Based<br>Asset Maintenance System</h1>
-                <p class="hero-subtitle">Streamline Your Operations, Maximize Uptime</p>
+                <p class="hero-subtitle">Streamline Your Operations, Simplify Tasks</p>
                 <div class="hero-buttons">
-                    <button class="btn btn-light btn-lg">
+                    <a href="{{ url_for('public.get_started') }}" class="btn btn-light btn-lg">
                         <i class="bi bi-gear"></i> Get Started
-                    </button>
-                    <button class="btn btn-outline-light btn-lg">
+                    </a>
+                    <a href="{{ url_for('public.learn_more') }}" class="btn btn-outline-light btn-lg">
                         <i class="bi bi-info-circle"></i> Learn More
-                    </button>
+                    </a>
                 </div>
                 <div style="position: absolute; bottom: 2rem; right: 2rem;">
                     <i class="bi bi-tools hero-icon"></i>
@@ -295,6 +286,7 @@
                     {% endwith %}
                     
                     <form method="POST" action="{{ url_for('auth.login') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                         <div class="mb-3">
                             <label for="username" class="form-label">Username</label>
                             <input type="text" class="form-control" id="username" name="username" required autofocus>
@@ -331,10 +323,9 @@
                         <div class="feature-icon blue">
                             <i class="bi bi-file-earmark-text"></i>
                         </div>
-                        <h3 class="feature-title">Asset Creation & Details</h3>
+                        <h3 class="feature-title">Asset Creation</h3>
                         <p class="feature-description">
-                            Easily create or bypass installed database all your assets, including 
-                            specifications, and #investors documentation.
+                            Easily create assets, add custom details and data based off make, model, and asset type.
                         </p>
                     </div>
                 </div>
@@ -345,10 +336,9 @@
                         <div class="feature-icon green">
                             <i class="bi bi-boxes"></i>
                         </div>
-                        <h3 class="feature-title">Inventory & Parts Management</h3>
+                        <h3 class="feature-title">Inventory</h3>
                         <p class="feature-description">
-                            Track parts to restaurants, manage vital life total assets, bid #held on task to 
-                            tank size match realdatary and known.
+                            Define parts, manage inventory, plan demand based off of maintenance.
                         </p>
                     </div>
                 </div>
@@ -361,9 +351,7 @@
                         </div>
                         <h3 class="feature-title">Maintenance & Workflows</h3>
                         <p class="feature-description">
-                            Build reusable maintenance checklist 
-                            ticket setup, and work duplic, set all timeptions tabs scheduled 
-                            fort operational work orders.
+                            Build reusable maintenance checklists, set up tickets, configure workflows, and schedule operational work orders.
                         </p>
                     </div>
                 </div>
@@ -376,10 +364,7 @@
                         </div>
                         <h3 class="feature-title">Reporting & Analytics</h3>
                         <p class="feature-description">
-                            Gain fields with compliance reports on 
-                            asset spending/pleas, fit Point 
-                            maintenance costs, try and operational 
-                            efficiency.
+                            Generate comprehensive reports on asset performance, maintenance costs, and operational efficiency.
                         </p>
                     </div>
                 </div>
@@ -417,7 +402,7 @@
     <!-- Footer -->
     <footer>
         <div class="container">
-            <p>&copy; 2024 EBAMS Core. All Terms of Reserved.</p>
+            <p>&copy; 2024 EBAMS Core. All Rights Reserved.</p>
         </div>
     </footer>
 

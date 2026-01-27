@@ -59,8 +59,8 @@ class InventoryMovementService:
         
         query = InventoryMovement.query.options(
             joinedload(InventoryMovement.part),
-            joinedload(InventoryMovement.major_location),
-            joinedload(InventoryMovement.storeroom)
+            joinedload(InventoryMovement.to_major_location),
+            joinedload(InventoryMovement.to_storeroom)
         )
         
         if part_id:

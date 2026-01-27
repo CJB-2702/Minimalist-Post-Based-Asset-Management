@@ -5,124 +5,49 @@ Service for the "Create Arrival from Purchase Order Lines" portal.
 This service handles:
 - Searching for unfulfilled/partially fulfilled PO lines
 - Building summaries of selected PO lines
-- Validating that lines can be fully accepted (no partials/rejections for pattern 2)
+- Validating that lines can be received
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Optional
-
-from sqlalchemy import func
 from sqlalchemy.orm import joinedload
 
-from app import db
-from app.data.core.asset_info.asset import Asset
-from app.data.core.major_location import MajorLocation
-from app.data.core.supply.part_definition import PartDefinition
-from app.data.core.user_info.user import User
-from app.data.inventory.ordering.purchase_order_header import PurchaseOrderHeader
-from app.data.inventory.ordering.purchase_order_line import PurchaseOrderLine
+from app.data.inventory.purchasing.purchase_order_header import PurchaseOrderHeader
+from app.data.inventory.purchasing.purchase_order_line import PurchaseOrderLine
 from app.logger import get_logger
-from app.services.inventory.purchasing.purchase_order_line_service import PurchaseOrderLineService
+from app.services.inventory.purchasing.po_search_service import POSearchFilters, POSearchService
 
 logger = get_logger("asset_management.services.inventory.arrival_po_line_selection")
 
 
-@dataclass(frozen=True)
-class POLineFilters:
-    status: Optional[str] = None
-    part_number: Optional[str] = None
-    part_name: Optional[str] = None
-    vendor: Optional[str] = None
-    date_from: Optional[str] = None
-    date_to: Optional[str] = None
-    created_by_id: Optional[int] = None
-    part_demand_assigned_to_id: Optional[int] = None
-    event_assigned_to_id: Optional[int] = None
-    asset_id: Optional[int] = None
-    search_term: Optional[str] = None
-
-
 class ArrivalPOLineSelectionService:
-    """Service for selecting PO lines for arrival creation (pattern 2)."""
+    """Service for selecting PO lines for arrival creation."""
 
     @staticmethod
     def get_filter_options() -> dict:
         """Return dropdown options used by the portal filter UI."""
         statuses = ["Pending", "Ordered", "Shipped", "Complete", "Cancelled"]
-        users = User.query.filter_by(is_active=True).order_by(User.username).all()
-        locations = MajorLocation.query.filter_by(is_active=True).order_by(MajorLocation.name).all()
-        assets = Asset.query.filter_by(status="Active").order_by(Asset.name).all()
+        shared = POSearchService.get_shared_filter_options()
 
         return {
             "statuses": statuses,
-            "users": users,
-            "locations": locations,
-            "assets": assets,
+            "users": shared["users"],
+            "locations": shared["major_locations"],
+            "assets": shared["assets"],
         }
 
     @staticmethod
-    def get_unfulfilled_po_lines(filters: POLineFilters, *, limit: int = 1000) -> list[PurchaseOrderLine]:
+    def get_unfulfilled_po_lines(filters: POSearchFilters, *, limit: int = 1000) -> list[PurchaseOrderLine]:
         """
         Get PO lines that are unfulfilled or partially fulfilled.
 
-        For pattern 2, we want lines where:
+        We want lines where:
         - quantity_received_total < quantity_ordered (i.e., remaining > 0)
         - Status is Ordered or Shipped (not Complete, Cancelled)
         """
-        from datetime import datetime
-
-        # Build base query using PurchaseOrderLineService
-        date_from = None
-        date_to = None
-        if filters.date_from:
-            try:
-                date_from = datetime.strptime(filters.date_from, "%Y-%m-%d")
-            except ValueError:
-                pass
-        if filters.date_to:
-            try:
-                date_to = datetime.strptime(filters.date_to, "%Y-%m-%d")
-            except ValueError:
-                pass
-
-        query = PurchaseOrderLineService.build_po_lines_query(
-            status=filters.status,
-            part_number=filters.part_number,
-            part_name=filters.part_name,
-            vendor=filters.vendor,
-            date_from=date_from,
-            date_to=date_to,
-            created_by_id=filters.created_by_id,
-            part_demand_assigned_to_id=filters.part_demand_assigned_to_id,
-            event_assigned_to_id=filters.event_assigned_to_id,
-            asset_id=filters.asset_id,
-            search_term=filters.search_term,
-            order_by="created_at",
-            order_direction="desc",
-        )
-
-        # Filter to only unfulfilled/partially fulfilled lines
-        # remaining = quantity_ordered - (quantity_accepted + quantity_rejected) > 0
-        query = query.filter(
-            PurchaseOrderLine.quantity_ordered > (
-                func.coalesce(PurchaseOrderLine.quantity_accepted, 0.0)
-                + func.coalesce(PurchaseOrderLine.quantity_rejected, 0.0)
-            )
-        )
-
-        # Default status filter: only Ordered or Shipped (exclude Complete, Cancelled)
-        if not filters.status:
-            query = query.filter(PurchaseOrderLine.status.in_(["Ordered", "Shipped"]))
-
-        # Eager load relationships
-        query = query.options(
-            joinedload(PurchaseOrderLine.purchase_order).joinedload(PurchaseOrderHeader.major_location),
-            joinedload(PurchaseOrderLine.part),
-        )
-
-        return query.limit(limit).all()
+        # Use shared PO search service (query building), then re-fetch by ids with eager loading
+        lines = POSearchService.search_po_lines(filters, unfulfilled_only=True, limit=limit)
+        return ArrivalPOLineSelectionService.get_lines_by_ids([l.id for l in lines])
 
     @staticmethod
     def get_lines_by_ids(po_line_ids: list[int]) -> list[PurchaseOrderLine]:
@@ -147,15 +72,14 @@ class ArrivalPOLineSelectionService:
     def build_lines_summary(selected_lines: list[PurchaseOrderLine]) -> list[dict]:
         """
         Build summary of selected PO lines showing remaining quantities.
-
-        For pattern 2: assumes full acceptance (no rejections), so remaining = quantity_ordered - quantity_received_total.
+        
+        Remaining = quantity_ordered - quantity_received_total.
         """
         summary: list[dict] = []
         for line in sorted(selected_lines, key=lambda x: x.id):
             remaining = max(
                 0.0,
-                float(line.quantity_ordered or 0.0)
-                - (float(line.quantity_accepted or 0.0) + float(line.quantity_rejected or 0.0)),
+                float(line.quantity_ordered or 0.0) - float(line.quantity_received_total or 0.0),
             )
             if remaining <= 0:
                 continue  # Skip fully fulfilled lines
@@ -198,9 +122,9 @@ class ArrivalPOLineSelectionService:
         return out
 
     @staticmethod
-    def validate_lines_for_full_acceptance(po_line_ids: list[int]) -> tuple[bool, list[str]]:
+    def validate_lines_for_receipt(po_line_ids: list[int]) -> tuple[bool, list[str]]:
         """
-        Validate that selected lines can be fully accepted (pattern 2 constraint).
+        Validate that selected lines can be received.
 
         Returns:
             (is_valid, list_of_error_messages)
@@ -216,8 +140,7 @@ class ArrivalPOLineSelectionService:
         for line in lines:
             remaining = max(
                 0.0,
-                float(line.quantity_ordered or 0.0)
-                - (float(line.quantity_accepted or 0.0) + float(line.quantity_rejected or 0.0)),
+                float(line.quantity_ordered or 0.0) - float(line.quantity_received_total or 0.0),
             )
             if remaining <= 0:
                 errors.append(f"PO Line {line.id} is already fully fulfilled")

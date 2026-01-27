@@ -1,0 +1,534 @@
+{% extends 'base.html' %}
+{% block title %}Request {{ item.id }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .info-card {
+        border-left: 4px solid;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .info-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .info-card.primary { border-left-color: #0d6efd; }
+    .info-card.success { border-left-color: #198754; }
+    .info-card.warning { border-left-color: #ffc107; }
+    .info-card.danger { border-left-color: #dc3545; }
+    .info-card.info { border-left-color: #0dcaf0; }
+    .info-card.secondary { border-left-color: #6c757d; }
+    
+    /* Cancelled outcome styling */
+    .outcome-cancelled {
+        opacity: 0.5;
+        background-color: #f8f9fa !important;
+        filter: grayscale(50%);
+    }
+    .outcome-cancelled .card-header {
+        background-color: #e9ecef !important;
+        color: #6c757d !important;
+    }
+    .outcome-cancelled .badge {
+        opacity: 0.7;
+    }
+    .outcome-cancelled:hover {
+        transform: none;
+        box-shadow: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-3">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="bi bi-file-earmark-text text-primary"></i> Dispatch Request #{{ item.id }}
+                    </h1>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="{{ url_for('dispatching.index') }}">Dispatching</a></li>
+                            <li class="breadcrumb-item"><a href="{{ url_for('dispatching.requests_list') }}">Requests</a></li>
+                            <li class="breadcrumb-item active">Request #{{ item.id }}</li>
+                        </ol>
+                    </nav>
+                </div>
+                <div>
+                    <a href="{{ url_for('dispatching.requests_list') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Requests
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-lg-8">
+            <!-- High-Visibility Scheduling Card -->
+            <div class="card mb-3 shadow-sm" style="background-color: #fff3cd; border-left: 5px solid #ffc107;">
+                <div class="card-body">
+                    <h3 class="mb-3">
+                        <i class="bi bi-calendar-event text-warning"></i> Request Schedule
+                    </h3>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h5 class="text-muted">Request For</h5>
+                            <h4 class="mb-0">
+                                <i class="bi bi-person-circle"></i> 
+                                {% if item.requested_for_user %}
+                                    {{ item.requested_for_user.first_name }} {{ item.requested_for_user.last_name }}
+                                    <small class="text-muted">({{ item.requested_for_user.username }})</small>
+                                {% else %}
+                                    <span class="text-muted">Not specified</span>
+                                {% endif %}
+                            </h4>
+                        </div>
+                        <div class="col-md-4">
+                            <h5 class="text-muted">Requested Start</h5>
+                            <h4 class="mb-0">
+                                <i class="bi bi-clock"></i> 
+                                {% if item.desired_start %}
+                                    {{ item.desired_start.strftime('%Y-%m-%d') }}
+                                    <br><small>{{ item.desired_start.strftime('%H:%M') }}</small>
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </h4>
+                        </div>
+                        <div class="col-md-4">
+                            <h5 class="text-muted">Requested End</h5>
+                            <h4 class="mb-0">
+                                <i class="bi bi-clock-fill"></i> 
+                                {% if item.desired_end %}
+                                    {{ item.desired_end.strftime('%Y-%m-%d') }}
+                                    <br><small>{{ item.desired_end.strftime('%H:%M') }}</small>
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Request Information Card -->
+            <div class="card mb-3 info-card primary">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle"></i> Request Information
+                        {% if ctx.has_active_outcome %}
+                        <span class="badge bg-warning text-dark ms-2">
+                            <i class="bi bi-lock-fill"></i> Intent Fields Locked
+                        </span>
+                        {% endif %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if ctx.has_active_outcome %}
+                    <div class="alert alert-warning alert-dismissible fade show mb-3" role="alert">
+                        <small>
+                            <i class="bi bi-lock"></i> <strong>Note:</strong> Request intent fields are locked because an outcome has been assigned. 
+                            This ensures the original request remains unchanged while dispatchers work on it.
+                        </small>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    {% endif %}
+                    <dl class="row mb-0">
+                        <dt class="col-sm-3">Request ID</dt>
+                        <dd class="col-sm-9"><strong>#{{ item.id }}</strong></dd>
+                        
+                        <dt class="col-sm-3">Status</dt>
+                        <dd class="col-sm-9">
+                            <span class="badge bg-secondary">{{ item.status }}</span>
+                            {% if ctx.event %}<span class="badge bg-info ms-2">Event: {{ ctx.event.status }}</span>{% endif %}
+                        </dd>
+                        
+                        <dt class="col-sm-3">Requested By</dt>
+                        <dd class="col-sm-9">
+                            {% if item.requested_by_user %}
+                                <strong>{{ item.requested_by_user.first_name }} {{ item.requested_by_user.last_name }}</strong>
+                                <br><small class="text-muted">{{ item.requested_by_user.username }}</small>
+                            {% else %}
+                                <span class="text-muted">Not specified</span>
+                            {% endif %}
+                        </dd>
+                        
+                        <dt class="col-sm-3">Requested For</dt>
+                        <dd class="col-sm-9">
+                            {% if item.requested_for_user %}
+                                <strong>{{ item.requested_for_user.first_name }} {{ item.requested_for_user.last_name }}</strong>
+                                <br><small class="text-muted">{{ item.requested_for_user.username }}</small>
+                            {% else %}
+                                <span class="text-muted">Not specified</span>
+                            {% endif %}
+                        </dd>
+                        
+                        <dt class="col-sm-3">Asset Type</dt>
+                        <dd class="col-sm-9">
+                            {% if item.asset_type %}
+                                <strong>{{ item.asset_type.name }}</strong>
+                                {% if item.asset_subclass_text %}
+                                    <br><small class="text-muted">Subclass: {{ item.asset_subclass_text }}</small>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-muted">N/A</span>
+                            {% endif %}
+                        </dd>
+                        
+                        <dt class="col-sm-3">Scope</dt>
+                        <dd class="col-sm-9">
+                            <span class="badge bg-info">{{ item.dispatch_scope }}</span>
+                        </dd>
+                        
+                        <dt class="col-sm-3">Location</dt>
+                        <dd class="col-sm-9">
+                            {% if item.major_location %}
+                                <strong>{{ item.major_location.name }}</strong>
+                            {% else %}
+                                <span class="text-muted">N/A</span>
+                            {% endif %}
+                            {% if item.activity_location %}
+                                <br><small class="text-muted">Activity: {{ item.activity_location }}</small>
+                            {% endif %}
+                        </dd>
+                        
+                        <dt class="col-sm-3">Desired Dates</dt>
+                        <dd class="col-sm-9">
+                            <small>
+                                {% if item.desired_start %}
+                                    {{ item.desired_start.strftime('%Y-%m-%d %H:%M') }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                                {% if item.desired_end %}
+                                    <br>→ {{ item.desired_end.strftime('%Y-%m-%d %H:%M') }}
+                                {% endif %}
+                            </small>
+                        </dd>
+                        
+                        {% if item.num_people %}
+                        <dt class="col-sm-3">Number of People</dt>
+                        <dd class="col-sm-9">{{ item.num_people }}</dd>
+                        {% endif %}
+                        
+                        {% if item.names_freeform %}
+                        <dt class="col-sm-3">Names</dt>
+                        <dd class="col-sm-9"><small>{{ item.names_freeform }}</small></dd>
+                        {% endif %}
+                        
+                        {% if item.estimated_meter_usage %}
+                        <dt class="col-sm-3">Est. Meter Usage</dt>
+                        <dd class="col-sm-9">{{ item.estimated_meter_usage }}</dd>
+                        {% endif %}
+                        
+                        <dt class="col-sm-3">Resolution</dt>
+                        <dd class="col-sm-9">
+                            {% if item.resolution_type %}
+                                <span class="badge bg-primary">{{ item.resolution_type }}</span>
+                            {% else %}
+                                <span class="text-muted">Pending</span>
+                            {% endif %}
+                        </dd>
+                        
+                        {% if item.notes %}
+                        <dt class="col-sm-12 mt-2">Notes</dt>
+                        <dd class="col-sm-12">
+                            <div class="alert alert-light mb-0">
+                                {{ item.notes }}
+                            </div>
+                        </dd>
+                        {% endif %}
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Outcome Summary Section -->
+            {% if all_outcomes|length > 0 %}
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h1 class="h5 mb-0">
+                        <i class="bi bi-check-circle"></i> Outcome Summary
+                    </h1>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">
+                        This request has {{ all_outcomes|length }} outcome(s) associated with it:
+                    </p>
+                    <div class="row">
+                        {% for outcome_type, outcome_obj in all_outcomes %}
+                        <div class="col-12 mb-3 {% if outcome_obj.cancelled %}outcome-cancelled{% endif %}">
+                            {% if outcome_type == 'dispatch' %}
+                                <h5 class="mb-2">
+                                    <i class="bi bi-calendar-event text-primary"></i> Dispatch
+                                    {% if outcome_obj.cancelled %}
+                                        <span class="badge bg-secondary ms-2">
+                                            <i class="bi bi-x-circle"></i> Cancelled
+                                        </span>
+                                    {% elif ctx.active_outcome_type == 'dispatch' and ctx.active_outcome_id == outcome_obj.id %}
+                                        <span class="badge bg-success ms-2">
+                                            <i class="bi bi-check-circle"></i> Active
+                                        </span>
+                                    {% endif %}
+                                </h5>
+                                {% with dispatch=outcome_obj %}
+                                    {% include 'dispatching/outcomes/dispatches/dispatch_view_page_card.html' %}
+                                {% endwith %}
+                            {% elif outcome_type == 'contract' %}
+                                <h5 class="mb-2">
+                                    <i class="bi bi-file-earmark-text text-info"></i> Contract
+                                    {% if outcome_obj.cancelled %}
+                                        <span class="badge bg-secondary ms-2">
+                                            <i class="bi bi-x-circle"></i> Cancelled
+                                        </span>
+                                    {% elif ctx.active_outcome_type == 'contract' and ctx.active_outcome_id == outcome_obj.id %}
+                                        <span class="badge bg-success ms-2">
+                                            <i class="bi bi-check-circle"></i> Active
+                                        </span>
+                                    {% endif %}
+                                </h5>
+                                {% with contract=outcome_obj %}
+                                    {% include 'dispatching/outcomes/contracts/dispatch_view_page_card.html' %}
+                                {% endwith %}
+                            {% elif outcome_type == 'reimbursement' %}
+                                <h5 class="mb-2">
+                                    <i class="bi bi-cash-coin text-success"></i> Reimbursement
+                                    {% if outcome_obj.cancelled %}
+                                        <span class="badge bg-secondary ms-2">
+                                            <i class="bi bi-x-circle"></i> Cancelled
+                                        </span>
+                                    {% elif ctx.active_outcome_type == 'reimbursement' and ctx.active_outcome_id == outcome_obj.id %}
+                                        <span class="badge bg-success ms-2">
+                                            <i class="bi bi-check-circle"></i> Active
+                                        </span>
+                                    {% endif %}
+                                </h5>
+                                {% with reimbursement=outcome_obj %}
+                                    {% include 'dispatching/outcomes/reimbursements/dispatch_view_page_card.html' %}
+                                {% endwith %}
+                            {% elif outcome_type == 'reject' %}
+                                <h5 class="mb-2">
+                                    <i class="bi bi-x-circle text-danger"></i> Rejection
+                                    {% if outcome_obj.cancelled %}
+                                        <span class="badge bg-secondary ms-2">
+                                            <i class="bi bi-x-circle"></i> Cancelled
+                                        </span>
+                                    {% elif ctx.active_outcome_type == 'reject' and ctx.active_outcome_id == outcome_obj.id %}
+                                        <span class="badge bg-success ms-2">
+                                            <i class="bi bi-check-circle"></i> Active
+                                        </span>
+                                    {% endif %}
+                                </h5>
+                                {% with reject=outcome_obj %}
+                                    {% include 'dispatching/outcomes/rejects/dispatch_view_page_card.html' %}
+                                {% endwith %}
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <!-- No Outcome Yet -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h1 class="h5 mb-0">
+                        <i class="bi bi-hourglass-split"></i> Outcome Summary
+                    </h1>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-info-circle"></i> No outcomes have been assigned to this request yet.
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Event Activity Widget -->
+            {% if ctx.event and ctx.event.id %}
+            <div id="event-widget-container"
+                 hx-get="{{ url_for('comments.event_widget', event_id=ctx.event.id) }}"
+                 hx-trigger="load"
+                 hx-target="#event-widget-container"
+                 hx-swap="outerHTML">
+                <div class="card mb-4">
+                    <div class="card-body text-center text-muted">
+                        <i class="bi bi-hourglass-split"></i> Loading event activity...
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Quick Actions Card -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-lightning-charge"></i> Quick Actions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a class="btn btn-outline-warning" href="{{ url_for('dispatching.requests_edit', item_id=item.id) }}">
+                            <i class="bi bi-pencil"></i> Edit Request
+                            {% if ctx.has_active_outcome %}<i class="bi bi-lock-fill ms-1" title="Intent fields are locked"></i>{% endif %}
+                        </a>
+                        {% if ctx.has_active_outcome %}
+                        <small class="text-muted text-center">
+                            <i class="bi bi-info-circle"></i> Intent fields are locked
+                        </small>
+                        {% endif %}
+                        
+                        {% if not ctx.has_active_outcome %}
+                        <a class="btn btn-primary" href="#assign-outcome-section">
+                            <i class="bi bi-plus-circle"></i> Assign Outcome
+                        </a>
+                        {% endif %}
+                        
+                        {% if ctx.has_dispatch %}
+                        <a class="btn btn-outline-primary" href="{{ url_for('dispatching.dispatches_detail', item_id=ctx.dispatch.id) }}">
+                            <i class="bi bi-calendar-event"></i> View Dispatch
+                        </a>
+                        {% endif %}
+                        
+                        {% if ctx.has_contract %}
+                        <a class="btn btn-outline-info" href="{{ url_for('dispatching.contracts_detail', item_id=ctx.contract.id) }}">
+                            <i class="bi bi-file-earmark-text"></i> View Contract
+                        </a>
+                        {% endif %}
+                        
+                        {% if ctx.has_reimbursement %}
+                        <a class="btn btn-outline-success" href="{{ url_for('dispatching.reimbursements_detail', item_id=ctx.reimbursement.id) }}">
+                            <i class="bi bi-cash-coin"></i> View Reimbursement
+                        </a>
+                        {% endif %}
+                        
+                        {% if ctx.has_reject %}
+                        <a class="btn btn-outline-danger" href="{{ url_for('dispatching.rejects_detail', item_id=ctx.reject.id) }}">
+                            <i class="bi bi-x-circle"></i> View Rejection
+                        </a>
+                        {% endif %}
+                        
+                        <a class="btn btn-outline-secondary" href="{{ url_for('dispatching.requests_list') }}">
+                            <i class="bi bi-arrow-left"></i> Back to Requests
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Assign Outcome Section -->
+            {% if not ctx.has_active_outcome %}
+            <div class="card mb-3" id="assign-outcome-section">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0"><i class="bi bi-plus-circle"></i> Assign Outcome</h6>
+                </div>
+                <div class="card-body">
+                    <p class="small text-muted mb-3">Select an outcome type to assign to this request:</p>
+                    <form method="get" action="" id="outcome-selection-form">
+                        <div class="mb-3">
+                            <label for="outcome_type" class="form-label">Outcome Type</label>
+                            <select class="form-select form-select-lg" name="outcome_type" id="outcome_type" required>
+                                <option value="">-- Select Outcome Type --</option>
+                                <option value="dispatch">Dispatch - Schedule and assign assets</option>
+                                <option value="contract">Contract - Record external contractor agreement</option>
+                                <option value="reimbursement">Reimbursement - Record reimbursement transaction</option>
+                                <option value="reject">Reject - Reject this dispatch request</option>
+                            </select>
+                            <div class="form-text">Choose the type of outcome for this dispatch request</div>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-arrow-right"></i> Continue to Form
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const form = document.getElementById('outcome-selection-form');
+                const outcomeSelect = document.getElementById('outcome_type');
+                
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const outcomeType = outcomeSelect.value;
+                    if (outcomeType) {
+                        const url = "{{ url_for('dispatching.outcome_create', request_id=item.id, outcome_type='PLACEHOLDER') }}".replace('PLACEHOLDER', outcomeType);
+                        window.location.href = url;
+                    }
+                });
+            });
+            </script>
+            {% endif %}
+
+            <!-- Event Information Card -->
+            {% if ctx.event %}
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-clock-history"></i> Event Information</h6>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-5">Event ID</dt>
+                        <dd class="col-sm-7">
+                            <a href="{{ url_for('events.detail', event_id=ctx.event.id) }}" class="text-decoration-none">
+                                #{{ ctx.event.id }}
+                            </a>
+                        </dd>
+                        
+                        <dt class="col-sm-5">Event Type</dt>
+                        <dd class="col-sm-7">{{ ctx.event.event_type }}</dd>
+                        
+                        <dt class="col-sm-5">Event Status</dt>
+                        <dd class="col-sm-7">
+                            <span class="badge bg-info">{{ ctx.event.status }}</span>
+                        </dd>
+                        
+                        <dt class="col-sm-5">Created</dt>
+                        <dd class="col-sm-7">
+                            <small>{{ ctx.event.created_at.strftime('%Y-%m-%d %H:%M') if ctx.event.created_at else 'N/A' }}</small>
+                        </dd>
+                        
+                        {% if ctx.event.description %}
+                        <dt class="col-sm-12 mt-2">Description</dt>
+                        <dd class="col-sm-12">
+                            <small class="text-muted">{{ ctx.event.description }}</small>
+                        </dd>
+                        {% endif %}
+                    </dl>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Request Metadata Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-info-circle"></i> Request Metadata</h6>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-5">Submitted</dt>
+                        <dd class="col-sm-7">
+                            <small>{{ item.submitted_at.strftime('%Y-%m-%d %H:%M') if item.submitted_at else 'N/A' }}</small>
+                        </dd>
+                        
+                        <dt class="col-sm-5">Created</dt>
+                        <dd class="col-sm-7">
+                            <small>{{ item.created_at.strftime('%Y-%m-%d %H:%M') if item.created_at else 'N/A' }}</small>
+                        </dd>
+                        
+                        {% if item.updated_at %}
+                        <dt class="col-sm-5">Last Updated</dt>
+                        <dd class="col-sm-7">
+                            <small>{{ item.updated_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                        </dd>
+                        {% endif %}
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

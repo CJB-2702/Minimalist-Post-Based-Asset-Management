@@ -1,0 +1,56 @@
+<!-- Parts Summary -->
+<div class="card mb-4">
+  <div class="card-header">
+    <h5 class="mb-0"><i class="bi bi-basket"></i> Parts Summary (Confirm Pricing)</h5>
+  </div>
+  <div class="card-body">
+    {% set has_parts = parts_summary and parts_summary|length > 0 %}
+    {% set has_unlinked = unlinked_parts and unlinked_parts|length > 0 %}
+    {% set clean_filters = {} %}
+    {% for k, v in filters.items() %}
+      {% if v and v != '' %}
+        {% set _ = clean_filters.update({k: v}) %}
+      {% endif %}
+    {% endfor %}
+    <form method="POST" action="{{ url_for('inventory.create_po_from_part_demands_submit_v2', **clean_filters) }}" id="po-submit-form" form="po-header-form">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      
+      {% if has_parts or has_unlinked %}
+        {% if has_parts %}
+        <div class="row g-3">
+          {% for row in parts_summary %}
+            {% set part_demands_for_part = selected_demands|selectattr('part_id', 'equalto', row.part_id)|list %}
+            {% set linked_demands_list = [] %}
+            {% for d in part_demands_for_part %}
+              {% set _ = linked_demands_list.append({'part_demand_id': d.id, 'quantity_required': d.quantity_required}) %}
+            {% endfor %}
+            {% set is_unlinked = row.part_id in (unlinked_parts|map(attribute='part_id')|list) and not part_demands_for_part %}
+            {% with linked_demands_list=linked_demands_list, is_unlinked=is_unlinked, filters=filters %}
+              {% include 'inventory/purchase_orders/components/part_summary_item.html' %}
+            {% endwith %}
+          {% endfor %}
+        </div>
+        {% endif %}
+      {% else %}
+        <div class="alert alert-warning mb-0">
+          <i class="bi bi-exclamation-triangle"></i> Select part demands or add unlinked parts to see the parts summary.
+        </div>
+      {% endif %}
+      
+      <div class="d-flex justify-content-between align-items-center mt-4">
+        <button type="button" 
+                class="btn btn-outline-primary" 
+                data-bs-toggle="modal" 
+                data-bs-target="#addUnlinkedPartModal">
+          <i class="bi bi-plus-circle"></i> Add Unlinked Part
+        </button>
+        <button type="submit" class="btn btn-success" id="po-submit-button" {% if not has_parts and not has_unlinked %}disabled{% endif %}>
+          <i class="bi bi-check-circle"></i> Create Purchase Order
+        </button>
+      </div>
+    </form>
+    
+    <!-- Add Unlinked Part Modal -->
+    {% include 'inventory/purchase_orders/components/add_unlinked_part_modal.html' %}
+  </div>
+</div>

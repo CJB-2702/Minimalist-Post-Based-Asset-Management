@@ -86,9 +86,15 @@
                     <!-- Comments List -->
                     <div id="comments-list-container" style="max-height: 400px; overflow-y: auto;" class="mb-3">
                         {% if comments %}
-                            <!-- Pre-rendered Modals for each comment (only if user owns the comment) -->
-                        {% for comment in pre_rendered_comments %}
-                        {{ comment | safe }}
+                            <!-- Render each comment using include instead of pre-rendered HTML -->
+                        {% for comment in comments %}
+                            {% set comment_data = {
+                                'edit_history': comment.edit_history if comment.edit_history is defined else [],
+                                'metadata': comment.metadata if comment.metadata is defined else None,
+                                'show_delete': comment.show_delete if comment.show_delete is defined else False,
+                                'show_edit': comment.show_edit if comment.show_edit is defined else False,
+                            } %}
+                            {% include 'core/events/comment_item.html' %}
                         {% endfor %}
                         {% else %}
                             <p class="text-muted text-center mb-0">No comments yet</p>
@@ -121,6 +127,7 @@
                               hx-target="#event-widget-card"
                               hx-swap="outerHTML"
                               enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                             <input type="hidden" name="replied_to_comment_id" id="replied_to_comment_id" value="">
                             <div class="mb-2">
                                 <label for="comment-content-{{ event.id }}" class="form-label">Comment</label>

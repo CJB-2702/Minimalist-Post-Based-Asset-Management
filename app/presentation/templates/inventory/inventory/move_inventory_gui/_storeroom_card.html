@@ -1,0 +1,27 @@
+<div class="card storeroom-card-preview {% if storeroom_id and storeroom_id == storeroom.id %}selected{% endif %}" 
+     data-storeroom-id="{{ storeroom.id }}"
+     data-storeroom-name="{{ storeroom.room_name }}"
+     data-major-location-id="{{ storeroom.major_location_id }}"
+     id="storeroom-card-{{ storeroom.id }}">
+    <div class="card-header" data-storeroom-header>{{ storeroom.room_name }}</div>
+    <div class="card-body text-center">
+        <div class="storeroom-svg-preview" data-svg-preview>
+            <img src="{{ url_for('inventory.storeroom_preview_svg', storeroom_id=storeroom.id) }}" 
+                 alt="Storeroom {{ storeroom.id }} layout" 
+                 width="100" 
+                 height="100"
+                 data-svg-image
+                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div style="display: none; width: 100%; height: 100%; align-items: center; justify-content: center;" 
+                 data-placeholder-icon>
+                <i class="bi bi-building" style="font-size: 2rem; color: #6c757d;"></i>
+            </div>
+        </div>
+        <div class="storeroom-card-details" data-card-details>
+            {% if storeroom.address %}
+            <p class="storeroom-card-address" data-address>{{ storeroom.address }}</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+

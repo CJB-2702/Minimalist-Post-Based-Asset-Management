@@ -1,0 +1,27 @@
+{% if routes %}
+    {% for category, category_routes in routes.items() %}
+        {% if loop.index > 1 %}
+            <li><hr class="dropdown-divider"></li>
+        {% endif %}
+        <li><h6 class="dropdown-header">
+            <i class="bi bi-folder"></i> {{ category }}
+        </h6></li>
+        {% for route_key, route_info in category_routes.items() %}
+            <li>
+                <a class="dropdown-item" href="{{ url_for(route_info.route) }}">
+                    <i class="bi {{ route_info.icon or 'bi-link-45deg' }} me-2"></i> {{ route_info.name }}
+                    {% if route_info.description %}
+                        <small class="text-muted d-block ms-4">{{ route_info.description }}</small>
+                    {% endif %}
+                </a>
+            </li>
+        {% endfor %}
+    {% endfor %}
+{% else %}
+    {% if query %}
+        <li><span class="dropdown-item-text text-muted">No routes found matching "{{ query }}"</span></li>
+    {% else %}
+        <li><span class="dropdown-item-text text-muted">Type to search routes...</span></li>
+    {% endif %}
+{% endif %}
+

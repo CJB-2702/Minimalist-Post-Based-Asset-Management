@@ -1,0 +1,268 @@
+{
+  "Core Management": {
+    "Dashboard": {
+      "name": "Dashboard",
+      "route": "core_dashboard.dashboard",
+      "description": "Core dashboard with navigation to all core module areas",
+      "icon": "bi-speedometer2"
+    },
+    "Assets": {
+      "name": "Assets",
+      "route": "core_assets.list",
+      "description": "View and manage assets",
+      "icon": "bi-list-ul"
+    },
+    "Asset Types": {
+      "name": "Asset Types",
+      "route": "asset_types.list",
+      "description": "View and manage asset types",
+      "icon": "bi-tags"
+    },
+    "Make/Models": {
+      "name": "Make/Models",
+      "route": "make_models.list",
+      "description": "View and manage make and model definitions",
+      "icon": "bi-tag"
+    },
+    "Events": {
+      "name": "Events",
+      "route": "events.list",
+      "description": "View and manage events",
+      "icon": "bi-list-ul"
+    },
+    "Parts": {
+      "name": "Parts",
+      "route": "core_supply_parts.list",
+      "description": "View and manage parts",
+      "icon": "bi-box"
+    },
+    "Tool Definitions": {
+      "name": "Tool Definitions",
+      "route": "core_supply_tools.list",
+      "description": "View and manage tool definitions",
+      "icon": "bi-tools"
+    },
+    "Users": {
+      "name": "Users",
+      "route": "users.list",
+      "description": "View and manage users",
+      "icon": "bi-person"
+    },
+    "Locations": {
+      "name": "Locations",
+      "route": "locations.list",
+      "description": "View and manage locations",
+      "icon": "bi-geo-alt"
+    }
+  },
+  "Asset Management": {
+    "System Dashboard": {
+      "name": "System Dashboard",
+      "route": "main.dashboard",
+      "description": "System overview and analytics",
+      "icon": "bi-speedometer2"
+    },
+    "Asset Dashboard": {
+      "name": "Asset Dashboard",
+      "route": "main.asset_management",
+      "description": "Asset overview and statistics",
+      "icon": "bi-truck"
+    },
+    "Asset List": {
+      "name": "Asset List",
+      "route": "core_assets.list",
+      "description": "View all assets",
+      "icon": "bi-list-ul"
+    }
+  },
+  "Dispatching": {
+    "Dispatching Home": {
+      "name": "Dispatching Home",
+      "route": "dispatching.index",
+      "description": "Dispatching module landing page with portals",
+      "icon": "bi-truck"
+    },
+    "Request Dispatch": {
+      "name": "Request Dispatch",
+      "route": "dispatching.requests_new",
+      "description": "Submit a new request for vehicle assignment",
+      "icon": "bi-plus-circle"
+    },
+    "User Portal": {
+      "name": "User Portal",
+      "route": "dispatching.user_portal",
+      "description": "View your assigned vehicles and work assignments",
+      "icon": "bi-person-circle"
+    },
+    "Dispatcher Portal": {
+      "name": "Dispatcher Portal",
+      "route": "dispatching.dispatcher_portal",
+      "description": "Manage dispatch requests and assign vehicles",
+      "icon": "bi-calendar-check"
+    },
+    "View All Requests": {
+      "name": "View All Requests",
+      "route": "dispatching.requests_list",
+      "description": "View all dispatch requests",
+      "icon": "bi-list-ul"
+    },
+    "View Dispatches": {
+      "name": "View Dispatches",
+      "route": "dispatching.dispatches_list",
+      "description": "View all standard dispatch outcomes",
+      "icon": "bi-calendar-event"
+    },
+    "View Contracts": {
+      "name": "View Contracts",
+      "route": "dispatching.contracts_list",
+      "description": "View all contract outcomes",
+      "icon": "bi-file-earmark-text"
+    },
+    "View Reimbursements": {
+      "name": "View Reimbursements",
+      "route": "dispatching.reimbursements_list",
+      "description": "View all reimbursement outcomes",
+      "icon": "bi-currency-exchange"
+    },
+    "View Rejects": {
+      "name": "View Rejects",
+      "route": "dispatching.rejects_list",
+      "description": "View all rejected requests",
+      "icon": "bi-x-circle"
+    }
+  },
+  "Maintenance": {
+    "Maintenance Portal": {
+      "name": "Maintenance Portal",
+      "route": "maintenance.index",
+      "description": "Maintenance management portal",
+      "icon": "bi-speedometer2"
+    },
+    "Technician Portal": {
+      "name": "Technician Portal",
+      "route": "technician_portal.dashboard",
+      "description": "Portal for technicians",
+      "icon": "bi-person-wrench"
+    },
+    "Manager Portal": {
+      "name": "Manager Portal",
+      "route": "manager_portal.dashboard",
+      "description": "Portal for managers",
+      "icon": "bi-clipboard-check"
+    },
+    "Fleet Portal": {
+      "name": "Fleet Portal",
+      "route": "fleet_portal.dashboard",
+      "description": "Fleet-wide maintenance oversight",
+      "icon": "bi-truck"
+    },
+    "View Maintenance Events": {
+      "name": "View Maintenance Events",
+      "route": "maintenance.view_events",
+      "description": "View all maintenance events",
+      "icon": "bi-calendar-event"
+    },
+    "Most Recent Event": {
+      "name": "Most Recent Event",
+      "route": "technician_portal.most_recent_event",
+      "description": "View the most recent maintenance event",
+      "icon": "bi-clock-history"
+    },
+    "Continue Discussion": {
+      "name": "Continue Discussion",
+      "route": "technician_portal.continue_discussion",
+      "description": "Continue discussion on maintenance events",
+      "icon": "bi-chat-dots"
+    }
+  },
+  "Inventory": {
+    "Inventory Management Portal": {
+      "name": "Inventory Management Portal",
+      "route": "inventory.index",
+      "description": "Main inventory management portal",
+      "icon": "bi-speedometer2"
+    },
+    "View Purchase Orders": {
+      "name": "View Purchase Orders",
+      "route": "inventory.purchase_orders_list",
+      "description": "View and manage purchase orders",
+      "icon": "bi-receipt"
+    },
+    "View Arrivals": {
+      "name": "View Arrivals",
+      "route": "inventory.po_arrivals",
+      "description": "View and manage package arrivals",
+      "icon": "bi-box-arrow-in-down"
+    },
+    "View Active Inventory": {
+      "name": "View Active Inventory",
+      "route": "inventory.active_inventory_view",
+      "description": "View and manage active inventory",
+      "icon": "bi-clipboard-data"
+    },
+    "Purchasing Portal": {
+      "name": "Purchasing Portal",
+      "route": "inventory.create_po",
+      "description": "Create purchase orders from part demands",
+      "icon": "bi-list-check"
+    },
+    "Arrivals Portal": {
+      "name": "Arrivals Portal",
+      "route": "inventory.create_arrival",
+      "description": "Create and manage package arrivals",
+      "icon": "bi-box-arrow-in-down"
+    },
+    "Storeroom Designer": {
+      "name": "Storeroom Designer",
+      "route": "inventory.storeroom_index",
+      "description": "Design and manage storeroom layouts",
+      "icon": "bi-map"
+    },
+    "Initial Stocking Portal": {
+      "name": "Initial Stocking Portal",
+      "route": "inventory.initial_stocking",
+      "description": "Initial inventory stocking operations",
+      "icon": "bi-box-arrow-in-down"
+    },
+    "Issue Portal": {
+      "name": "Issue Portal",
+      "route": "inventory.issue_parts",
+      "description": "Issue parts from inventory",
+      "icon": "bi-box-arrow-right"
+    },
+    "View Part Issues": {
+      "name": "View Part Issues",
+      "route": "inventory.part_issues_list",
+      "description": "View all part issue transactions",
+      "icon": "bi-list-ul"
+    }
+  },
+  "System": {
+    "Log Viewer": {
+      "name": "Log Viewer",
+      "route": "main.logs",
+      "description": "View application logs",
+      "icon": "bi-journal-text"
+    },
+    "Admin": {
+      "name": "Admin",
+      "route": "admin.index",
+      "description": "Admin portal",
+      "icon": "bi-shield-lock"
+    },
+    "Help": {
+      "name": "Help",
+      "route": "main.help",
+      "description": "Help and documentation",
+      "icon": "bi-question-circle"
+    },
+    "About": {
+      "name": "About",
+      "route": "main.about",
+      "description": "About the system",
+      "icon": "bi-info-circle"
+    }
+  }
+}
+
+

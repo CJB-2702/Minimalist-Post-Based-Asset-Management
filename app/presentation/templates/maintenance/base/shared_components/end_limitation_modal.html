@@ -1,0 +1,70 @@
+<!-- End Limitation Modal -->
+<div class="modal fade" id="endLimitationModal{{ limitation.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('maintenance.close_limitation', limitation_id=limitation.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <div class="modal-header">
+                    <h5 class="modal-title">Close Asset Capability Limitation</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Status: <strong>{{ limitation.status }}</strong></p>
+                    {% if asset %}
+                    <p class="text-muted small">Closing this limitation will update the asset's capability status based on any remaining active limitations.</p>
+                    {% endif %}
+                    
+                    {% if limitation.limitation_description %}
+                    <div class="mb-3">
+                        <p class="mb-0"><strong>Limitation:</strong></p>
+                        <p class="text-muted">{{ limitation.limitation_description }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if limitation.temporary_modifications %}
+                    <div class="mb-3">
+                        <p class="mb-0"><strong>Temporary Modifications:</strong></p>
+                        <p class="text-muted">{{ limitation.temporary_modifications }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        <label for="limitationStartTime{{ limitation.id }}" class="form-label">Start Time <span class="text-danger">*</span></label>
+                        <input type="datetime-local" class="form-control" id="limitationStartTime{{ limitation.id }}" name="start_time" 
+                               value="{{ limitation.start_time.strftime('%Y-%m-%dT%H:%M') if limitation.start_time else '' }}" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="limitationEndTime{{ limitation.id }}" class="form-label">End Time <span class="text-danger">*</span></label>
+                        <input type="datetime-local" class="form-control" id="limitationEndTime{{ limitation.id }}" name="end_time" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="closeLimitationComment{{ limitation.id }}" class="form-label">Comment</label>
+                        <textarea class="form-control" id="closeLimitationComment{{ limitation.id }}" name="comment" rows="3" placeholder="Optional comment about closing this limitation"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Close Limitation</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Set current time when modal opens for end time
+document.getElementById('endLimitationModal{{ limitation.id }}').addEventListener('show.bs.modal', function() {
+    const endTimeInput = document.getElementById('limitationEndTime{{ limitation.id }}');
+    if (!endTimeInput.value) {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        endTimeInput.value = `${year}-${month}-${day}T${hours}:${minutes}`;
+    }
+});
+</script>

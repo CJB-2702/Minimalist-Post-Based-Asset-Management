@@ -177,7 +177,7 @@
                                         <input type="checkbox" class="event-checkbox" name="event_ids" value="{{ event.event_id }}">
                                     </td>
                                     <td>
-                                        <a href="{{ url_for('maintenance_event.view_maintenance_event', event_id=event.event_id) }}" target="_blank">
+                                        <a href="{{ url_for('maintenance_event_view.view_maintenance_event', event_id=event.event_id) }}" target="_blank">
                                             #{{ event.event_id }}
                                         </a>
                                     </td>
@@ -216,12 +216,12 @@
                                         {% endif %}
                                     </td>
                                     <td>
-                                        <a href="{{ url_for('maintenance_event.assign_event', event_id=event.event_id) }}" 
+                                        <a href="{{ url_for('maintenance_event_assign.assign_event', event_id=event.event_id) }}" 
                                            class="btn btn-sm btn-warning" 
                                            title="Assign individually">
                                             <i class="bi bi-person-check"></i>
                                         </a>
-                                        <a href="{{ url_for('maintenance_event.view_maintenance_event', event_id=event.event_id) }}" 
+                                        <a href="{{ url_for('maintenance_event_view.view_maintenance_event', event_id=event.event_id) }}" 
                                            class="btn btn-sm btn-outline-primary" 
                                            target="_blank"
                                            title="View details">
@@ -303,6 +303,7 @@
                     <i class="bi bi-people"></i> Bulk Assign Selected Events
                 </h5>
                 <form method="POST" action="{{ url_for('manager_portal.bulk_assign_events') }}" id="bulkAssignForm">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <input type="hidden" name="event_ids" id="selectedEventIds">
                     <div class="row g-3">
                         <div class="col-md-6">

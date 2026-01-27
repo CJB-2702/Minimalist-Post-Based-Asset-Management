@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{% block title %}Asset Management System{% endblock %}</title>
     
     <!-- HTMX for dynamic interactions -->
@@ -21,8 +22,51 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-icons.css') }}">
     
     {% block extra_css %}{% endblock %}
+    <style>
+        /* Search dropdown styles */
+        #searchDropdownContainer {
+            position: relative;
+        }
+        #searchDropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            z-index: 1050;
+            margin-top: 0.25rem;
+        }
+        #searchDropdown .dropdown-item {
+            white-space: normal;
+        }
+        #searchDropdown .dropdown-item small {
+            font-size: 0.75rem;
+        }
+        #searchSpinner {
+            width: 1rem;
+            height: 1rem;
+        }
+    </style>
 </head>
 <body>
+    <!-- Global Toast Notifications -->
+    <div class="position-fixed top-0 end-0 p-3" style="z-index: 11000">
+        <div id="globalToast" class="toast" role="alert">
+            <div class="toast-header">
+                <strong class="me-auto" id="globalToastTitle">Notification</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body" id="globalToastBody"></div>
+        </div>
+    </div>
+
+    <!-- Global HTMX Loading Indicator -->
+    <div id="htmx-loading-indicator" class="htmx-indicator position-fixed" 
+         style="top: 20px; right: 20px; z-index: 10999; display: none;">
+        <div class="alert alert-info mb-0 shadow-sm">
+            <span class="spinner-border spinner-border-sm me-2"></span>
+            <span id="loading-text">Processing...</span>
+        </div>
+    </div>
+
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
@@ -114,8 +158,51 @@
                     </li>
                     
                     <!-- Dispatching -->
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('dispatching.index') }}">Dispatching</a>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            Dispatching
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('dispatching.index') }}">
+                                <i class="bi bi-truck"></i> Dispatching Home
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><h6 class="dropdown-header">
+                                <i class="bi bi-person-circle"></i> Portals
+                            </h6></li>
+                            <li><a class="dropdown-item" href="{{ url_for('dispatching.user_portal') }}">
+                                <i class="bi bi-person-circle"></i> User Portal
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('dispatching.dispatcher_portal') }}">
+                                <i class="bi bi-calendar-check"></i> Dispatcher Portal
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><h6 class="dropdown-header">
+                                <i class="bi bi-lightning"></i> Quick Actions
+                            </h6></li>
+                            <li><a class="dropdown-item" href="{{ url_for('dispatching.requests_new') }}">
+                                <i class="bi bi-plus-circle"></i> New Request
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('dispatching.requests_list') }}">
+                                <i class="bi bi-list-ul"></i> View All Requests
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><h6 class="dropdown-header">
+                                <i class="bi bi-folder"></i> Outcomes
+                            </h6></li>
+                            <li><a class="dropdown-item" href="{{ url_for('dispatching.dispatches_list') }}">
+                                <i class="bi bi-calendar-event"></i> Dispatches
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('dispatching.contracts_list') }}">
+                                <i class="bi bi-file-earmark-text"></i> Contracts
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('dispatching.reimbursements_list') }}">
+                                <i class="bi bi-currency-exchange"></i> Reimbursements
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('dispatching.rejects_list') }}">
+                                <i class="bi bi-x-circle"></i> Rejects
+                            </a></li>
+                        </ul>
                     </li>
                     
                     <!-- Maintenance -->
@@ -163,24 +250,62 @@
                             <li><a class="dropdown-item" href="{{ url_for('inventory.index') }}">
                                 <i class="bi bi-speedometer2"></i> Inventory Management Portal
                             </a></li>
-                            {% endif %}
                             <li><hr class="dropdown-divider"></li>
+                            {% endif %}
                             <li><h6 class="dropdown-header">
-                                <i class="bi bi-box-seam"></i> Portals
+                                <i class="bi bi-receipt"></i> Purchase Orders
                             </h6></li>
                             {% if endpoint_exists('inventory.purchase_orders_list') %}
                             <li><a class="dropdown-item" href="{{ url_for('inventory.purchase_orders_list') }}">
-                                <i class="bi bi-receipt"></i> Purchase Order Portal
+                                <i class="bi bi-list-ul"></i> View Purchase Orders
                             </a></li>
                             {% endif %}
-                            {% if endpoint_exists('inventory.create_po_from_single_maintenance') %}
-                            <li><a class="dropdown-item" href="{{ url_for('inventory.create_po_from_single_maintenance') }}">
-                                <i class="bi bi-cart-plus"></i> Create PO (Single Maintenance)
+                            {% if endpoint_exists('inventory.create_po') %}
+                            <li><a class="dropdown-item" href="{{ url_for('inventory.create_po') }}">
+                                <i class="bi bi-list-check"></i> Purchasing Portal
                             </a></li>
                             {% endif %}
-                            {% if endpoint_exists('inventory.arrivals_index') %}
-                            <li><a class="dropdown-item" href="{{ url_for('inventory.arrivals_index') }}">
+                            <li><hr class="dropdown-divider"></li>
+                            <li><h6 class="dropdown-header">
                                 <i class="bi bi-box-arrow-in-down"></i> Arrivals
+                            </h6></li>
+                            {% if endpoint_exists('inventory.po_arrivals') %}
+                            <li><a class="dropdown-item" href="{{ url_for('inventory.po_arrivals') }}">
+                                <i class="bi bi-list-ul"></i> View Arrivals
+                            </a></li>
+                            {% endif %}
+                            {% if endpoint_exists('inventory.create_arrival') %}
+                            <li><a class="dropdown-item" href="{{ url_for('inventory.create_arrival') }}">
+                                <i class="bi bi-box-arrow-in-down"></i> Arrivals Portal
+                            </a></li>
+                            {% endif %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li><h6 class="dropdown-header">
+                                <i class="bi bi-clipboard-data"></i> Inventory
+                            </h6></li>
+                            {% if endpoint_exists('inventory.active_inventory_view') %}
+                            <li><a class="dropdown-item" href="{{ url_for('inventory.active_inventory_view') }}">
+                                <i class="bi bi-eye"></i> View Active Inventory
+                            </a></li>
+                            {% endif %}
+                            {% if endpoint_exists('inventory.storeroom_index') %}
+                            <li><a class="dropdown-item" href="{{ url_for('inventory.storeroom_index') }}">
+                                <i class="bi bi-map"></i> Storeroom Designer
+                            </a></li>
+                            {% endif %}
+                            {% if endpoint_exists('inventory.initial_stocking') %}
+                            <li><a class="dropdown-item" href="{{ url_for('inventory.initial_stocking') }}">
+                                <i class="bi bi-box-arrow-in-down"></i> Initial Stocking Portal
+                            </a></li>
+                            {% endif %}
+                            {% if endpoint_exists('inventory.issue_parts') %}
+                            <li><a class="dropdown-item" href="{{ url_for('inventory.issue_parts') }}">
+                                <i class="bi bi-box-arrow-right"></i> Issue Portal
+                            </a></li>
+                            {% endif %}
+                            {% if endpoint_exists('inventory.part_issues_list') %}
+                            <li><a class="dropdown-item" href="{{ url_for('inventory.part_issues_list') }}">
+                                <i class="bi bi-list-ul"></i> View Part Issues
                             </a></li>
                             {% endif %}
                         </ul>
@@ -206,11 +331,105 @@
                     </li>
                 </ul>
                 
-                <!-- Search -->
-                <form class="d-flex me-3" action="{{ url_for('main.search') }}" method="GET">
-                    <input class="form-control me-2" type="search" name="q" placeholder="Search..." aria-label="Search">
-                    <button class="btn btn-outline-light" type="submit">Search</button>
-                </form>
+                <!-- Search with Dropdown -->
+                <div class="d-flex me-3">
+                    <div class="dropdown" id="searchDropdownContainer">
+                        <form class="d-flex" action="{{ url_for('searchbar.search') }}" method="GET">
+                            <div class="input-group">
+                                <input 
+                                    class="form-control" 
+                                    type="search" 
+                                    name="q" 
+                                    id="searchInput"
+                                    placeholder="Search..." 
+                                    aria-label="Search"
+                                    autocomplete="off"
+                                    hx-get="{{ url_for('searchbar.dropdown') }}"
+                                    hx-trigger="input changed delay:300ms, focus"
+                                    hx-target="#searchDropdown"
+                                    hx-swap="innerHTML"
+                                    hx-indicator="#searchSpinner"
+                                    hx-include="this"
+                                    onfocus="showSearchDropdown()"
+                                    onblur="setTimeout(() => hideSearchDropdown(), 200)">
+                                <button 
+                                    class="btn btn-outline-light" 
+                                    type="button" 
+                                    id="searchDropdownButton"
+                                    onclick="toggleSearchDropdown()"
+                                    aria-label="Show routes">
+                                    <i class="bi bi-chevron-down"></i>
+                                </button>
+                                <button class="btn btn-outline-light" type="submit" aria-label="Search">
+                                    <i class="bi bi-search"></i>
+                                </button>
+                            </div>
+                        </form>
+                        <ul 
+                            class="dropdown-menu dropdown-menu-end" 
+                            id="searchDropdown"
+                            style="max-height: 400px; overflow-y: auto; min-width: 350px; display: none;">
+                            <li>
+                                <span class="dropdown-item-text">
+                                    <span class="spinner-border spinner-border-sm" id="searchSpinner" role="status" aria-hidden="true" style="display: none;"></span>
+                                    <span class="ms-2">Type to search routes...</span>
+                                </span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <script>
+                    function showSearchDropdown() {
+                        const dropdown = document.getElementById('searchDropdown');
+                        dropdown.style.display = 'block';
+                    }
+                    function hideSearchDropdown() {
+                        const dropdown = document.getElementById('searchDropdown');
+                        const input = document.getElementById('searchInput');
+                        // Only hide if not hovering over dropdown and input not focused
+                        if (!dropdown.matches(':hover') && !input.matches(':focus')) {
+                            dropdown.style.display = 'none';
+                        }
+                    }
+                    function toggleSearchDropdown() {
+                        const dropdown = document.getElementById('searchDropdown');
+                        const input = document.getElementById('searchInput');
+                        if (dropdown.style.display === 'none' || !dropdown.style.display) {
+                            dropdown.style.display = 'block';
+                            // Trigger HTMX to load routes if empty
+                            if (dropdown.querySelector('li span.dropdown-item-text')) {
+                                htmx.trigger(input, 'input');
+                            }
+                        } else {
+                            dropdown.style.display = 'none';
+                        }
+                    }
+                    // Keep dropdown open when hovering
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const dropdown = document.getElementById('searchDropdown');
+                        if (dropdown) {
+                            dropdown.addEventListener('mouseenter', function() {
+                                this.style.display = 'block';
+                            });
+                            dropdown.addEventListener('mouseleave', function() {
+                                const input = document.getElementById('searchInput');
+                                if (!input.matches(':focus')) {
+                                    this.style.display = 'none';
+                                }
+                            });
+                            // Show dropdown after HTMX swap
+                            document.body.addEventListener('htmx:afterSwap', function(event) {
+                                if (event.detail.target.id === 'searchDropdown') {
+                                    const dropdown = document.getElementById('searchDropdown');
+                                    const input = document.getElementById('searchInput');
+                                    if (input.matches(':focus') || dropdown.querySelector('li:not(.dropdown-item-text)')) {
+                                        dropdown.style.display = 'block';
+                                    }
+                                }
+                            });
+                        }
+                    });
+                </script>
                 
                 <!-- User Menu -->
                 <ul class="navbar-nav">
@@ -266,6 +485,39 @@
     
     <!-- Custom JS -->
     <script src="{{ url_for('static', filename='js/base.js') }}"></script>
+    
+    <!-- Global HTMX Event Handlers -->
+    <script>
+    // Configure HTMX to include CSRF token in all requests
+    document.body.addEventListener('htmx:configRequest', function(evt) {
+        evt.detail.headers['X-CSRFToken'] = document.querySelector('meta[name="csrf-token"]').content;
+    });
+    
+    // Global HTMX toast notification handler
+    document.body.addEventListener('showToast', function(evt) {
+        const { message, type, title } = evt.detail;
+        
+        const toastEl = document.getElementById('globalToast');
+        const toastTitleEl = document.getElementById('globalToastTitle');
+        const toastBodyEl = document.getElementById('globalToastBody');
+        
+        toastTitleEl.textContent = title || (type === 'success' ? 'Success' : 'Error');
+        toastBodyEl.textContent = message;
+        toastBodyEl.className = `toast-body ${type === 'success' ? 'bg-success' : 'bg-danger'} text-white`;
+        
+        const toast = new bootstrap.Toast(toastEl, { delay: 3000 });
+        toast.show();
+    });
+
+    // Loading indicator visibility  
+    document.body.addEventListener('htmx:beforeRequest', function(evt) {
+        document.getElementById('htmx-loading-indicator').style.display = 'block';
+    });
+
+    document.body.addEventListener('htmx:afterRequest', function(evt) {
+        document.getElementById('htmx-loading-indicator').style.display = 'none';
+    });
+    </script>
     
     {% block extra_js %}{% endblock %}
     

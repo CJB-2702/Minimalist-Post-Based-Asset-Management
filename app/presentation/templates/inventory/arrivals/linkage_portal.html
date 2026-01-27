@@ -28,107 +28,125 @@
         </div>
         <div class="card-body">
             {% for arrival_data in arrivals_with_po_lines %}
+            {% set received_qty = (arrival_data.part_arrival.quantity_received or 0.0) %}
+            {% set linked_qty = (arrival_data.part_arrival.total_quantity_linked or 0.0) %}
+            {% set available_qty = (arrival_data.quantity_available or 0.0) %}
+            {% set linked_pct = arrival_data.allocation_percentage %}
+            {# "Fully linked" when available is near zero (allow tiny float noise) #}
+            {% set fully_linked = (received_qty > 0.0) and ((available_qty|float) <= 0.00001 or (linked_qty|float) >= ((received_qty|float) - 0.00001)) %}
             <!-- SECTION: ARRIVAL {{ loop.index }} -->
-            <div class="row g-3 align-items-stretch" data-arrival-id="{{ arrival_data.part_arrival.id }}">
-                <div class="col-md-6">
-                    <h6 class="fw-bold mb-2"><i class="bi bi-box-seam"></i> Arrival and Summary</h6>
-                    <div class="card arrival-item clickable-arrival" data-part-id="{{ arrival_data.part_arrival.part.id }}" data-part-number="{{ arrival_data.part_arrival.part.part_number }}">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <div>
-                                    <h6 class="mb-1">Arrival #{{ arrival_data.part_arrival.id }}</h6>
-                                    <small class="text-muted">Location: {{ arrival_data.part_arrival.major_location.name if arrival_data.part_arrival.major_location else 'N/A' }}</small>
+            <div class="row g-3" data-arrival-id="{{ arrival_data.part_arrival.id }}">
+                <div class="col-12">
+                    <div class="card arrival-item clickable-arrival arrival-condensed {% if not fully_linked %}arrival-needs-linking{% endif %}"
+                         data-part-id="{{ arrival_data.part_arrival.part.id }}"
+                         data-part-number="{{ arrival_data.part_arrival.part.part_number }}">
+                        <div class="card-body py-2">
+                            <!-- Header row (condensed) -->
+                            <div class="d-flex justify-content-between align-items-start gap-2">
+                                <div class="flex-grow-1">
+                                    <div class="d-flex flex-wrap align-items-center gap-2">
+                                        <span class="fw-bold">Arrival #{{ arrival_data.part_arrival.id }}</span>
+                                        <span class="text-muted small">Location: {{ arrival_data.part_arrival.major_location.name if arrival_data.part_arrival.major_location else 'N/A' }}</span>
+                                        <span class="text-muted small">|</span>
+                                        <span class="fw-semibold">{{ arrival_data.part_arrival.part.part_number }}</span>
+                                        <span class="text-muted small">{{ arrival_data.part_arrival.part.part_name }}</span>
+                                    </div>
                                 </div>
-                                <span class="badge bg-info">{{ arrival_data.part_arrival.status }}</span>
-                            </div>
-                            <hr class="my-2">
-                            <div class="row">
-                                <div class="col-6">
-                                    <small class="text-muted">Part:</small><br>
-                                    <strong>{{ arrival_data.part_arrival.part.part_number }}</strong> - {{ arrival_data.part_arrival.part.part_name }}
-                                </div>
-                                <div class="col-6">
-                                    <small class="text-muted">Quantity Received:</small><br>
-                                    <strong>{{ arrival_data.part_arrival.quantity_received }} {{ arrival_data.part_arrival.part.unit_of_measure or 'units' }}</strong>
-                                </div>
-                            </div>
-                            <div class="row mt-2">
-                                <div class="col-6">
-                                    <small class="text-muted">Received:</small> <strong class="text-success">{{ arrival_data.part_arrival.quantity_received }}</strong>
-                                </div>
-                                <div class="col-6">
-                                    <small class="text-muted">Linked:</small> <strong class="text-warning linked-qty">{{ arrival_data.part_arrival.quantity_linked_to_purchase_order_line or 0.0 }}</strong>
+                                <div class="d-flex gap-2 align-items-center flex-shrink-0">
+                                    {% if fully_linked %}
+                                        <span class="badge bg-success">Fully linked</span>
+                                    {% endif %}
+                                    <span class="badge bg-info">{{ arrival_data.part_arrival.status }}</span>
                                 </div>
                             </div>
-                            <div class="row mt-2">
-                                <div class="col-12">
-                                    <small class="text-muted">Available:</small>
-                                    <strong class="text-primary available-qty">{{ arrival_data.quantity_available }} {{ arrival_data.part_arrival.part.unit_of_measure or 'units' }}</strong>
-                                    <span class="badge bg-{% if arrival_data.allocation_percentage >= 75 %}danger{% elif arrival_data.allocation_percentage >= 50 %}warning{% else %}success{% endif %} allocation-badge ms-2 availability-pct">{{ "%.1f"|format(100 - arrival_data.allocation_percentage) }}% Available</span>
+
+                            <!-- Details row (single row, wraps on small screens) -->
+                            <div class="arrival-details-row mt-2">
+                                <div class="arrival-kv">
+                                    <span class="arrival-k">Received</span>
+                                    <span class="arrival-v fw-semibold">{{ received_qty }} {{ arrival_data.part_arrival.part.unit_of_measure or 'units' }}</span>
+                                </div>
+                                <div class="arrival-kv">
+                                    <span class="arrival-k">Linked</span>
+                                    <span class="arrival-v fw-semibold {% if fully_linked %}text-success{% elif received_qty and (linked_qty|float) <= 0.00001 %}text-danger{% else %}text-warning{% endif %} linked-qty">
+                                        {{ linked_qty }}/{{ received_qty }}
+                                    </span>
+                                    <span class="badge bg-{% if fully_linked or linked_pct >= 99.99 %}success{% elif linked_pct >= 50 %}warning{% else %}danger{% endif %} allocation-badge ms-1">
+                                        {{ "%.0f"|format(linked_pct) }}% Linked
+                                    </span>
+                                </div>
+                                {% if not fully_linked %}
+                                <div class="arrival-kv">
+                                    <span class="arrival-k">Available</span>
+                                    <span class="arrival-v fw-semibold text-success available-qty">{{ available_qty }} {{ arrival_data.part_arrival.part.unit_of_measure or 'units' }}</span>
+                                </div>
+                                {% endif %}
+                                <div class="arrival-kv">
+                                    <span class="arrival-k">Condition</span>
+                                    <span class="arrival-v fw-semibold">{{ arrival_data.part_arrival.condition or 'Good' }}</span>
                                 </div>
                             </div>
-                            <div class="mt-2">
-                                <small class="text-muted">Condition:</small> <strong>{{ arrival_data.part_arrival.condition or 'Good' }}</strong>
-                            </div>
+
                             {% if arrival_data.part_arrival.inspection_notes %}
-                            <div class="mt-2">
-                                <small class="text-muted">Notes:</small><br>
-                                <small>{{ arrival_data.part_arrival.inspection_notes }}</small>
-                            </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-6">
-                    <h6 class="fw-bold mb-2"><i class="bi bi-receipt"></i> Linked PO Line</h6>
-                    <div class="card border-0">
-                        <div class="list-group po-lines-list" data-arrival-id="{{ arrival_data.part_arrival.id }}">
-                            {% if arrival_data.linked_po_line %}
-                                <div class="list-group-item po-line-item border-success" data-po-line-id="{{ arrival_data.linked_po_line.id }}">
-                                    <div class="d-flex justify-content-between align-items-start mb-2">
-                                        <div>
-                                            <h6 class="mb-1">PO: {{ arrival_data.linked_po_line.purchase_order.po_number }} - Line {{ arrival_data.linked_po_line.line_number }}</h6>
-                                            <small class="text-muted">Vendor: {{ arrival_data.linked_po_line.purchase_order.vendor_name }}</small>
-                                        </div>
-                                        <span class="badge bg-success">Linked</span>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-6">
-                                            <small class="text-muted">Part:</small><br>
-                                            <strong>{{ arrival_data.linked_po_line.part.part_number }}</strong> - {{ arrival_data.linked_po_line.part.part_name }}
-                                        </div>
-                                        <div class="col-6">
-                                            <small class="text-muted">Ordered:</small><br>
-                                            <strong>{{ arrival_data.linked_po_line.quantity_ordered }}</strong>
-                                        </div>
-                                    </div>
-                                    <div class="row mt-2">
-                                        <div class="col-6">
-                                            <small class="text-muted">Accepted:</small><br>
-                                            <strong class="text-success">{{ arrival_data.linked_po_line.quantity_accepted or 0.0 }}</strong>
-                                        </div>
-                                        <div class="col-6">
-                                            <small class="text-muted">Linked from this arrival:</small><br>
-                                            <strong>{{ arrival_data.part_arrival.quantity_linked_to_purchase_order_line or 0.0 }}</strong>
-                                        </div>
-                                    </div>
-                                    <div class="mt-2">
-                                        <button class="btn btn-sm btn-outline-danger unlink-btn" data-arrival-id="{{ arrival_data.part_arrival.id }}">
-                                            <i class="bi bi-unlink"></i> Unlink
-                                        </button>
-                                    </div>
+                                <div class="mt-2 small text-muted">
+                                    <span class="fw-semibold">Notes:</span> {{ arrival_data.part_arrival.inspection_notes }}
                                 </div>
                             {% endif %}
 
-                            {% if not arrival_data.linked_po_line %}
-                            <div class="list-group-item">
-                                <small class="text-muted">
-                                    <i class="bi bi-info-circle"></i>
-                                    No linked PO line for this arrival yet. Use the <span class="fw-bold">Arrival Linkage Tool</span> below to find and link matching PO lines.
-                                </small>
-                            </div>
-                            {% endif %}
+                            <!-- Linked PO Lines (collapsible) -->
+                            <details class="mt-2 arrival-po-line">
+                                <summary class="arrival-po-line-summary">
+                                    <span class="fw-semibold"><i class="bi bi-receipt"></i> Linked PO Lines</span>
+                                    <span class="text-muted small">
+                                        {% if arrival_data.links_info %}
+                                            ({{ arrival_data.links_info|length }} link{{ 's' if arrival_data.links_info|length != 1 else '' }})
+                                        {% else %}
+                                            (none)
+                                        {% endif %}
+                                    </span>
+                                </summary>
+
+                                <div class="mt-2 po-lines-list" data-arrival-id="{{ arrival_data.part_arrival.id }}">
+                                    {% if arrival_data.links_info %}
+                                        {% for link_info in arrival_data.links_info %}
+                                        <div class="card po-line-item border-success mb-2" data-po-line-id="{{ link_info.po_line_id }}" data-link-id="{{ link_info.link_id }}">
+                                            <div class="card-body py-2">
+                                                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                                                    <div class="d-flex flex-wrap align-items-center gap-2">
+                                                        <span class="badge bg-success">Linked</span>
+                                                        <span class="fw-semibold">PO: {{ link_info.po_number }} - Line {{ link_info.po_line.line_number }}</span>
+                                                        <span class="text-muted small">Vendor: {{ link_info.po_line.purchase_order.vendor_name if link_info.po_line.purchase_order else 'N/A' }}</span>
+                                                        <span class="text-muted small">|</span>
+                                                        <span class="text-muted small">Part:</span>
+                                                        <span class="fw-semibold small">{{ link_info.po_line.part.part_number if link_info.po_line.part else 'N/A' }} - {{ link_info.po_line.part.part_name if link_info.po_line.part else 'N/A' }}</span>
+                                                        <span class="text-muted small">|</span>
+                                                        <span class="text-muted small">Ordered:</span>
+                                                        <span class="fw-semibold">{{ link_info.po_line.quantity_ordered }}</span>
+                                                        <span class="text-muted small">|</span>
+                                                        <span class="text-muted small">Linked from this arrival:</span>
+                                                        <span class="fw-semibold">{{ link_info.quantity_linked }}</span>
+                                                    </div>
+                                                    <div class="d-flex gap-2 align-items-center">
+                                                        <button class="btn btn-sm btn-outline-danger unlink-btn" data-arrival-id="{{ arrival_data.part_arrival.id }}" data-link-id="{{ link_info.link_id }}">
+                                                            <i class="bi bi-unlink"></i> Unlink
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <div class="card border-0">
+                                            <div class="card-body py-2">
+                                                <small class="text-muted">
+                                                    <i class="bi bi-info-circle"></i>
+                                                    No linked PO lines for this arrival yet. Use the <span class="fw-bold">Arrival Linkage Tool</span> below to find and link matching PO lines.
+                                                </small>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </details>
                         </div>
                     </div>
                 </div>
@@ -305,6 +323,44 @@
     }
     .clickable-arrival:hover {
         background-color: #e9ecef;
+    }
+    .arrival-needs-linking {
+        background-color: #fff8db;
+    }
+    .arrival-condensed .card-body {
+        font-size: 0.95rem;
+    }
+    .arrival-details-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem 1.25rem;
+        align-items: baseline;
+    }
+    .arrival-kv {
+        display: inline-flex;
+        gap: 0.4rem;
+        align-items: baseline;
+        white-space: nowrap;
+    }
+    .arrival-k {
+        color: #6c757d;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+    }
+    .arrival-v {
+        line-height: 1.1;
+    }
+    .arrival-po-line summary {
+        cursor: pointer;
+        user-select: none;
+        color: #0d6efd;
+    }
+    .arrival-po-line summary:hover {
+        text-decoration: underline;
+    }
+    .po-line-item .card-body {
+        font-size: 0.9rem;
     }
     .clickable-arrival.selected-item {
         background-color: #cfe2ff !important;
@@ -568,9 +624,13 @@
     
     // Link arrival to PO line
     function linkArrivalToPOLine(arrivalId, poLineId, quantity) {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
         fetch(`/inventory/arrivals/${packageId}/link/api/link`, {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
             body: JSON.stringify({part_arrival_id: arrivalId, po_line_id: poLineId, quantity_to_link: quantity})
         })
         .then(r => r.json())
@@ -593,9 +653,13 @@
     function unlinkArrival(arrivalId) {
         if (!confirm('Are you sure you want to unlink this arrival?')) return;
         
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
         fetch(`/inventory/arrivals/${packageId}/link/api/unlink`, {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
             body: JSON.stringify({part_arrival_id: arrivalId})
         })
         .then(r => r.json())
@@ -649,9 +713,9 @@
                 selectedPartId = parseInt(this.dataset.partId);
                 selectedPartNumber = this.dataset.partNumber;
                 
-                // Get available quantity from the card
+                // Get available quantity from the card (may not exist if fully linked)
                 const availableQtyEl = this.querySelector('.available-qty');
-                selectedArrivalQtyAvailable = parseFloat(availableQtyEl.textContent.trim().split(' ')[0]) || 0;
+                selectedArrivalQtyAvailable = availableQtyEl ? parseFloat(availableQtyEl.textContent.trim().split(' ')[0]) || 0 : 0;
                 
                 updateSelectedArrivalSummary();
                 loadPurchaseOrders();
@@ -678,7 +742,8 @@
         document.querySelectorAll('.unlink-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 const arrivalId = parseInt(this.dataset.arrivalId);
-                unlinkArrival(arrivalId);
+                const linkId = this.dataset.linkId ? parseInt(this.dataset.linkId) : null;
+                unlinkArrival(arrivalId, linkId);
             });
         });
         

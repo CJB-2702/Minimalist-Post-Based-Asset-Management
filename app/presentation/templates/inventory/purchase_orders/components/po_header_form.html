@@ -1,0 +1,52 @@
+<!-- PO Header Form -->
+<div class="card mb-4">
+  <div class="card-header">
+    <h5 class="mb-0"><i class="bi bi-receipt"></i> PO Header</h5>
+  </div>
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label">Vendor Name *</label>
+        <input class="form-control" id="vendor_name" name="vendor_name" form="po-submit-form" required>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Vendor Contact</label>
+        <input class="form-control" id="vendor_contact" name="vendor_contact" form="po-submit-form">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Location *</label>
+        <select class="form-select" id="location_id" name="location_id" form="po-submit-form" required>
+          <option value="">-- Select Location --</option>
+          {% for loc in locations %}
+            <option value="{{ loc.id }}">{{ loc.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Storeroom</label>
+        <select class="form-select" id="storeroom_id" name="storeroom_id" form="po-submit-form">
+          <option value="">-- Optional --</option>
+          {% for s in storerooms %}
+            <option value="{{ s.id }}">{{ s.room_name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Shipping</label>
+        <input class="form-control" id="shipping_cost" name="shipping_cost" form="po-submit-form" type="number" step="0.01" value="0.00">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Tax</label>
+        <input class="form-control" id="tax_amount" name="tax_amount" form="po-submit-form" type="number" step="0.01" value="0.00">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Other</label>
+        <input class="form-control" id="other_amount" name="other_amount" form="po-submit-form" type="number" step="0.01" value="0.00">
+      </div>
+      <div class="col-12">
+        <label class="form-label">Notes</label>
+        <textarea class="form-control" id="notes" name="notes" form="po-submit-form" rows="2"></textarea>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,145 @@
+{# Shared PO search form.
+   Expected context:
+   - action_url: string
+   - clear_url: string (optional; defaults to action_url)
+   - filters: dict-like
+   - status_options: list[str]
+   - users: list[User]
+   - assets: list[Asset]
+   - major_locations: list[MajorLocation] (optional)
+   - show_location: bool (optional)
+   - status_label: string (optional)
+   - status_placeholder: string (optional)
+   - use_htmx: bool (optional; defaults to false)
+   - hx_target: string (optional; defaults to #search-results-container)
+   - hx_indicator: string (optional; defaults to #search-results-loading)
+   - hx_swap: string (optional; defaults to innerHTML)
+   - hx_push_url: bool|string (optional; defaults to false)
+#}
+
+{% set _filters = filters or {} %}
+{% set _action_url = action_url %}
+{% set _clear_url = clear_url or _action_url %}
+{% set _show_location = show_location or false %}
+{% set _use_htmx = use_htmx or false %}
+{% set _hx_target = hx_target or '#search-results-container' %}
+{% set _hx_indicator = hx_indicator or '#search-results-loading' %}
+{% set _hx_swap = hx_swap or 'innerHTML' %}
+{% set _hx_push_url = hx_push_url if hx_push_url is not none else false %}
+
+<form method="GET" 
+      action="{{ _action_url }}" 
+      class="row g-3"
+      {% if _use_htmx %}
+      hx-get="{{ _action_url }}"
+      hx-target="{{ _hx_target }}"
+      hx-swap="{{ _hx_swap }}"
+      {% if _hx_indicator %}hx-indicator="{{ _hx_indicator }}"{% endif %}
+      {% if _hx_push_url %}hx-push-url="{{ _hx_push_url }}"{% else %}hx-push-url="false"{% endif %}
+      {% endif %}>
+  <div class="col-md-3">
+    <label class="form-label">{{ status_label or 'Status' }}</label>
+    <select class="form-select" name="status">
+      <option value="">{{ status_placeholder or 'All Statuses' }}</option>
+      {% for s in status_options %}
+        <option value="{{ s }}" {% if _filters.status == s %}selected{% endif %}>{{ s }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="col-md-3">
+    <label class="form-label">Part Number</label>
+    <input type="text" class="form-control" name="part_number" value="{{ _filters.part_number }}" placeholder="Part number">
+  </div>
+
+  <div class="col-md-3">
+    <label class="form-label">Part Name</label>
+    <input type="text" class="form-control" name="part_name" value="{{ _filters.part_name }}" placeholder="Part name">
+  </div>
+
+  <div class="col-md-3">
+    <label class="form-label">Vendor</label>
+    <input type="text" class="form-control" name="vendor" value="{{ _filters.vendor }}" placeholder="Vendor name">
+  </div>
+
+  <div class="col-md-3">
+    <label class="form-label">Order Date From</label>
+    <input type="date" class="form-control" name="date_from" value="{{ _filters.date_from }}">
+  </div>
+
+  <div class="col-md-3">
+    <label class="form-label">Order Date To</label>
+    <input type="date" class="form-control" name="date_to" value="{{ _filters.date_to }}">
+  </div>
+
+  <div class="col-md-3">
+    <label class="form-label">Created By</label>
+    <select class="form-select" name="created_by_id">
+      <option value="">All Users</option>
+      {% for u in users %}
+        <option value="{{ u.id }}" {% if _filters.created_by_id|int == u.id %}selected{% endif %}>{{ u.username }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="col-md-3">
+    <label class="form-label">Search</label>
+    <input type="text" class="form-control" name="search" value="{{ _filters.search_term }}" placeholder="Part, vendor, or PO number">
+  </div>
+
+  {% if _show_location %}
+  <div class="col-md-3">
+    <label class="form-label">Location</label>
+    <select class="form-select" name="location_id">
+      <option value="">All Locations</option>
+      {% for loc in major_locations %}
+        <option value="{{ loc.id }}" {% if _filters.location_id|int == loc.id %}selected{% endif %}>{{ loc.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  {% endif %}
+
+  <div class="col-12"><hr class="my-2"></div>
+
+  <div class="col-md-4">
+    <label class="form-label">Part Demand Assigned To</label>
+    <select class="form-select" name="part_demand_assigned_to_id">
+      <option value="">All Users</option>
+      {% for u in users %}
+        <option value="{{ u.id }}" {% if _filters.part_demand_assigned_to_id|int == u.id %}selected{% endif %}>{{ u.username }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="col-md-4">
+    <label class="form-label">Event Assigned To</label>
+    <select class="form-select" name="event_assigned_to_id">
+      <option value="">All Users</option>
+      {% for u in users %}
+        <option value="{{ u.id }}" {% if _filters.event_assigned_to_id|int == u.id %}selected{% endif %}>{{ u.username }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="col-md-4">
+    <label class="form-label">Asset</label>
+    <select class="form-select" name="asset_id">
+      <option value="">All Assets</option>
+      {% for asset in assets %}
+        <option value="{{ asset.id }}" {% if _filters.asset_id|int == asset.id %}selected{% endif %}>{{ asset.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="col-12">
+    <div class="d-flex justify-content-end gap-2">
+      <button type="submit" class="btn btn-primary">
+        <i class="bi bi-search"></i> Search
+      </button>
+      <a class="btn btn-outline-secondary" href="{{ _clear_url }}">
+        <i class="bi bi-x-circle"></i> Clear
+      </a>
+    </div>
+  </div>
+</form>
+

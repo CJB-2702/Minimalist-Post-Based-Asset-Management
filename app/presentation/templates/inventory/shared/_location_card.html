@@ -1,0 +1,57 @@
+{# Location Card Partial - Based on storeroom/view.html style #}
+{#
+Expects these variables from parent scope:
+  - location: Location object (from loop)
+  - selected_location_id: Currently selected location ID (from parent)
+  - mode: 'htmx' | 'anchor' | 'js' | 'readonly' (from parent)
+  - location_url: URL for link (set in parent loop for htmx/anchor mode)
+  - location_onclick: JavaScript handler (set in parent loop for js mode)
+  - card_col_class: Bootstrap column class (from parent, default: 'col-6')
+#}
+{% set col_class = card_col_class|default('col-6') %}
+{% set is_selected = (selected_location_id and location.id == selected_location_id) %}
+
+<div class="{{ col_class }}">
+    {% if location_url %}
+        <a href="{{ location_url }}" 
+           class="text-decoration-none" 
+           {% if mode == 'anchor' %}style="color: inherit;"{% endif %}>
+    {% elif location_onclick %}
+        <div onclick="{{ location_onclick }}" style="cursor: pointer;">
+    {% endif %}
+    
+    <div class="card location-card{% if is_selected %} selected{% endif %}"
+         data-location-id="{{ location.id }}">
+        <div class="card-body py-2">
+            <div class="d-flex justify-content-between align-items-start">
+                <div class="flex-grow-1">
+                    <h6 class="mb-1">
+                        {{ location.display_name or location.location }}
+                    </h6>
+                    {% if location.location != location.display_name %}
+                    <p class="text-muted small mb-1">ID: {{ location.location }}</p>
+                    {% endif %}
+                    <div class="small text-muted">
+                        <i class="bi bi-grid-3x3-gap"></i> 
+                        {% if location.bin_count is defined %}
+                            {{ location.bin_count }}
+                        {% elif location.bins %}
+                            {{ location.bins|length }}
+                        {% else %}
+                            0
+                        {% endif %}
+                        bin{{ 's' if ((location.bin_count is defined and location.bin_count != 1) or (location.bins and location.bins|length != 1) or (not location.bins and 1 != 1)) else '' }}
+                    </div>
+                </div>
+                <span class="badge bg-info">ID: {{ location.id }}</span>
+            </div>
+        </div>
+    </div>
+    
+    {% if location_url %}
+        </a>
+    {% elif location_onclick %}
+        </div>
+    {% endif %}
+</div>
+

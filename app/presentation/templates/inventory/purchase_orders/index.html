@@ -11,7 +11,7 @@
                     <h1 class="h3 mb-1">
                         <i class="bi bi-receipt text-primary"></i> Purchase Orders
                     </h1>
-                    <p class="text-muted mb-0">Golden path: create from a single maintenance event, then receive arrivals</p>
+                    <p class="text-muted mb-0">Create purchase orders from part demand lines, then receive arrivals</p>
                 </div>
                 <div>
                     <a href="{{ url_for('inventory.index') }}" class="btn btn-outline-secondary">
@@ -29,16 +29,10 @@
                     <h5 class="mb-0"><i class="bi bi-plus-circle"></i> Create Purchase Order</h5>
                 </div>
                 <div class="card-body">
-                    <p class="text-muted mb-3">Create a purchase order using one of the supported portals.</p>
+                    <p class="text-muted mb-3">Create a purchase order using the part demand lines portal.</p>
                     <div class="d-flex flex-wrap gap-2">
-                        <a class="btn btn-primary" href="{{ url_for('inventory.create_po_from_single_maintenance') }}">
-                            <i class="bi bi-arrow-right-circle"></i> From Single Maintenance Event
-                        </a>
-                        <a class="btn btn-outline-primary" href="{{ url_for('inventory.create_po_from_part_demands') }}">
+                        <a class="btn btn-primary" href="{{ url_for('inventory.create_po') }}">
                             <i class="bi bi-arrow-right-circle"></i> From Part Demand Lines
-                        </a>
-                        <a class="btn btn-outline-primary" href="{{ url_for('inventory.create_unlinked_purchase_order') }}">
-                            <i class="bi bi-arrow-right-circle"></i> Create Unlinked Purchase Order
                         </a>
                     </div>
                 </div>

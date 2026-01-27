@@ -1,0 +1,65 @@
+<!-- Work Order Specific Capability Limitations Card -->
+{% if active_limitations %}
+{# Only show this card if there are active limitations for this work order #}
+{% set is_non_mission_capable = false %}
+{% set is_partially_capable = false %}
+{% for limitation in active_limitations %}
+    {% if 'Non-Mission Capable' in limitation.status or 'NMC' in limitation.status %}
+        {% set is_non_mission_capable = true %}
+    {% elif 'Partial' in limitation.status or 'PMC' in limitation.status or 'Compensation' in limitation.status %}
+        {% set is_partially_capable = true %}
+    {% endif %}
+{% endfor %}
+{% set card_color = 'danger' if is_non_mission_capable else ('warning' if is_partially_capable else 'warning') %}
+
+<div class="card mb-4 border-{{ card_color }}" style="background-color: {% if is_non_mission_capable %}#ffebee{% elif is_partially_capable %}#fff3cd{% else %}#fff3cd{% endif %};">
+    <div class="card-header bg-{{ card_color }} bg-opacity-10">
+        <h5 class="mb-0">
+            <i class="bi bi-exclamation-diamond text-{{ card_color }}"></i> 
+            Work Order Specific Capability Limitations
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-{{ card_color }} mb-0">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>Active Limitations: {{ active_limitations|length }}</strong>
+                    <p class="mb-0 small mt-1">
+                        {% for limitation in active_limitations %}
+                        <span class="badge bg-{{ card_color }} me-1">{{ limitation.status }}</span>
+                        {% endfor %}
+                    </p>
+                </div>
+                {% if active_limitations|length == 1 %}
+                <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#endLimitationModal{{ active_limitations[0].id }}">
+                    <i class="bi bi-check-circle"></i> End Limitation
+                </button>
+                {% endif %}
+            </div>
+            {% if active_limitations|length > 1 %}
+            <div class="mt-2">
+                <p class="mb-2 small"><strong>Multiple active limitations:</strong></p>
+                {% for limitation in active_limitations %}
+                <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-white rounded">
+                    <div>
+                        <span class="badge bg-{{ card_color }} me-2">{{ limitation.status }}</span>
+                        {% if limitation.limitation_description %}
+                        <small>{{ limitation.limitation_description[:50] }}{% if limitation.limitation_description|length > 50 %}...{% endif %}</small>
+                        {% endif %}
+                    </div>
+                    <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#endLimitationModal{{ limitation.id }}">
+                        <i class="bi bi-check-circle"></i> End
+                    </button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Include end limitation modals -->
+{% for limitation in active_limitations %}
+{% include 'maintenance/base/shared_components/end_limitation_modal.html' %}
+{% endfor %}
+{% endif %}

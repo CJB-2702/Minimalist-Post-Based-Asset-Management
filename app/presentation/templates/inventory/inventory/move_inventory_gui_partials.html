@@ -1,0 +1,218 @@
+{# Partial template for HTMX responses - returns multiple divs with hx-swap-oob #}
+
+{# Form Controls - hidden inputs and submit button #}
+<div id="formControls" hx-swap-oob="true">
+    <input type="hidden" 
+           name="active_inventory_id" 
+           value="{{ active_inventory.id }}">
+    <input type="hidden" 
+           name="to_major_location_id"
+           value="{{ major_location_id or '' }}">
+    <input type="hidden" 
+           name="to_storeroom_id"
+           value="{{ storeroom_id or '' }}">
+    <input type="hidden" 
+           name="to_location_id"
+           value="{{ location_id or '' }}">
+    <input type="hidden" 
+           name="to_bin_id"
+           value="{{ bin_id or '' }}">
+    
+    <!-- Submit Button -->
+    <div class="d-grid">
+        <button type="submit" 
+                class="btn btn-primary btn-lg"
+                {% if not (major_location_id and storeroom_id and location_id) %}disabled{% endif %}>
+            <i class="bi bi-check-circle"></i> Move Inventory
+        </button>
+    </div>
+</div>
+
+{# Destination Fields - swapped out-of-band to update the form #}
+<div id="destinationFields" class="mb-3" hx-swap-oob="true">
+    <label class="form-label"><strong>Destination:</strong></label>
+    
+    <!-- Major Location -->
+    <div class="mb-2">
+        <label for="destMajorLocation" class="form-label small">Major Location</label>
+        {% set selected_major_loc = major_locations|selectattr("id", "equalto", major_location_id)|first if major_location_id else none %}
+        <input type="text" 
+               class="form-control form-control-sm" 
+               id="destMajorLocation"
+               value="{{ selected_major_loc.name if selected_major_loc else 'Not selected' }}"
+               disabled>
+    </div>
+    
+    <!-- Storeroom -->
+    <div class="mb-2">
+        <label for="destStoreroom" class="form-label small">Storeroom</label>
+        <input type="text" 
+               class="form-control form-control-sm" 
+               id="destStoreroom"
+               value="{% if storeroom_id and selected_storeroom %}{{ selected_storeroom.room_name }}{% else %}Not selected{% endif %}"
+               disabled>
+    </div>
+    
+    <!-- Location -->
+    <div class="mb-2">
+        <label for="destLocation" class="form-label small">Location</label>
+        <input type="text" 
+               class="form-control form-control-sm" 
+               id="destLocation"
+               value="{% if location_id and selected_location %}{{ selected_location.display_name or selected_location.location }}{% else %}Not selected{% endif %}"
+               disabled>
+    </div>
+    
+    <!-- Bin -->
+    <div class="mb-2">
+        <label for="destBin" class="form-label small">Bin</label>
+        {% set selected_bin = bins_list|selectattr("id", "equalto", bin_id)|first if (bin_id and bins_list) else none %}
+        <input type="text" 
+               class="form-control form-control-sm" 
+               id="destBin"
+               value="{% if bin_id and selected_bin %}{{ selected_bin.display_name }}{% else %}Unassigned{% endif %}"
+               disabled>
+    </div>
+</div>
+
+{# Destination Selector - main target #}
+<div class="card visual-selector-card" id="destinationSelector">
+    <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0"><i class="bi bi-diagram-3"></i> Destination Selector</h5>
+    </div>
+    <div class="card-body">
+        <!-- Step 1: Major Location Selection -->
+        <div id="step1" class="step-section {% if not major_location_id %}active{% endif %}" data-step="1">
+            <h6 class="mb-3">Step 1: Select Major Location</h6>
+            <form method="GET" action="{{ url_for('inventory.move_inventory_gui') }}" id="majorLocationForm">
+                <input type="hidden" name="initial_active_inventory_id" value="{{ active_inventory.id }}">
+                <div class="mb-3">
+                    <label for="majorLocationSelect" class="form-label">Major Location <span class="text-danger">*</span></label>
+                    <select class="form-select" 
+                            id="majorLocationSelect" 
+                            name="major_location_id"
+                            data-major-location-select
+                            onchange="this.form.submit()">
+                        <option value="">Select a major location</option>
+                        {% for loc in major_locations %}
+                        <option value="{{ loc.id }}" 
+                                {% if major_location_id == loc.id %}selected{% endif %}>{{ loc.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Step 2: Storeroom Cards -->
+        {% if major_location_id %}
+        <div id="step2" class="step-section {% if major_location_id and not storeroom_id %}active{% endif %}" data-step="2">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="mb-0">Step 2: Select Storeroom</h6>
+                <a href="{{ url_for('inventory.move_inventory_gui', initial_active_inventory_id=active_inventory.id) }}" 
+                   class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Change Location
+                </a>
+            </div>
+            <div id="storeroomCardsContainer" data-storeroom-cards-container>
+                {% if storerooms %}
+                    <div class="storeroom-cards-grid">
+                        {% for storeroom in storerooms %}
+                            <a href="{{ url_for('inventory.move_inventory_gui', initial_active_inventory_id=active_inventory.id, major_location_id=major_location_id, storeroom=storeroom.id) }}"
+                               class="text-decoration-none"
+                               data-storeroom-link="{{ storeroom.id }}">
+                                <div class="card storeroom-card-preview {% if storeroom_id and storeroom_id == storeroom.id %}selected{% endif %}" 
+                                     data-storeroom-id="{{ storeroom.id }}"
+                                     data-storeroom-name="{{ storeroom.room_name }}"
+                                     data-major-location-id="{{ storeroom.major_location_id }}"
+                                     id="storeroom-card-{{ storeroom.id }}">
+                                    <div class="card-header" data-storeroom-header>{{ storeroom.room_name }}</div>
+                                    <div class="card-body text-center">
+                                        <div class="storeroom-svg-preview" data-svg-preview>
+                                            <img src="{{ url_for('inventory.storeroom_preview_svg', storeroom_id=storeroom.id) }}" 
+                                                 alt="Storeroom {{ storeroom.id }} layout" 
+                                                 width="100" 
+                                                 height="100"
+                                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                            <div style="display: none; width: 100%; height: 100%; align-items: center; justify-content: center;" 
+                                                 data-placeholder-icon>
+                                                <i class="bi bi-building" style="font-size: 2rem; color: #6c757d;"></i>
+                                            </div>
+                                        </div>
+                                        <div class="storeroom-card-details" data-card-details>
+                                            {% if storeroom.address %}
+                                            <p class="storeroom-card-address" data-address>{{ storeroom.address }}</p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted py-5">
+                        <p>No storerooms found for this major location</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Step 3: Location Viewer -->
+        {% if storeroom_id and selected_storeroom %}
+        <div id="step3" class="step-section {% if storeroom_id and not location_id %}active{% endif %}" data-step="3">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="mb-0">Step 3: Select Location</h6>
+                <a href="{{ url_for('inventory.move_inventory_gui', initial_active_inventory_id=active_inventory.id, major_location_id=major_location_id) }}" 
+                   class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Change Storeroom
+                </a>
+            </div>
+            <div id="locationViewerContainer" data-location-viewer-container>
+                {% macro location_card_url(loc_id) -%}
+                    {{ url_for('inventory.move_inventory_gui', initial_active_inventory_id=active_inventory.id, major_location_id=major_location_id, storeroom=storeroom_id, location=loc_id) }}
+                {%- endmacro %}
+                {% set svg_content = scaled_svg_content %}
+                {% set selected_location_id = location_id %}
+                {% set mode = 'htmx' %}
+                {% set sidebar_heading = 'Locations' %}
+                {% set card_col_class = 'col-12' %}
+                {% set card_url_builder = location_card_url %}
+                {% include 'inventory/shared/_location_viewer.html' %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Step 4: Bin Viewer -->
+        {% if location_id and selected_location %}
+        <div id="step4" class="step-section active" data-step="4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="mb-0">Step 4: Select Bin (Optional)</h6>
+                <a href="{{ url_for('inventory.move_inventory_gui', initial_active_inventory_id=active_inventory.id, major_location_id=major_location_id, storeroom=storeroom_id) }}" 
+                   class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Change Location
+                </a>
+            </div>
+            <div id="binViewerContainer" data-bin-viewer-container>
+                {% macro bin_card_url(b_id) -%}
+                    {{ url_for('inventory.move_inventory_gui', initial_active_inventory_id=active_inventory.id, major_location_id=major_location_id, storeroom=storeroom_id, location=location_id, bin=b_id) }}
+                {%- endmacro %}
+                {% set selected_bin_id = bin_id %}
+                {% set mode = 'htmx' %}
+                {% set sidebar_heading = 'Bins (Optional)' %}
+                {% set extra_sidebar_content %}
+                    <div class="mt-3">
+                        <a href="{{ url_for('inventory.move_inventory_gui', initial_active_inventory_id=active_inventory.id, major_location_id=major_location_id, storeroom=storeroom_id, location=location_id) }}"
+                           class="btn btn-outline-secondary w-100" 
+                           data-skip-bin-btn>
+                            <i class="bi bi-x-circle"></i> Skip Bin Selection
+                        </a>
+                    </div>
+                {% endset %}
+                {% set card_url_builder = bin_card_url %}
+                {% include 'inventory/shared/_bin_viewer.html' %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+

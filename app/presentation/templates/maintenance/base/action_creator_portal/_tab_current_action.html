@@ -1,0 +1,73 @@
+                <div class="tab-pane fade" id="creator-current-pane" role="tabpanel">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-list-check"></i> Select from Current Action Set
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <!-- Search (JavaScript filtering) -->
+                            <div class="mb-3">
+                                <label for="currentSearch" class="form-label">Search Current Actions</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="currentSearch" 
+                                       placeholder="Type to filter by action name or description..." 
+                                       value=""
+                                       onkeyup="filterCurrentActions(this.value)">
+                                <small class="text-muted">Searching actions in the current maintenance event</small>
+                            </div>
+
+                            <!-- Current Actions List -->
+                            <div class="list-group" style="max-height: 600px; overflow-y: auto;" id="current-actions-list">
+                                {% if current_actions %}
+                                    {% for action_struct in current_actions %}
+                                    <div class="list-group-item action-item current-action-item" 
+                                         data-source-action-id="{{ action_struct.action_id }}" 
+                                         data-action-name="{{ action_struct.action.action_name|lower }}"
+                                         data-action-description="{{ (action_struct.action.description or '')|lower }}"
+                                         style="cursor: pointer;"
+                                         onclick="selectCurrentAction({{ action_struct.action_id }}, {{ maintenance_action_set_id }})">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div class="flex-grow-1">
+                                                <div class="d-flex align-items-center mb-1">
+                                                    <span class="badge bg-secondary me-2">#{{ action_struct.action.sequence_order }}</span>
+                                                    <h6 class="mb-0">{{ action_struct.action.action_name }}</h6>
+                                                    <span class="badge bg-{{ 'success' if action_struct.action.status == 'Complete' else 'primary' if action_struct.action.status == 'In Progress' else 'secondary' }} ms-2">
+                                                        {{ action_struct.action.status }}
+                                                    </span>
+                                                </div>
+                                                <small class="text-muted">{{ action_struct.action.description or 'No description' }}</small>
+                                                <div class="mt-1">
+                                                    {% if action_struct.action.estimated_duration %}
+                                                        <span class="badge bg-info">Est: {{ action_struct.action.estimated_duration }}h</span>
+                                                    {% endif %}
+                                                    {% if action_struct.action.safety_notes %}
+                                                        <span class="badge bg-warning ms-1">Safety Notes</span>
+                                                    {% endif %}
+                                                    {% if action_struct.part_demands %}
+                                                        <span class="badge bg-success ms-1">{{ action_struct.part_demands|length }} Parts</span>
+                                                    {% endif %}
+                                                    {% if action_struct.action_tools %}
+                                                        <span class="badge bg-primary ms-1">{{ action_struct.action_tools|length }} Tools</span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-outline-primary ms-2" onclick="event.stopPropagation(); selectCurrentAction({{ action_struct.action_id }}, {{ maintenance_action_set_id }})">
+                                                <i class="bi bi-check-circle"></i> Select
+                                            </button>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="list-group-item">
+                                        <p class="text-muted mb-0">No actions in current action set.</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="alert alert-info mt-3">
+                                <i class="bi bi-info-circle"></i> <strong>Note:</strong> Copying from current actions will duplicate the action including part demands and tools. Status will reset to "Not Started".
+                            </div>
+                        </div>
+                    </div>
+                </div>

@@ -4,60 +4,39 @@
 
 {% block head %}
 <style>
-    .storeroom-card {
-        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-        border: none;
-        border-radius: 8px;
-        height: 100%;
-    }
-    
-    .storeroom-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 6px 20px rgba(0,0,0,0.12);
-    }
-    
-    .storeroom-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap: 1.5rem;
-    }
-    
-    .badge-svg {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    }
+    /* No custom styles needed - using Bootstrap defaults */
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container-fluid">
+    <!-- Navigation -->
+    <div class="mb-3">
+        <a href="{{ url_for('inventory.index') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i> Back to Inventory
+        </a>
+    </div>
+
     <!-- Page Header -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h1 class="h3 mb-1">
-                        <i class="bi bi-map text-primary"></i> Storeroom Designer
-                    </h1>
-                    <p class="text-muted mb-0">Manage storerooms, locations, and bins</p>
-                </div>
-                <div>
-                    <a href="{{ url_for('inventory.index') }}" class="btn btn-outline-secondary">
-                        <i class="bi bi-arrow-left"></i> Back to Inventory
-                    </a>
-                </div>
-            </div>
+    <div class="card mb-4 shadow-sm border-0">
+        <div class="card-body py-4 px-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+            <h1 class="text-white mb-0 text-uppercase fw-bold" style="letter-spacing: 1px;">
+                <i class="bi bi-building"></i> Storerooms
+            </h1>
+            <p class="text-white-50 mb-0 mt-2">Manage and organize your inventory storage locations</p>
         </div>
     </div>
 
     <!-- Create Storeroom Section -->
     <div class="row mb-4">
-        <div class="col-lg-6">
+        <div class="col-lg-8 col-xl-6">
             <div class="card shadow-sm">
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0"><i class="bi bi-plus-circle"></i> Create New Storeroom</h5>
                 </div>
                 <div class="card-body">
                     <form method="POST" action="{{ url_for('inventory.storeroom_create') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                         <div class="mb-3">
                             <label for="room_name" class="form-label">Storeroom Name <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="room_name" name="room_name" required 
@@ -89,75 +68,125 @@
         </div>
     </div>
 
-    <!-- Storerooms List -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card shadow-sm">
-                <div class="card-header">
-                    <h5 class="mb-0"><i class="bi bi-building"></i> Existing Storerooms ({{ storerooms|length }})</h5>
-                </div>
-                <div class="card-body">
-                    {% if storerooms %}
-                        <div class="storeroom-grid">
-                            {% for storeroom in storerooms %}
-                            <div class="card storeroom-card shadow-sm">
-                                <div class="card-body">
-                                    <h5 class="card-title">{{ storeroom.room_name }}</h5>
-                                    <h6 class="card-subtitle mb-2 text-muted">
-                                        <i class="bi bi-geo-alt"></i> {{ storeroom.major_location.name if storeroom.major_location else 'N/A' }}
-                                    </h6>
-                                    
-                                    {% if storeroom.address %}
-                                    <p class="card-text small text-muted mb-2">{{ storeroom.address[:100] }}...</p>
-                                    {% endif %}
-                                    
-                                    <div class="mb-3">
-                                        <span class="badge bg-info">{{ storeroom.locations.count() }} Locations</span>
-                                        {% if storeroom.svg_content %}
-                                        <span class="badge badge-svg">
-                                            <i class="bi bi-diagram-3"></i> Has Layout
-                                        </span>
-                                        {% endif %}
-                                    </div>
-                                    
-                                    <div class="d-grid gap-2">
-                                        <a href="{{ url_for('inventory.storeroom_view', storeroom_id=storeroom.id) }}" 
-                                           class="btn btn-sm btn-info">
-                                            <i class="bi bi-eye"></i> View Summary
-                                        </a>
-                                        <a href="{{ url_for('inventory.storeroom_build', storeroom_id=storeroom.id) }}" 
-                                           class="btn btn-sm btn-primary">
-                                            <i class="bi bi-tools"></i> Build & Manage
-                                        </a>
-                                        <div class="btn-group">
-                                            <a href="{{ url_for('inventory.storeroom_edit', storeroom_id=storeroom.id) }}" 
-                                               class="btn btn-sm btn-outline-secondary">
-                                                <i class="bi bi-pencil"></i> Edit
-                                            </a>
-                                            <button type="button" class="btn btn-sm btn-outline-danger" 
-                                                    onclick="confirmDelete('{{ storeroom.id }}', '{{ storeroom.room_name }}')">
-                                                <i class="bi bi-trash"></i> Delete
-                                            </button>
-                                        </div>
-                                    </div>
+    <!-- Storerooms Section -->
+    {% if storerooms %}
+        {% for storeroom in storerooms %}
+        <div class="card mb-4 shadow-sm border-0 overflow-hidden">
+            <!-- Storeroom Title Bar -->
+            <div class="card-header">
+                <h5 class="mb-0">{{ storeroom.room_name }}</h5>
+            </div>
+            
+            <!-- Content Area: Description/Buttons + Image -->
+            <div class="row g-0">
+                <!-- Left: Description and Buttons -->
+                <div class="col-md-8 col-lg-9">
+                    <div class="card-body p-4 d-flex flex-column" style="min-height: 220px;">
+                        <div class="flex-grow-1">
+                            <!-- Primary Location Info -->
+                            <div class="text-secondary mb-2 fw-semibold">
+                                <i class="bi bi-geo-alt-fill"></i> {{ storeroom.major_location.name if storeroom.major_location else 'N/A' }}
+                            </div>
+                            
+                            <!-- Address -->
+                            {% if storeroom.address %}
+                            <div class="text-muted small mb-3">
+                                <i class="bi bi-house-door"></i> {{ storeroom.address[:150] }}{% if storeroom.address|length > 150 %}...{% endif %}
+                            </div>
+                            {% endif %}
+                            
+                            <!-- Metadata Row -->
+                            <div class="row row-cols-auto g-2 mb-3">
+                                <div class="col">
+                                    <span class="badge bg-primary">
+                                        <i class="bi bi-hash"></i> ID: {{ storeroom.id }}
+                                    </span>
+                                </div>
+                                <div class="col">
+                                    <span class="badge bg-info">
+                                        <i class="bi bi-pin-map"></i> {{ storeroom.locations.count() }} Locations
+                                    </span>
+                                </div>
+                                <div class="col">
+                                    <span class="badge bg-success">
+                                        <i class="bi bi-box"></i> {{ storeroom_bin_counts[storeroom.id] }} Bins
+                                    </span>
+                                </div>
+                                {% if storeroom.svg_content %}
+                                <div class="col">
+                                    <span class="badge text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                                        <i class="bi bi-diagram-3"></i> Has Layout
+                                    </span>
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Timestamps -->
+                            <div class="small text-muted">
+                                {% if storeroom.created_at %}
+                                <div><i class="bi bi-calendar-plus"></i> Created: {{ storeroom.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+                                {% endif %}
+                                {% if storeroom.updated_at %}
+                                <div><i class="bi bi-calendar-check"></i> Updated: {{ storeroom.updated_at.strftime('%Y-%m-%d %H:%M') }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="mt-auto">
+                            <div class="d-grid gap-2">
+                                <a href="{{ url_for('inventory.storeroom_view', storeroom_id=storeroom.id) }}" 
+                                   class="btn btn-sm btn-info">
+                                    <i class="bi bi-eye"></i> View Summary
+                                </a>
+                                <a href="{{ url_for('inventory.storeroom_build', storeroom_id=storeroom.id) }}" 
+                                   class="btn btn-sm btn-primary">
+                                    <i class="bi bi-tools"></i> Build & Manage
+                                </a>
+                                <div class="btn-group w-100">
+                                    <a href="{{ url_for('inventory.storeroom_edit', storeroom_id=storeroom.id) }}" 
+                                       class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-pencil"></i> Edit
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" 
+                                            onclick="confirmDelete('{{ storeroom.id }}', '{{ storeroom.room_name }}')">
+                                        <i class="bi bi-trash"></i> Delete
+                                    </button>
                                 </div>
                             </div>
-                            {% endfor %}
                         </div>
+                    </div>
+                </div>
+                
+                <!-- Right: Preview Image -->
+                <div class="col-md-4 col-lg-3 bg-light border-start d-flex align-items-center justify-content-center p-3">
+                    {% if storeroom.raw_svg %}
+                    <img src="{{ url_for('inventory.storeroom_view_raw_svg', storeroom_id=storeroom.id) }}" 
+                         alt="{{ storeroom.room_name }} layout" 
+                         class="img-fluid"
+                         width="200" 
+                         height="200">
                     {% else %}
-                        <div class="text-center text-muted py-5">
-                            <i class="bi bi-inbox" style="font-size: 3rem;"></i>
-                            <p class="mt-3">No storerooms yet. Create your first storeroom above.</p>
-                        </div>
+                    <div class="text-center text-muted p-3">
+                        <i class="bi bi-hourglass-split" style="font-size: 2.5rem;"></i>
+                        <div class="small mt-2 fw-semibold">Layout Update<br>Pending</div>
+                    </div>
                     {% endif %}
                 </div>
             </div>
         </div>
-    </div>
+        {% endfor %}
+    {% else %}
+        <div class="text-center text-muted py-5">
+            <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+            <p class="mt-3">No storerooms yet. Create your first storeroom above.</p>
+        </div>
+    {% endif %}
 </div>
 
 <!-- Delete Confirmation Form (hidden) -->
 <form id="deleteForm" method="POST" style="display:none;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 </form>
 
 <script>

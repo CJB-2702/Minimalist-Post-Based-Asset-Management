@@ -1,0 +1,144 @@
+<!-- Search Results -->
+<div class="mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h6 class="mb-0"><i class="bi bi-list-check"></i> Search Results</h6>
+    <div class="d-flex gap-2">
+      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="document.querySelectorAll('.demand-check:not(:disabled)').forEach(cb => cb.checked = true)">Select all</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="document.querySelectorAll('.demand-check:not(:disabled)').forEach(cb => cb.checked = false)">Select none</button>
+    </div>
+  </div>
+  {% if part_demands %}
+    {% set clean_filters = {} %}
+    {% for k, v in filters.items() %}
+      {% if v and v != '' %}
+        {% set _ = clean_filters.update({k: v}) %}
+      {% endif %}
+    {% endfor %}
+    <form method="POST" action="{{ url_for('inventory.create_po_from_part_demands_add', **clean_filters) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead>
+            <tr>
+              <th style="width: 44px;"></th>
+              <th>ID</th>
+              <th>Part</th>
+              <th>Quantity</th>
+              <th>Price</th>
+              <th>Status</th>
+              <th>Priority</th>
+              <th>Maintenance Event</th>
+              <th>Asset</th>
+              <th>Location</th>
+              <th>Assigned To</th>
+              <th>Requested By</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for pd in part_demands %}
+              {% set is_disabled = pd.status in ['Issued', 'Ordered', 'Installed'] or pd.id in selected_demands|map(attribute='id')|list %}
+              <tr class="{% if is_disabled %}table-secondary{% endif %}" data-demand-id="{{ pd.id }}" {% if pd.id in selected_demands|map(attribute='id')|list %}title="This part demand is already in the selected queue"{% endif %}>
+                <td>
+                  <input class="form-check-input demand-check" type="checkbox" name="part_demand_ids" value="{{ pd.id }}" 
+                         data-demand-id="{{ pd.id }}" {% if is_disabled %}disabled{% endif %}>
+                </td>
+                <td>{{ pd.id }}</td>
+                <td>
+                  {% if pd.part %}
+                    <strong>{{ pd.part.part_number }}</strong><br>
+                    <small class="text-muted">{{ pd.part.part_name }}</small>
+                  {% else %}
+                    <span class="text-muted">Part #{{ pd.part_id }}</span>
+                  {% endif %}
+                </td>
+                <td>{{ pd.quantity_required }}</td>
+                <td>
+                  {% if pd.part and pd.part.last_unit_cost %}
+                    <div>
+                      <strong>${{ "%.2f"|format(pd.part.last_unit_cost) }}</strong>
+                      <small class="text-muted d-block">
+                        Total: ${{ "%.2f"|format(pd.quantity_required * pd.part.last_unit_cost) }}
+                      </small>
+                    </div>
+                  {% else %}
+                    <span class="text-muted">N/A</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <span class="badge 
+                    {% if pd.status == 'Pending Manager Approval' or pd.status == 'Requested' %}bg-warning
+                    {% elif pd.status == 'Pending Inventory Approval' %}bg-info
+                    {% elif pd.status == 'Approved' or pd.status == 'Issued' %}bg-success
+                    {% elif pd.status == 'Rejected' %}bg-danger
+                    {% else %}bg-secondary{% endif %}">
+                    {{ pd.status }}
+                  </span>
+                </td>
+                <td>
+                  <span class="badge 
+                    {% if pd.priority == 'Critical' %}bg-danger
+                    {% elif pd.priority == 'High' %}bg-warning
+                    {% elif pd.priority == 'Medium' %}bg-info
+                    {% else %}bg-secondary{% endif %}">
+                    {{ pd.priority }}
+                  </span>
+                </td>
+                <td>
+                  {% if pd.action and pd.action.maintenance_action_set %}
+                    Event #{{ pd.action.maintenance_action_set.event_id }}
+                    {% if pd.action.maintenance_action_set.task_name %}
+                      <br><small class="text-muted">{{ pd.action.maintenance_action_set.task_name }}</small>
+                    {% endif %}
+                  {% else %}
+                    <span class="text-muted">N/A</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if pd.action and pd.action.maintenance_action_set and pd.action.maintenance_action_set.asset_id %}
+                    Asset #{{ pd.action.maintenance_action_set.asset_id }}
+                  {% else %}
+                    <span class="text-muted">N/A</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if pd.action and pd.action.maintenance_action_set and pd.action.maintenance_action_set.asset %}
+                    {% if pd.action.maintenance_action_set.asset.major_location %}
+                      {{ pd.action.maintenance_action_set.asset.major_location.name }}
+                    {% else %}
+                      <span class="text-muted">N/A</span>
+                    {% endif %}
+                  {% else %}
+                    <span class="text-muted">N/A</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if pd.action and pd.action.maintenance_action_set and pd.action.maintenance_action_set.assigned_user %}
+                    {{ pd.action.maintenance_action_set.assigned_user.username }}
+                  {% else %}
+                    <span class="text-muted">Unassigned</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if pd.requested_by %}
+                    {{ pd.requested_by.username }}
+                  {% else %}
+                    <span class="text-muted">N/A</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="d-flex justify-content-end mt-3">
+        <button type="submit" class="btn btn-primary" id="addSelectedBtn">
+          <i class="bi bi-plus-circle"></i> Add Selected to Queue
+        </button>
+      </div>
+    </form>
+  {% else %}
+    <div class="alert alert-info mb-0">
+      <i class="bi bi-info-circle"></i> No matching orderable part demands.
+    </div>
+  {% endif %}
+</div>

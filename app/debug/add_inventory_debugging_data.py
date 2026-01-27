@@ -273,36 +273,231 @@ def _insert_storerooms(storerooms_data, system_user_id):
         db.session.flush()
 
 
+def _resolve_location_id(location_id_or_name):
+    """
+    Resolve location identifier to location_id.
+    
+    Args:
+        location_id_or_name: Either an integer location_id or a string major_location_name
+        
+    Returns:
+        int: The location_id
+        
+    Raises:
+        ValueError: If location not found
+    """
+    from app.data.core.major_location import MajorLocation
+    
+    if isinstance(location_id_or_name, int):
+        # Already an ID, verify it exists
+        location = MajorLocation.query.get(location_id_or_name)
+        if not location:
+            raise ValueError(f"Location ID {location_id_or_name} not found")
+        return location_id_or_name
+    elif isinstance(location_id_or_name, str):
+        # Look up by name
+        location = MajorLocation.query.filter_by(name=location_id_or_name).first()
+        if not location:
+            raise ValueError(f"Location name '{location_id_or_name}' not found")
+        return location.id
+    else:
+        raise ValueError(f"location_id_or_name must be int or str, got {type(location_id_or_name)}")
+
+
+def _resolve_part_id(part_id_or_number):
+    """
+    Resolve part identifier to part_id.
+    
+    Args:
+        part_id_or_number: Either an integer part_id or a string part_number
+        
+    Returns:
+        int: The part_id
+        
+    Raises:
+        ValueError: If part not found
+    """
+    from app.data.core.supply.part_definition import PartDefinition
+    
+    if isinstance(part_id_or_number, int):
+        # Already an ID, verify it exists
+        part = PartDefinition.query.get(part_id_or_number)
+        if not part:
+            raise ValueError(f"Part ID {part_id_or_number} not found")
+        return part_id_or_number
+    elif isinstance(part_id_or_number, str):
+        # Look up by part_number
+        part = PartDefinition.query.filter_by(part_number=part_id_or_number).first()
+        if not part:
+            raise ValueError(f"Part number '{part_id_or_number}' not found")
+        return part.id
+    else:
+        raise ValueError(f"part_id_or_number must be int or str, got {type(part_id_or_number)}")
+
+
+def _transform_po_data_to_v2_format(po_data):
+    """
+    Transform purchase order data from old format to new v2 format.
+    
+    Detects format and transforms if needed:
+    - Old format: flat structure with major_location_name, lines array, part_number
+    - New format: nested structure with header.location_id, line_items array, part_id
+    
+    Args:
+        po_data: Dictionary in either old or new format
+        
+    Returns:
+        dict: Dictionary in new v2 format
+    """
+    # Check if already in new format (has 'header' key)
+    if 'header' in po_data and 'line_items' in po_data:
+        # Already in new format, but may need to resolve location_id/part_id
+        transformed = po_data.copy()
+        header = transformed['header'].copy()
+        
+        # Resolve location_id if it's a name
+        if 'location_id' in header:
+            header['location_id'] = _resolve_location_id(header['location_id'])
+        elif 'major_location_name' in header:
+            header['location_id'] = _resolve_location_id(header.pop('major_location_name'))
+        elif 'major_location_name' in po_data:
+            # Old format location name at top level
+            header['location_id'] = _resolve_location_id(po_data['major_location_name'])
+        
+        # Transform line_items
+        line_items = []
+        for line in transformed['line_items']:
+            line_item = line.copy()
+            
+            # Resolve part_id if it's a part_number
+            if 'part_id' in line_item:
+                line_item['part_id'] = _resolve_part_id(line_item['part_id'])
+            elif 'part_number' in line_item:
+                line_item['part_id'] = _resolve_part_id(line_item.pop('part_number'))
+            
+            # Ensure confirmed is True
+            if 'confirmed' not in line_item:
+                line_item['confirmed'] = True
+            
+            # Ensure linked_demands exists (default to empty list)
+            if 'linked_demands' not in line_item:
+                line_item['linked_demands'] = []
+            
+            line_items.append(line_item)
+        
+        transformed['header'] = header
+        transformed['line_items'] = line_items
+        return transformed
+    
+    # Old format detected - transform to new format
+    transformed = {}
+    
+    # Build header object
+    header = {}
+    header['vendor_name'] = po_data.get('vendor_name')
+    if not header['vendor_name']:
+        raise ValueError("vendor_name is required")
+    
+    header['vendor_contact'] = po_data.get('vendor_contact')
+    
+    # Resolve location
+    if 'major_location_name' in po_data:
+        header['location_id'] = _resolve_location_id(po_data['major_location_name'])
+    elif 'location_id' in po_data:
+        header['location_id'] = _resolve_location_id(po_data['location_id'])
+    else:
+        raise ValueError("Either location_id or major_location_name is required")
+    
+    # Optional header fields
+    if 'storeroom_id' in po_data:
+        header['storeroom_id'] = po_data['storeroom_id']
+    
+    header['shipping_cost'] = po_data.get('shipping_cost', 0.0)
+    header['tax_amount'] = po_data.get('tax_amount', 0.0)
+    header['other_amount'] = po_data.get('other_amount', 0.0)
+    header['notes'] = po_data.get('notes')
+    
+    if 'expected_delivery_date' in po_data:
+        header['expected_delivery_date'] = po_data['expected_delivery_date']
+    
+    # Transform lines to line_items
+    lines = po_data.get('lines', [])
+    if not lines:
+        raise ValueError("At least one line item is required")
+    
+    line_items = []
+    for line in lines:
+        line_item = {}
+        
+        # Resolve part_id from part_number
+        if 'part_number' in line:
+            line_item['part_id'] = _resolve_part_id(line['part_number'])
+        elif 'part_id' in line:
+            line_item['part_id'] = _resolve_part_id(line['part_id'])
+        else:
+            raise ValueError("Either part_id or part_number is required for line item")
+        
+        # Convert quantity_ordered to quantity
+        if 'quantity_ordered' in line:
+            line_item['quantity'] = line['quantity_ordered']
+        elif 'quantity' in line:
+            line_item['quantity'] = line['quantity']
+        else:
+            raise ValueError("quantity or quantity_ordered is required for line item")
+        
+        line_item['unit_cost'] = line.get('unit_cost')
+        if line_item['unit_cost'] is None:
+            raise ValueError("unit_cost is required for line item")
+        
+        # Always set confirmed to True for debug data
+        line_item['confirmed'] = True
+        
+        # Default to empty linked_demands for unlinked POs
+        line_item['linked_demands'] = []
+        
+        # Optional fields
+        if 'unlinked_quantity' in line:
+            line_item['unlinked_quantity'] = line['unlinked_quantity']
+        
+        line_items.append(line_item)
+    
+    transformed['header'] = header
+    transformed['line_items'] = line_items
+    
+    return transformed
+
+
 def _insert_purchase_orders(purchase_orders_data, system_user_id):
     """Insert purchase orders with their lines"""
-    from app.buisness.inventory.ordering.purchase_order_factory import PurchaseOrderFactory
-    from app.data.inventory.ordering.purchase_order_header import PurchaseOrderHeader
+    from app.buisness.inventory.purchasing.purchase_order_factory import PurchaseOrderFactory
+    from app.data.inventory.purchasing.purchase_order_header import PurchaseOrderHeader
     from app.data.core.major_location import MajorLocation
     
     for po_data in purchase_orders_data:
-        # Check if purchase order already exists (by vendor_name and major_location_name)
-        vendor_name = po_data.get('vendor_name')
-        major_location_name = po_data.get('major_location_name')
+        # Transform to v2 format (handles both old and new formats)
+        try:
+            transformed_po_data = _transform_po_data_to_v2_format(po_data)
+        except Exception as e:
+            logger.error(f"Failed to transform PO data: {e}")
+            raise
         
-        if vendor_name:
+        # Check if purchase order already exists (by vendor_name and location_id)
+        vendor_name = transformed_po_data['header'].get('vendor_name')
+        location_id = transformed_po_data['header'].get('location_id')
+        
+        if vendor_name and location_id:
             query = PurchaseOrderHeader.query.filter_by(vendor_name=vendor_name)
-            
-            if major_location_name:
-                major_location = MajorLocation.query.filter_by(name=major_location_name).first()
-                if major_location:
-                    query = query.filter_by(major_location_id=major_location.id)
+            query = query.filter_by(major_location_id=location_id)
             
             existing_po = query.first()
             if existing_po:
-                logger.debug(f"Purchase order for vendor '{vendor_name}' at location '{major_location_name}' already exists (PO: {existing_po.po_number}), skipping")
+                logger.debug(f"Purchase order for vendor '{vendor_name}' at location ID {location_id} already exists (PO: {existing_po.po_number}), skipping")
                 continue
         
-        # Create purchase order from dictionary
-        # created_by_id is optional - factory will use system user if not provided
-        po_context = PurchaseOrderFactory.create_from_dict(
-            po_data=po_data,
-            created_by_id=system_user_id,  # Will fall back to system user if None
-            lookup_location_by_name=True
+        # Create purchase order from dictionary using from_dict
+        po_context = PurchaseOrderFactory.from_dict(
+            po_data=transformed_po_data,
+            created_by_id=system_user_id
         )
         
         # Count lines that were successfully added

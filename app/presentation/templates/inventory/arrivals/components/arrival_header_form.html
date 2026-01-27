@@ -1,0 +1,49 @@
+<!-- Arrival Header Form -->
+<div class="card mb-4">
+  <div class="card-header">
+    <h5 class="mb-0"><i class="bi bi-box"></i> Package Header</h5>
+  </div>
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-md-4">
+        <label class="form-label">Package Number *</label>
+        <input class="form-control" name="package_number" form="arrival-submit-form" required>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Location *</label>
+        <select class="form-select" name="major_location_id" form="arrival-submit-form" required
+                onchange="filter_storeroom_dropdowns_by_major_location_id(this.value, 'arrival-form-from-lines')">
+          <option value="">-- Select Location --</option>
+          {% for loc in locations %}
+            <option value="{{ loc.id }}" data-location-id="{{ loc.id }}" data-major-location-name="{{ loc.name }}">{{ loc.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Storeroom *</label>
+        <select class="form-select" name="storeroom_id" form="arrival-submit-form" required>
+          <option value="">-- Select Storeroom --</option>
+          {% for s in storerooms %}
+            <option value="{{ s.id }}" class="storeroom-dropdown-item"
+                    data-storeroom-id="{{ s.id }}"
+                    data-storeroom-name="{{ s.room_name }}"
+                    data-major-location-id="{{ s.major_location_id }}"
+                    data-major-location-name="{% if s.major_location %}{{ s.major_location.name }}{% endif %}">{{ s.room_name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Tracking Number</label>
+        <input class="form-control" name="tracking_number" form="arrival-submit-form">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Carrier</label>
+        <input class="form-control" name="carrier" form="arrival-submit-form">
+      </div>
+      <div class="col-12">
+        <label class="form-label">Notes</label>
+        <textarea class="form-control" name="notes" form="arrival-submit-form" rows="2"></textarea>
+      </div>
+    </div>
+  </div>
+</div>

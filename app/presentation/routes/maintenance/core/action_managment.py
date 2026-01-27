@@ -9,25 +9,23 @@ from urllib.parse import urlparse
 from app.logger import get_logger
 from app import db
 
+# Import maintenance_bp from main maintenance routes
+from app.presentation.routes.maintenance.main import maintenance_bp
+
 from app.buisness.maintenance.base.structs.maintenance_action_set_struct import MaintenanceActionSetStruct
 from app.buisness.maintenance.base.maintenance_context import MaintenanceContext
 from app.data.maintenance.base.actions import Action
 from app.buisness.core.event_context import EventContext
-from app.buisness.maintenance.base.action_context import ActionContext
+from app.buisness.maintenance.base.action_managment.action_context import ActionContext
 import traceback 
-from app.data.maintenance.base.part_demands import PartDemand
-from app.data.maintenance.base.action_tools import ActionTool
-from app.data.core.supply.part_definition import PartDefinition
 from app.data.core.supply.tool_definition import ToolDefinition
+from app.services.maintenance.maintenance_supply_workflow import MaintenanceSupplyWorkflowService
 
 
 logger = get_logger("asset_management.routes.maintenance.action_managment")
 
-# Import maintenance_bp from main maintenance routes
-from app.presentation.routes.maintenance.main import maintenance_bp
 
-
-def get_redirect_url(event_id, default_endpoint='maintenance_event.work_maintenance_event'):
+def get_redirect_url(event_id, default_endpoint='maintenance_event_work.work_maintenance_event'):
     """
     Get redirect URL, checking in order:
     1. redirect_to form/query parameter
@@ -119,17 +117,17 @@ def update_action_status(action_id):
         valid_statuses = ['Not Started', 'In Progress', 'Complete', 'Failed', 'Skipped', 'Blocked']
         if new_status not in valid_statuses:
             flash('Invalid status', 'error')
-            return redirect(url_for('maintenance_event.work_maintenance_event', event_id=event_id))
+            return redirect(url_for('maintenance_event_work.work_maintenance_event', event_id=event_id))
         
         # Check if comment is required
         requires_comment = new_status in ['Blocked', 'Failed'] or (old_status in ['Complete', 'Failed'] and new_status in ['Complete', 'Failed'])
         if requires_comment and not final_comment:
             flash(f'Comment is required when marking action as {new_status}', 'error')
-            return redirect(url_for('maintenance_event.work_maintenance_event', event_id=event_id))
+            return redirect(url_for('maintenance_event_work.work_maintenance_event', event_id=event_id))
         
         # ===== BUSINESS LOGIC SECTION =====
         action_orchestrator = maintenance_context.get_action_orchestrator()
-        comment_text = action_orchestrator.update_action_status(
+        action_orchestrator.update_action_status(
             action_id=action_id,
             user_id=current_user.id,
             username=current_user.username,
@@ -149,7 +147,7 @@ def update_action_status(action_id):
         maintenance_context._sync_event_status()
         
         flash(f'Action status updated to {new_status}', 'success')
-        return redirect(url_for('maintenance_event.work_maintenance_event', event_id=event_id))
+        return redirect(url_for('maintenance_event_work.work_maintenance_event', event_id=event_id))
         
     except Exception as e:
         logger.error(f"Error updating action status: {e}")
@@ -164,8 +162,8 @@ def update_action_status(action_id):
                 maintenance_context = MaintenanceContext.from_maintenance_action_set(action.maintenance_action_set_id)
                 struct: MaintenanceActionSetStruct = maintenance_context.struct
                 if struct.event_id:
-                    return redirect(url_for('maintenance_event.work_maintenance_event', event_id=struct.event_id))
-        except:
+                    return redirect(url_for('maintenance_event_work.work_maintenance_event', event_id=struct.event_id))
+        except Exception:
             pass
         abort(404)
 
@@ -231,7 +229,7 @@ def edit_action(action_id):
                 updates['scheduled_start_time'] = datetime.strptime(scheduled_start_time_str, '%Y-%m-%dT%H:%M')
             except ValueError:
                 flash('Invalid scheduled start time format', 'error')
-                return redirect(url_for('maintenance_event.work_maintenance_event', event_id=event_id))
+                return redirect(url_for('maintenance_event_work.work_maintenance_event', event_id=event_id))
         elif 'scheduled_start_time' in request.form:  # Explicitly cleared
             updates['scheduled_start_time'] = None
         
@@ -240,7 +238,7 @@ def edit_action(action_id):
                 updates['start_time'] = datetime.strptime(start_time_str, '%Y-%m-%dT%H:%M')
             except ValueError:
                 flash('Invalid start time format', 'error')
-                return redirect(url_for('maintenance_event.work_maintenance_event', event_id=event_id))
+                return redirect(url_for('maintenance_event_work.work_maintenance_event', event_id=event_id))
         elif 'start_time' in request.form:  # Explicitly cleared
             updates['start_time'] = None
         
@@ -250,7 +248,7 @@ def edit_action(action_id):
                 updates['end_time'] = end_time
             except ValueError:
                 flash('Invalid end time format', 'error')
-                return redirect(url_for('maintenance_event.work_maintenance_event', event_id=event_id))
+                return redirect(url_for('maintenance_event_work.work_maintenance_event', event_id=event_id))
         elif 'end_time' in request.form and not reset_to_in_progress:  # Explicitly cleared
             updates['end_time'] = None
         
@@ -260,11 +258,11 @@ def edit_action(action_id):
                 billable_hours = float(billable_hours_str)
                 if billable_hours < 0:
                     flash('Billable hours must be non-negative', 'error')
-                    return redirect(url_for('maintenance_event.work_maintenance_event', event_id=event_id))
+                    return redirect(url_for('maintenance_event_work.work_maintenance_event', event_id=event_id))
                 updates['billable_hours'] = billable_hours
             except ValueError:
                 flash('Invalid billable hours value', 'error')
-                return redirect(url_for('maintenance_event.work_maintenance_event', event_id=event_id))
+                return redirect(url_for('maintenance_event_work.work_maintenance_event', event_id=event_id))
         elif 'billable_hours' in request.form:  # Explicitly cleared
             updates['billable_hours'] = None
         
@@ -273,11 +271,11 @@ def edit_action(action_id):
                 estimated_duration = float(estimated_duration_str)
                 if estimated_duration < 0:
                     flash('Estimated duration must be non-negative', 'error')
-                    return redirect(url_for('maintenance_event.work_maintenance_event', event_id=event_id))
+                    return redirect(url_for('maintenance_event_work.work_maintenance_event', event_id=event_id))
                 updates['estimated_duration'] = estimated_duration
             except ValueError:
                 flash('Invalid estimated duration value', 'error')
-                return redirect(url_for('maintenance_event.work_maintenance_event', event_id=event_id))
+                return redirect(url_for('maintenance_event_work.work_maintenance_event', event_id=event_id))
         elif 'estimated_duration' in request.form:  # Explicitly cleared
             updates['estimated_duration'] = None
         
@@ -286,11 +284,11 @@ def edit_action(action_id):
                 expected_billable_hours = float(expected_billable_hours_str)
                 if expected_billable_hours < 0:
                     flash('Expected billable hours must be non-negative', 'error')
-                    return redirect(url_for('maintenance_event.work_maintenance_event', event_id=event_id))
+                    return redirect(url_for('maintenance_event_work.work_maintenance_event', event_id=event_id))
                 updates['expected_billable_hours'] = expected_billable_hours
             except ValueError:
                 flash('Invalid expected billable hours value', 'error')
-                return redirect(url_for('maintenance_event.work_maintenance_event', event_id=event_id))
+                return redirect(url_for('maintenance_event_work.work_maintenance_event', event_id=event_id))
         elif 'expected_billable_hours' in request.form:  # Explicitly cleared
             updates['expected_billable_hours'] = None
         
@@ -317,7 +315,7 @@ def edit_action(action_id):
                 updates['assigned_user_id'] = assigned_user_id
             except ValueError:
                 flash('Invalid assigned user ID', 'error')
-                return redirect(url_for('maintenance_event.work_maintenance_event', event_id=event_id))
+                return redirect(url_for('maintenance_event_work.work_maintenance_event', event_id=event_id))
         elif 'assigned_user_id' in request.form:  # Explicitly cleared
             updates['assigned_user_id'] = None
         
@@ -327,11 +325,11 @@ def edit_action(action_id):
                 sequence_order = int(sequence_order_str)
                 if sequence_order < 1:
                     flash('Sequence order must be at least 1', 'error')
-                    return redirect(url_for('maintenance_event.work_maintenance_event', event_id=event_id))
+                    return redirect(url_for('maintenance_event_work.work_maintenance_event', event_id=event_id))
                 updates['sequence_order'] = sequence_order
             except ValueError:
                 flash('Invalid sequence order value', 'error')
-                return redirect(url_for('maintenance_event.work_maintenance_event', event_id=event_id))
+                return redirect(url_for('maintenance_event_work.work_maintenance_event', event_id=event_id))
         
         # Convert maintenance_action_set_id (integer)
         if maintenance_action_set_id_str:
@@ -346,12 +344,12 @@ def edit_action(action_id):
         # Validate: end_time must be after start_time
         if updates.get('end_time') and updates.get('start_time') and updates['end_time'] < updates['start_time']:
             flash('End time must be after start time', 'error')
-            return redirect(url_for('maintenance_event.work_maintenance_event', event_id=event_id))
+            return redirect(url_for('maintenance_event_work.work_maintenance_event', event_id=event_id))
         
         # ===== BUSINESS LOGIC SECTION =====
         # Delegate all business logic to action orchestrator
         action_orchestrator = maintenance_context.get_action_orchestrator()
-        comment_text = action_orchestrator.edit_action(
+        action_orchestrator.edit_action(
             action_id=action_id,
             user_id=current_user.id,
             username=current_user.username,
@@ -367,9 +365,9 @@ def edit_action(action_id):
         
         # Redirect based on source
         if redirect_target == 'edit':
-            return redirect(url_for('maintenance_event.render_edit_page', event_id=event_id))
+            return redirect(url_for('maintenance_event_edit.render_edit_page', event_id=event_id))
         else:
-            return redirect(url_for('maintenance_event.work_maintenance_event', event_id=event_id))
+            return redirect(url_for('maintenance_event_work.work_maintenance_event', event_id=event_id))
         
     except ValueError as e:
         flash(str(e), 'error')
@@ -383,10 +381,10 @@ def edit_action(action_id):
                 event_id = struct.event_id if struct else None
                 if event_id:
                     if redirect_target == 'edit':
-                        return redirect(url_for('maintenance_event.render_edit_page', event_id=event_id))
+                        return redirect(url_for('maintenance_event_edit.render_edit_page', event_id=event_id))
                     else:
-                        return redirect(url_for('maintenance_event.work_maintenance_event', event_id=event_id))
-        except:
+                        return redirect(url_for('maintenance_event_work.work_maintenance_event', event_id=event_id))
+        except Exception:
             pass
         abort(404)
     except Exception as e:
@@ -404,10 +402,10 @@ def edit_action(action_id):
                 event_id = struct.event_id if struct else None
                 if event_id:
                     if redirect_target == 'edit':
-                        return redirect(url_for('maintenance_event.render_edit_page', event_id=event_id))
+                        return redirect(url_for('maintenance_event_edit.render_edit_page', event_id=event_id))
                     else:
-                        return redirect(url_for('maintenance_event.work_maintenance_event', event_id=event_id))
-        except:
+                        return redirect(url_for('maintenance_event_work.work_maintenance_event', event_id=event_id))
+        except Exception:
             pass
         abort(404)
 
@@ -437,17 +435,17 @@ def update_action_billable_hours(action_id):
         # ===== LIGHT VALIDATION SECTION =====
         if not billable_hours_str:
             flash('Billable hours is required', 'error')
-            return redirect(url_for('maintenance_event.work_maintenance_event', event_id=event_id))
+            return redirect(url_for('maintenance_event_work.work_maintenance_event', event_id=event_id))
         
         # ===== DATA TYPE CONVERSION SECTION =====
         try:
             billable_hours = float(billable_hours_str)
             if billable_hours < 0:
                 flash('Billable hours must be non-negative', 'error')
-                return redirect(url_for('maintenance_event.work_maintenance_event', event_id=event_id))
+                return redirect(url_for('maintenance_event_work.work_maintenance_event', event_id=event_id))
         except ValueError:
             flash('Invalid billable hours value', 'error')
-            return redirect(url_for('maintenance_event.work_maintenance_event', event_id=event_id))
+            return redirect(url_for('maintenance_event_work.work_maintenance_event', event_id=event_id))
         
         # ===== BUSINESS LOGIC SECTION =====
         action.billable_hours = billable_hours
@@ -458,7 +456,7 @@ def update_action_billable_hours(action_id):
         billable_hours_manager.auto_update_if_greater()
         
         flash('Billable hours updated', 'success')
-        return redirect(url_for('maintenance_event.work_maintenance_event', event_id=event_id))
+        return redirect(url_for('maintenance_event_work.work_maintenance_event', event_id=event_id))
         
     except Exception as e:
         logger.error(f"Error updating action billable hours: {e}")
@@ -471,8 +469,8 @@ def update_action_billable_hours(action_id):
                 maintenance_context = MaintenanceContext.from_maintenance_action_set(action.maintenance_action_set_id)
                 struct: MaintenanceActionSetStruct = maintenance_context.struct
                 if struct.event_id:
-                    return redirect(url_for('maintenance_event.work_maintenance_event', event_id=struct.event_id))
-        except:
+                    return redirect(url_for('maintenance_event_work.work_maintenance_event', event_id=struct.event_id))
+        except Exception:
             pass
         abort(404)
 
@@ -519,36 +517,15 @@ def create_part_demand(action_id):
         if quantity <= 0:
             flash('Quantity must be greater than 0', 'error')
             return redirect(get_redirect_url(event_id))
-        
-        # Create part demand
-        part_demand = PartDemand(
+
+        MaintenanceSupplyWorkflowService.create_part_demand(
             action_id=action_id,
             part_id=part_id,
             quantity_required=quantity,
-            notes=notes,
-            status='Pending Manager Approval',
-            requested_by_id=current_user.id,
-            created_by_id=current_user.id,
-            updated_by_id=current_user.id
+            notes=notes or None,
+            user_id=current_user.id,
+            username=current_user.username,
         )
-        db.session.add(part_demand)
-        db.session.commit()
-        
-        # Generate automated comment
-        if struct.event_id:
-            event_context = EventContext(struct.event_id)
-            
-            part = PartDefinition.query.get(part_id)
-            part_name = part.part_name if part else f"Part #{part_id}"
-            comment_text = f"Part demand created: {part_name} x{quantity} by {current_user.username}"
-            if notes:
-                comment_text += f". Notes: {notes}"
-            event_context.add_comment(
-                user_id=current_user.id,
-                content=comment_text,
-                is_human_made=False  # Automated comment
-            )
-            db.session.commit()
         
         flash('Part demand created successfully', 'success')
         return redirect(get_redirect_url(event_id))
@@ -564,7 +541,7 @@ def create_part_demand(action_id):
                 struct: MaintenanceActionSetStruct = maintenance_context.struct
                 if struct.event_id:
                     return redirect(get_redirect_url(struct.event_id))
-        except:
+        except Exception:
             pass
         abort(404)
 
@@ -596,51 +573,32 @@ def create_action_tool(action_id):
         # ===== LIGHT VALIDATION SECTION =====
         if not tool_id_str:
             flash('Tool ID is required', 'error')
-            return redirect(url_for('maintenance_event.render_edit_page', event_id=event_id))
+            return redirect(url_for('maintenance_event_edit.render_edit_page', event_id=event_id))
         
         # ===== DATA TYPE CONVERSION SECTION =====
         try:
             tool_id = int(tool_id_str)
         except ValueError:
             flash('Invalid tool ID', 'error')
-            return redirect(url_for('maintenance_event.render_edit_page', event_id=event_id))
+            return redirect(url_for('maintenance_event_edit.render_edit_page', event_id=event_id))
         
         # Verify tool exists
         
         tool = ToolDefinition.query.get(tool_id)
         if not tool:
             flash('Tool not found', 'error')
-            return redirect(url_for('maintenance_event.render_edit_page', event_id=event_id))
+            return redirect(url_for('maintenance_event_edit.render_edit_page', event_id=event_id))
         
         # ===== BUSINESS LOGIC SECTION =====
-        # Create action tool
-        action_tool = ActionTool(
+        MaintenanceSupplyWorkflowService.create_action_tool(
             action_id=action_id,
             tool_id=tool_id,
-            quantity_required=1,  # Default
-            status='Planned',
-            priority='Medium',
-            sequence_order=1,  # Default, can be updated later
-            created_by_id=current_user.id,
-            updated_by_id=current_user.id
+            user_id=current_user.id,
+            username=current_user.username,
         )
-        db.session.add(action_tool)
-        db.session.commit()
-        
-        # Generate automated comment
-        if struct.event_id:
-            event_context = EventContext(struct.event_id)
-            tool_name = tool.tool_name if tool else f"Tool #{tool_id}"
-            comment_text = f"Tool requirement created: {tool_name} for action '{action.action_name}' by {current_user.username}"
-            event_context.add_comment(
-                user_id=current_user.id,
-                content=comment_text,
-                is_human_made=False  # Automated comment
-            )
-            db.session.commit()
         
         flash('Tool requirement created successfully', 'success')
-        return redirect(url_for('maintenance_event.render_edit_page', event_id=event_id))
+        return redirect(url_for('maintenance_event_edit.render_edit_page', event_id=event_id))
         
     except Exception as e:
         logger.error(f"Error creating tool requirement: {e}")
@@ -655,8 +613,8 @@ def create_action_tool(action_id):
                 maintenance_context = MaintenanceContext.from_maintenance_action_set(action.maintenance_action_set_id)
                 struct: MaintenanceActionSetStruct = maintenance_context.struct
                 if struct.event_id:
-                    return redirect(url_for('maintenance_event.render_edit_page', event_id=struct.event_id))
-        except:
+                    return redirect(url_for('maintenance_event_edit.render_edit_page', event_id=struct.event_id))
+        except Exception:
             pass
         abort(404)
 
@@ -704,7 +662,7 @@ def delete_action(action_id):
             db.session.commit()
         
         flash('Action deleted successfully', 'success')
-        return redirect(url_for('maintenance_event.render_edit_page', event_id=event_id))
+        return redirect(url_for('maintenance_event_edit.render_edit_page', event_id=event_id))
         
     except Exception as e:
         logger.error(f"Error deleting action: {e}")
@@ -719,8 +677,8 @@ def delete_action(action_id):
                 maintenance_context = MaintenanceContext.from_maintenance_action_set(action.maintenance_action_set_id)
                 struct: MaintenanceActionSetStruct = maintenance_context.struct
                 if struct.event_id:
-                    return redirect(url_for('maintenance_event.render_edit_page', event_id=struct.event_id))
-        except:
+                    return redirect(url_for('maintenance_event_edit.render_edit_page', event_id=struct.event_id))
+        except Exception:
             pass
         abort(404)
 
@@ -749,7 +707,7 @@ def move_action_up(action_id):
         current_order = action.sequence_order
         if current_order <= 1:
             flash('Action is already at the top', 'warning')
-            return redirect(url_for('maintenance_event.render_edit_page', event_id=event_id))
+            return redirect(url_for('maintenance_event_edit.render_edit_page', event_id=event_id))
         
         # Move up (decrease sequence_order)
         new_order = current_order - 1
@@ -757,7 +715,7 @@ def move_action_up(action_id):
         action_context.reorder_action(new_order)
         
         flash('Action moved up successfully', 'success')
-        return redirect(url_for('maintenance_event.render_edit_page', event_id=event_id))
+        return redirect(url_for('maintenance_event_edit.render_edit_page', event_id=event_id))
         
     except Exception as e:
         logger.error(f"Error moving action up: {e}")
@@ -770,8 +728,8 @@ def move_action_up(action_id):
                 maintenance_context = MaintenanceContext.from_maintenance_action_set(action.maintenance_action_set_id)
                 struct: MaintenanceActionSetStruct = maintenance_context.struct
                 if struct.event_id:
-                    return redirect(url_for('maintenance_event.render_edit_page', event_id=struct.event_id))
-        except:
+                    return redirect(url_for('maintenance_event_edit.render_edit_page', event_id=struct.event_id))
+        except Exception:
             pass
         abort(404)
 
@@ -802,7 +760,7 @@ def move_action_down(action_id):
         
         if current_order >= max_order:
             flash('Action is already at the bottom', 'warning')
-            return redirect(url_for('maintenance_event.render_edit_page', event_id=event_id))
+            return redirect(url_for('maintenance_event_edit.render_edit_page', event_id=event_id))
         
         # Move down (increase sequence_order)
         new_order = current_order + 1
@@ -810,7 +768,7 @@ def move_action_down(action_id):
         action_context.reorder_action(new_order)
         
         flash('Action moved down successfully', 'success')
-        return redirect(url_for('maintenance_event.render_edit_page', event_id=event_id))
+        return redirect(url_for('maintenance_event_edit.render_edit_page', event_id=event_id))
         
     except Exception as e:
         logger.error(f"Error moving action down: {e}")
@@ -823,7 +781,7 @@ def move_action_down(action_id):
                 maintenance_context = MaintenanceContext.from_maintenance_action_set(action.maintenance_action_set_id)
                 struct: MaintenanceActionSetStruct = maintenance_context.struct
                 if struct.event_id:
-                    return redirect(url_for('maintenance_event.render_edit_page', event_id=struct.event_id))
-        except:
+                    return redirect(url_for('maintenance_event_edit.render_edit_page', event_id=struct.event_id))
+        except Exception:
             pass
         abort(404)

@@ -53,7 +53,7 @@
                     </p>
                 </div>
                 <div>
-                    <a href="{{ url_for('maintenance_event.view_maintenance_event', event_id=event.id) }}" class="btn btn-outline-secondary">
+                    <a href="{{ url_for('maintenance_event_view.view_maintenance_event', event_id=event.id) }}" class="btn btn-outline-secondary">
                         <i class="bi bi-arrow-left"></i> Back to View
                     </a>
                 </div>
@@ -61,129 +61,11 @@
         </div>
     </div>
 
-    <!-- Status Card -->
-    <div class="card mb-4 border-primary">
-        <div class="card-header bg-primary bg-opacity-10">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h5 class="mb-0">
-                        <i class="bi bi-clipboard-check text-primary"></i> Maintenance Status
-                    </h5>
-                </div>
-                <div>
-                    <span class="badge bg-{% if maintenance.status == 'Complete' %}success{% elif maintenance.status == 'In Progress' %}primary{% elif maintenance.status == 'Delayed' or maintenance.status == 'Blocked' %}danger{% else %}secondary{% endif %} fs-6">
-                        {{ maintenance.status }}
-                    </span>
-                </div>
-            </div>
-        </div>
-        <div class="card-body">
-            <div class="row align-items-center">
-                <div class="col-md-6">
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between mb-1">
-                            <span class="text-muted">Completion Progress</span>
-                            <span class="fw-bold">{{ "%.0f"|format(maintenance_context.completion_percentage) }}%</span>
-                        </div>
-                        <div class="progress" style="height: 25px;">
-                            <div class="progress-bar {% if maintenance_context.completion_percentage == 100 %}bg-success{% elif maintenance_context.completion_percentage > 0 %}bg-primary{% else %}bg-secondary{% endif %}" 
-                                 role="progressbar" 
-                                 style="width: {{ maintenance_context.completion_percentage }}%"
-                                 aria-valuenow="{{ maintenance_context.completion_percentage }}" 
-                                 aria-valuemin="0" 
-                                 aria-valuemax="100">
-                                {{ maintenance_context.completed_actions }} / {{ maintenance_context.total_actions }} Actions
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row g-2 text-center">
-                        <div class="col-4">
-                            <div class="border rounded p-2">
-                                <div class="fw-bold text-primary">{{ actions|length }}</div>
-                                <small class="text-muted">Total</small>
-                            </div>
-                        </div>
-                        <div class="col-4">
-                            <div class="border rounded p-2">
-                                <div class="fw-bold text-info">{{ actions|selectattr('action.status', 'equalto', 'In Progress')|list|length }}</div>
-                                <small class="text-muted">In Progress</small>
-                            </div>
-                        </div>
-                        <div class="col-4">
-                            <div class="border rounded p-2">
-                                <div class="fw-bold text-success">{{ actions|selectattr('action.status', 'equalto', 'Complete')|list|length }}</div>
-                                <small class="text-muted">Complete</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6 text-end">
-                    {% if maintenance.status in ['In Progress', 'Planned'] %}
-                    {% if all_actions_terminal %}
-                    <button type="button" class="btn btn-success btn-lg mb-2" data-bs-toggle="modal" data-bs-target="#completeMaintenanceModal">
-                        <i class="bi bi-check-circle"></i> Mark Complete
-                    </button>
-                    {% else %}
-                    <button type="button" class="btn btn-success btn-lg mb-2" disabled 
-                            data-bs-toggle="tooltip" 
-                            data-bs-placement="top" 
-                            title="Mark all actions as completed, skipped, or failed to submit">
-                        <i class="bi bi-check-circle"></i> Mark Complete
-                    </button>
-                    {% endif %}
-                    {% endif %}
-                    {% if maintenance.status in ['In Progress', 'Planned'] or active_blockers %}
-                    <button type="button" class="btn btn-warning btn-lg mb-2" data-bs-toggle="modal" data-bs-target="#createBlockedModal">
-                        <i class="bi bi-pause-circle"></i> Place in Blocked Status
-                    </button>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
+    {% include 'maintenance/base/work_maintenance_components/status_card.html' %}
 
-    {% if active_blockers %}
-    <!-- Active Blockers Card -->
-    <div class="card mb-4 border-danger" style="background-color: #ffebee;">
-        <div class="card-header bg-danger bg-opacity-10">
-            <h5 class="mb-0">
-                <i class="bi bi-exclamation-triangle text-danger"></i> Active Blockers
-            </h5>
-        </div>
-        <div class="card-body">
-            {% for blocker in active_blockers %}
-            <div class="mb-3 pb-3 {% if not loop.last %}border-bottom{% endif %}">
-                <div class="d-flex justify-content-between align-items-start mb-2">
-                    <div>
-                        <span class="badge bg-danger me-2">{{ blocker.mission_capability_status or 'N/A' }}</span>
-                        {% if blocker.priority %}
-                        <span class="badge bg-{% if blocker.priority == 'Critical' %}danger{% elif blocker.priority == 'High' %}warning{% elif blocker.priority == 'Medium' %}info{% else %}secondary{% endif %}">
-                            {{ blocker.priority }}
-                        </span>
-                        {% endif %}
-                    </div>
-                    <form method="POST" action="{{ url_for('maintenance.end_blocked_status', blocked_status_id=blocker.id) }}" class="d-inline">
-                        <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('End this blocked status and resume work?')">
-                            <i class="bi bi-check-circle"></i> End Blocked Status
-                        </button>
-                    </form>
-                </div>
-                {% if blocker.reason %}
-                <p class="mb-2"><strong>Reason:</strong> {{ blocker.reason }}</p>
-                {% endif %}
-                {% if blocker.start_date %}
-                <small class="text-muted">
-                    <i class="bi bi-calendar"></i> Started: {{ blocker.start_date.strftime('%Y-%m-%d %H:%M') }}
-                </small>
-                {% endif %}
-                {% if blocker.notes %}
-                <p class="mb-0 mt-2 text-muted small"><em>{{ blocker.notes }}</em></p>
-                {% endif %}
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-    {% endif %}
+    {% include 'maintenance/base/work_maintenance_components/active_blockers_card.html' %}
+
+    {% include 'maintenance/base/work_maintenance_components/active_limitations_card.html' %}
 
     <div class="row">
         <!-- Main Content -->
@@ -348,12 +230,14 @@
                                                 <div class="btn-group btn-group-sm">
                                                     {% if part_demand.status in ['Cancelled by Technician', 'Cancelled by Supply'] %}
                                                     <form method="POST" action="{{ url_for('maintenance.undo_part_demand', part_demand_id=part_demand.id) }}" class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                                         <button type="submit" class="btn btn-sm btn-warning" onclick="return confirm('Reset this part demand back to planned?')">
                                                             <i class="bi bi-arrow-counterclockwise"></i> Undo
                                                         </button>
                                                     </form>
                                                     {% elif part_demand.status != 'Issued' %}
                                                     <form method="POST" action="{{ url_for('maintenance.issue_part_demand', part_demand_id=part_demand.id) }}" class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                                         <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Issue this part?')">
                                                             <i class="bi bi-check"></i> Issue
                                                         </button>
@@ -504,10 +388,10 @@
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
-                        <a href="{{ url_for('maintenance_event.view_maintenance_event', event_id=event.id) }}" class="btn btn-outline-primary">
+                        <a href="{{ url_for('maintenance_event_view.view_maintenance_event', event_id=event.id) }}" class="btn btn-outline-primary">
                             <i class="bi bi-eye"></i> View Event
                         </a>
-                        <a href="{{ url_for('maintenance_event.render_edit_page', event_id=event.id) }}" class="btn btn-outline-warning">
+                        <a href="{{ url_for('maintenance_event_edit.render_edit_page', event_id=event.id) }}" class="btn btn-outline-warning">
                             <i class="bi bi-pencil"></i> Edit Event
                         </a>
                     </div>
@@ -619,12 +503,14 @@
                                 <div class="btn-group btn-group-sm ms-2">
                                     {% if part_demand.status in ['Cancelled by Technician', 'Cancelled by Supply'] %}
                                     <form method="POST" action="{{ url_for('maintenance.undo_part_demand', part_demand_id=part_demand.id) }}" class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                         <button type="submit" class="btn btn-sm btn-warning" onclick="return confirm('Reset this part demand back to planned?')" title="Undo Cancellation">
                                             <i class="bi bi-arrow-counterclockwise"></i>
                                         </button>
                                     </form>
                                     {% elif part_demand.status != 'Issued' %}
                                     <form method="POST" action="{{ url_for('maintenance.issue_part_demand', part_demand_id=part_demand.id) }}" class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                         <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Issue this part?')" title="Issue Part">
                                             <i class="bi bi-check"></i>
                                         </button>
@@ -663,17 +549,16 @@
                         <div class="mb-3 pb-3 {% if not loop.last %}border-bottom{% endif %}">
                             <div class="d-flex justify-content-between align-items-start mb-1">
                                 <div>
-                                    <span class="badge bg-{% if delay.mission_capability_status == 'Work in Progress' %}warning{% else %}danger{% endif %} me-2">
-                                        {{ delay.mission_capability_status or 'N/A' }}
-                                    </span>
                                     {% if delay.priority %}
-                                    <span class="badge bg-{% if delay.priority == 'Critical' %}danger{% elif delay.priority == 'High' %}warning{% else %}secondary{% endif %}">
-                                        {{ delay.priority }}
+                                    <span class="badge bg-{% if delay.priority == 'Critical' %}danger{% elif delay.priority == 'High' %}warning{% else %}info{% endif %}">
+                                        {{ delay.priority }} Priority
                                     </span>
                                     {% endif %}
                                 </div>
                                 {% if not delay.end_date %}
                                 <span class="badge bg-danger">Active</span>
+                                {% else %}
+                                <span class="badge bg-success">Closed</span>
                                 {% endif %}
                             </div>
                             {% if delay.reason %}
@@ -697,832 +582,66 @@
                     {% endif %}
                 </div>
             </div>
-        </div>
-    </div>
-</div>
 
-<!-- Action Status Change Modal -->
-<div class="modal fade" id="actionStatusModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form method="POST" action="" id="actionStatusForm">
-                <div class="modal-header">
-                    <h5 class="modal-title">Change Action Status</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            <!-- Capability Limitations Card -->
+            <div class="card mb-4 {% if active_limitations %}border-warning{% else %}border-secondary{% endif %}">
+                <div class="card-header {% if active_limitations %}bg-warning bg-opacity-10{% endif %}">
+                    <h5 class="mb-0">
+                        <i class="bi bi-{% if active_limitations %}exclamation-diamond text-warning{% else %}clock-history text-secondary{% endif %}"></i> 
+                        Capability Limitations ({{ limitation_records|length }})
+                    </h5>
                 </div>
-                <div class="modal-body">
-                    <input type="hidden" name="action_id" id="modalActionId">
-                    <p>Action: <strong id="modalActionName"></strong></p>
-                    <p>Current Status: <span class="badge bg-secondary" id="modalCurrentStatus"></span></p>
-                    
-                    <div class="mb-3">
-                        <label for="modalTargetStatus" class="form-label">New Status <span class="text-danger">*</span></label>
-                        <select class="form-select" id="modalTargetStatus" name="status" required>
-                            <option value="">-- Select Status --</option>
-                            <option value="Not Started">Not Started</option>
-                            <option value="In Progress">In Progress</option>
-                            <option value="Complete">Complete</option>
-                            <option value="Failed">Failed</option>
-                            <option value="Skipped">Skipped</option>
-                            <option value="Blocked">Blocked</option>
-                        </select>
-                    </div>
-                    
-                    <div class="mb-3" id="commentSection">
-                        <label for="statusComment" class="form-label">Comment <span class="text-danger" id="commentRequired">*</span></label>
-                        <textarea class="form-control" id="statusComment" name="comment" rows="3"></textarea>
-                        <input type="hidden" name="edited_comment" id="editedComment">
-                        <small class="text-muted" id="commentHelp">You can edit this comment before submitting.</small>
-                    </div>
-                    
-                    <!-- Part Demand Management for Complete -->
-                    <div class="mb-3" id="completePartDemandsSection" style="display: none;">
-                        <div class="card border-info">
-                            <div class="card-header bg-info bg-opacity-10 py-2">
-                                <small class="fw-bold text-info">
-                                    <i class="bi bi-box-seam"></i> Part Demand Management
-                                </small>
-                            </div>
-                            <div class="card-body py-2">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="issuePartDemands" name="issue_part_demands" value="true" checked>
-                                    <label class="form-check-label" for="issuePartDemands">
-                                        Automatically issue all non-issued part demands
-                                    </label>
+                <div class="card-body">
+                    {% if limitation_records %}
+                        {% for limitation in limitation_records %}
+                        <div class="mb-3 pb-3 {% if not loop.last %}border-bottom{% endif %}">
+                            <div class="d-flex justify-content-between align-items-start mb-1">
+                                <div>
+                                    <span class="badge bg-warning text-dark me-2">
+                                        {{ limitation.status }}
+                                    </span>
                                 </div>
+                                {% if limitation.is_active %}
+                                <span class="badge bg-danger">Active</span>
+                                {% else %}
+                                <span class="badge bg-success">Closed</span>
+                                {% endif %}
                             </div>
+                            {% if limitation.limitation_description %}
+                            <p class="small mb-1"><strong>Limitation:</strong> {{ limitation.limitation_description }}</p>
+                            {% endif %}
+                            {% if limitation.temporary_modifications %}
+                            <p class="small mb-1 text-info"><strong>Modifications:</strong> {{ limitation.temporary_modifications }}</p>
+                            {% endif %}
+                            {% if limitation.start_time %}
+                            <small class="text-muted">
+                                <i class="bi bi-calendar"></i> Started: {{ limitation.start_time.strftime('%Y-%m-%d %H:%M') }}
+                                {% if limitation.end_time %}
+                                <br><i class="bi bi-calendar-check"></i> Ended: {{ limitation.end_time.strftime('%Y-%m-%d %H:%M') }}
+                                {% endif %}
+                            </small>
+                            {% endif %}
                         </div>
-                    </div>
-                    
-                    <!-- Part Demand Management for Failed/Skipped -->
-                    <div class="mb-3" id="partDemandsSection" style="display: none;">
-                        <div class="card border-warning">
-                            <div class="card-header bg-warning bg-opacity-10 py-2">
-                                <small class="fw-bold text-warning">
-                                    <i class="bi bi-box-seam"></i> Part Demand Management
-                                </small>
-                            </div>
-                            <div class="card-body py-2">
-                                <div class="form-check mb-2">
-                                    <input class="form-check-input" type="radio" name="part_demand_action" id="partDemandLeaveAsIs" value="leave_as_is" checked>
-                                    <label class="form-check-label" for="partDemandLeaveAsIs">
-                                        Leave part demands as is
-                                    </label>
-                                </div>
-                                <div class="form-check mb-2">
-                                    <input class="form-check-input" type="radio" name="part_demand_action" id="duplicatePartDemands" value="duplicate">
-                                    <label class="form-check-label" for="duplicatePartDemands">
-                                        Duplicate all part demands (parts may have been consumed during failure)
-                                    </label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="part_demand_action" id="cancelPartDemands" value="cancel">
-                                    <label class="form-check-label" for="cancelPartDemands">
-                                        Cancel all non-issued part demands (task failed before start or was skipped)
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3" id="billableHoursSection">
-                        <label for="statusBillableHours" class="form-label">Billable Hours</label>
-                        <input type="number" step="any" min="0" class="form-control" id="statusBillableHours" name="billable_hours">
-                    </div>
-                    
-                    <div class="mb-3" id="completionNotesSection">
-                        <label for="statusCompletionNotes" class="form-label">Completion Notes</label>
-                        <textarea class="form-control" id="statusCompletionNotes" name="completion_notes" rows="3"></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Update Status</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Edit Action Modal -->
-<div class="modal fade" id="editActionModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <form method="POST" action="" id="editActionForm">
-                <div class="modal-header">
-                    <h5 class="modal-title">Edit Action</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
-                    <input type="hidden" name="action_id" id="editActionId">
-                    
-                    <!-- Read-only metadata fields -->
-                    <div class="card mb-3 bg-light">
-                        <div class="card-header py-2">
-                            <small class="fw-bold">Metadata (Read-only)</small>
-                        </div>
-                        <div class="card-body py-2">
-                            <div class="row g-2">
-                                <div class="col-md-6">
-                                    <label class="form-label small">Action ID</label>
-                                    <input type="text" class="form-control form-control-sm" id="editActionIdDisplay" disabled>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label small">Maintenance Action Set ID</label>
-                                    <input type="text" class="form-control form-control-sm" id="editMaintenanceActionSetId" name="maintenance_action_set_id" disabled>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label small">Template Action Item ID</label>
-                                    <input type="text" class="form-control form-control-sm" id="editTemplateActionItemId" 
-                                           data-bs-toggle="tooltip" data-bs-placement="top" 
-                                           title="Warning: Changing template action item ID may break template relationships" disabled>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label small">Assigned By ID</label>
-                                    <input type="text" class="form-control form-control-sm" id="editAssignedById" disabled>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label small">Created At</label>
-                                    <input type="text" class="form-control form-control-sm" id="editCreatedAt" disabled>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label small">Updated At</label>
-                                    <input type="text" class="form-control form-control-sm" id="editUpdatedAt" disabled>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Editable fields from VirtualActionItem and Action -->
-                    <div class="mb-3">
-                        <label for="editActionNameField" class="form-label">Action Name <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="editActionNameField" name="action_name" required>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="editDescription" class="form-label">Description</label>
-                        <textarea class="form-control" id="editDescription" name="description" rows="3"></textarea>
-                    </div>
-                    
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="editStatus" class="form-label">Status</label>
-                            <select class="form-select" id="editStatus" name="status">
-                                <option value="Not Started">Not Started</option>
-                                <option value="In Progress">In Progress</option>
-                                <option value="Complete">Complete</option>
-                                <option value="Failed">Failed</option>
-                                <option value="Skipped">Skipped</option>
-                                <option value="Blocked">Blocked</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="editSequenceOrder" class="form-label">Sequence Order</label>
-                            <input type="number" min="1" class="form-control" id="editSequenceOrder" name="sequence_order">
-                            <small class="text-muted">Changing this will reorder actions in the set</small>
-                        </div>
-                    </div>
-                    
-                    <!-- Reset to In Progress Option (for terminal states) -->
-                    <div class="mb-3" id="resetToInProgressSection" style="display: none;">
-                        <div class="alert alert-info">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="resetToInProgress" name="reset_to_in_progress" value="true">
-                                <label class="form-check-label" for="resetToInProgress">
-                                    <strong>Reset action to "In Progress"</strong> (for retry scenarios)
-                                </label>
-                            </div>
-                            <small class="text-muted">This will change the action status from a terminal state back to "In Progress" to allow retry.</small>
-                        </div>
-                    </div>
-                    
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="editScheduledStartTime" class="form-label">Scheduled Start Time</label>
-                            <input type="datetime-local" class="form-control" id="editScheduledStartTime" name="scheduled_start_time">
-                        </div>
-                        <div class="col-md-6">
-                            <label for="editStartTime" class="form-label">Start Time</label>
-                            <input type="datetime-local" class="form-control" id="editStartTime" name="start_time">
-                        </div>
-                    </div>
-                    
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="editEndTime" class="form-label">End Time</label>
-                            <input type="datetime-local" class="form-control" id="editEndTime" name="end_time">
-                        </div>
-                        <div class="col-md-6">
-                            <label for="editAssignedUserId" class="form-label">Assigned User</label>
-                            <select class="form-select" id="editAssignedUserId" name="assigned_user_id">
-                                <option value="">Unassigned</option>
-                                {% for user in users %}
-                                <option value="{{ user.id }}">{{ user.username }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="editEstimatedDuration" class="form-label">Estimated Duration (hours)</label>
-                            <input type="number" min="0" class="form-control" id="editEstimatedDuration" name="estimated_duration">
-                        </div>
-                        <div class="col-md-6">
-                            <label for="editExpectedBillableHours" class="form-label">Expected Billable Hours</label>
-                            <input type="number" min="0" class="form-control" id="editExpectedBillableHours" name="expected_billable_hours">
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="editBillableHours" class="form-label">Billable Hours</label>
-                        <input type="number" step="any" min="0" class="form-control" id="editBillableHours" name="billable_hours">
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="editCompletionNotes" class="form-label">Completion Notes</label>
-                        <textarea class="form-control" id="editCompletionNotes" name="completion_notes" rows="3"></textarea>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="editSafetyNotes" class="form-label">Safety Notes</label>
-                        <textarea class="form-control" id="editSafetyNotes" name="safety_notes" rows="3"></textarea>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="editNotes" class="form-label">Notes</label>
-                        <textarea class="form-control" id="editNotes" name="notes" rows="3"></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save Changes</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Complete Maintenance Modal -->
-<div class="modal fade" id="completeMaintenanceModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <form method="POST" action="{{ url_for('maintenance_event.complete_maintenance', event_id=event.id) }}">
-                <div class="modal-header">
-                    <h5 class="modal-title">Complete Maintenance</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="completionComment" class="form-label">Completion Comment <span class="text-danger">*</span></label>
-                        <textarea class="form-control" id="completionComment" name="completion_comment" rows="3" required></textarea>
-                    </div>
-                    
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="actualStartDate" class="form-label">Actual Start Date/Time <span class="text-danger">*</span></label>
-                            <input type="datetime-local" class="form-control" id="actualStartDate" name="actual_start_date" 
-                                   value="{% if maintenance.maintenance_action_set.start_date %}{{ maintenance.maintenance_action_set.start_date.strftime('%Y-%m-%dT%H:%M') }}{% endif %}" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="actualEndDate" class="form-label">Actual End Date/Time <span class="text-danger">*</span></label>
-                            <input type="datetime-local" class="form-control" id="actualEndDate" name="actual_end_date" 
-                                   value="{% if maintenance.maintenance_action_set.end_date %}{{ maintenance.maintenance_action_set.end_date.strftime('%Y-%m-%dT%H:%M') }}{% endif %}" required>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="actualBillableHours" class="form-label">Actual Billable Hours <span class="text-danger">*</span></label>
-                        <input type="number" step="any" min="0.2" class="form-control" id="actualBillableHours" name="actual_billable_hours" 
-                               value="{% if maintenance_context.get_billable_hours_manager().actual_hours %}{{ maintenance_context.get_billable_hours_manager().actual_hours }}{% else %}{{ maintenance_context.get_billable_hours_manager().calculated_hours }}{% endif %}" required>
-                        <small class="text-muted">Sum of action billable hours: 
-                            {{ "%.2f"|format(maintenance_context.get_billable_hours_manager().calculated_hours) }}h
-                        </small>
-                    </div>
-                    
-                    <!-- Meter Verification Section -->
-                    {% if asset %}
-                    <hr>
-                    <div class="mb-3">
-                        <h6 class="mb-3">
-                            <i class="bi bi-speedometer2"></i> Meter Verification <span class="text-danger">*</span>
-                        </h6>
-                        <div class="alert alert-info">
-                            <small><i class="bi bi-info-circle"></i> Please verify or update the current meter readings for this asset.</small>
-                        </div>
-                        
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label for="meter1" class="form-label">Meter 1</label>
-                                <input type="number" step="0.01" class="form-control meter-input" id="meter1" name="meter1" 
-                                       value="{% if asset.meter1 is not none %}{{ asset.meter1 }}{% endif %}"
-                                       placeholder="Enter meter 1 value">
-                            </div>
-                            <div class="col-md-6">
-                                <label for="meter2" class="form-label">Meter 2</label>
-                                <input type="number" step="0.01" class="form-control meter-input" id="meter2" name="meter2" 
-                                       value="{% if asset.meter2 is not none %}{{ asset.meter2 }}{% endif %}"
-                                       placeholder="Enter meter 2 value">
-                            </div>
-                        </div>
-                        
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label for="meter3" class="form-label">Meter 3</label>
-                                <input type="number" step="0.01" class="form-control meter-input" id="meter3" name="meter3" 
-                                       value="{% if asset.meter3 is not none %}{{ asset.meter3 }}{% endif %}"
-                                       placeholder="Enter meter 3 value">
-                            </div>
-                            <div class="col-md-6">
-                                <label for="meter4" class="form-label">Meter 4</label>
-                                <input type="number" step="0.01" class="form-control meter-input" id="meter4" name="meter4" 
-                                       value="{% if asset.meter4 is not none %}{{ asset.meter4 }}{% endif %}"
-                                       placeholder="Enter meter 4 value">
-                            </div>
-                        </div>
-                        
-                        <div class="form-check mb-3">
-                            <input class="form-check-input" type="checkbox" id="meterVerificationToggle" name="meter_verification_toggle" required>
-                            <label class="form-check-label" for="meterVerificationToggle">
-                                <strong>I confirm the meters are correct</strong>
-                            </label>
-                            <div class="form-text">This checkbox will be automatically checked if you modify any meter values.</div>
-                        </div>
-                    </div>
+                        {% endfor %}
+                    {% else %}
+                    <p class="text-muted mb-0 small"><em>No capability limitations recorded</em></p>
                     {% endif %}
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-success">Complete Maintenance</button>
-                </div>
-            </form>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- Create Blocked Status Modal -->
-<div class="modal fade" id="createBlockedModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form method="POST" action="{{ url_for('maintenance_event.create_blocker', event_id=event.id) }}">
-                <div class="modal-header">
-                    <h5 class="modal-title">Place in Blocked Status</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="missionCapabilityStatus" class="form-label">Mission Capability Status <span class="text-danger">*</span></label>
-                        <select class="form-select" id="missionCapabilityStatus" name="mission_capability_status" required>
-                            <option value="">-- Select Status --</option>
-                            {% for status in allowable_capability_statuses %}
-                            <option value="{{ status }}">{{ status }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="blockerReason" class="form-label">Reason <span class="text-danger">*</span></label>
-                        <select class="form-select" id="blockerReason" name="reason" required>
-                            <option value="">-- Select Reason --</option>
-                            {% for reason in allowable_reasons %}
-                            <option value="{{ reason }}">{{ reason }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="blockerNotes" class="form-label">Notes</label>
-                        <textarea class="form-control" id="blockerNotes" name="notes" rows="3"></textarea>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="blockerStartTime" class="form-label">Start Time</label>
-                        <input type="datetime-local" 
-                               class="form-control" 
-                               id="blockerStartTime" 
-                               name="start_time"
-                               required>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="blockerBillableHoursLost" class="form-label">Billable Hours Lost</label>
-                        <input type="number" step="any" min="0" class="form-control" id="blockerBillableHoursLost" name="billable_hours_lost">
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="eventPriority" class="form-label">Update Event Priority</label>
-                        <select class="form-select" id="eventPriority" name="event_priority">
-                            <option value="">-- Keep Current Priority ({{ maintenance.priority }}) --</option>
-                            <option value="Low">Low</option>
-                            <option value="Medium">Medium</option>
-                            <option value="High">High</option>
-                            <option value="Critical">Critical</option>
-                        </select>
-                        <small class="form-text text-muted">Optionally update the maintenance event priority when creating this blocker</small>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="blockerComment" class="form-label">Comment to Add to Event</label>
-                        <textarea class="form-control" id="blockerComment" name="comment_to_add_to_event" rows="2" placeholder="Optional comment to add to the event log"></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-warning">Create Blocked Status</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
 
-<!-- Add Part Demand Modal -->
-<div class="modal fade" id="addPartDemandModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form method="POST" action="" id="addPartDemandForm">
-                <div class="modal-header">
-                    <h5 class="modal-title">Add Part Demand</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <input type="hidden" name="action_id" id="partDemandActionId">
-                    <p>Action: <strong id="partDemandActionName"></strong></p>
-                    
-                    <div class="mb-3">
-                        <label for="partId" class="form-label">Part <span class="text-danger">*</span></label>
-                        <select class="form-select" id="partId" name="part_id" required>
-                            <option value="">-- Select Part --</option>
-                            {% for part in parts %}
-                            <option value="{{ part.id }}">{{ part.part_name }} ({{ part.part_number }})</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="quantityRequired" class="form-label">Quantity Required <span class="text-danger">*</span></label>
-                        <input type="number" step="any" min="0.1" class="form-control" id="quantityRequired" name="quantity_required" required>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="partDemandNotes" class="form-label">Notes</label>
-                        <textarea class="form-control" id="partDemandNotes" name="notes" rows="2"></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Add Part Demand</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
+{% include 'maintenance/base/work_maintenance_components/modals/action_status.html' %}
+{% include 'maintenance/base/work_maintenance_components/modals/edit_action.html' %}
+{% include 'maintenance/base/work_maintenance_components/modals/complete_maintenance.html' %}
+{% include 'maintenance/base/work_maintenance_components/modals/create_blocked.html' %}
+{% include 'maintenance/base/work_maintenance_components/modals/part_demand.html' %}
+{% include 'maintenance/base/work_maintenance_components/modals/create_limitation.html' %}
+{% include 'maintenance/base/work_maintenance_components/modals/close_limitation.html' %}
 
-<!-- Cancel Part Demand Modal -->
-<div class="modal fade" id="cancelPartDemandModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form method="POST" action="" id="cancelPartDemandForm">
-                <div class="modal-header">
-                    <h5 class="modal-title">Cancel Part Demand</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <input type="hidden" name="part_demand_id" id="cancelPartDemandId">
-                    <p>Part: <strong id="cancelPartName"></strong></p>
-                    <p>Quantity: <strong id="cancelQuantity"></strong></p>
-                    
-                    <div class="mb-3">
-                        <label for="cancellationComment" class="form-label">Cancellation Comment <span class="text-danger">*</span></label>
-                        <textarea class="form-control" id="cancellationComment" name="cancellation_comment" rows="3" required></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-danger">Cancel Part Demand</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
 
-<script>
-// Action Status Modal Handler
-document.getElementById('actionStatusModal').addEventListener('show.bs.modal', function (event) {
-    const button = event.relatedTarget;
-    const actionId = button.getAttribute('data-action-id');
-    const actionName = button.getAttribute('data-action-name');
-    const currentStatus = button.getAttribute('data-current-status');
-    const suggestedStatus = button.getAttribute('data-target-status') || ''; // Optional, for backward compatibility
-    
-    const modal = this;
-    modal.querySelector('#modalActionId').value = actionId;
-    modal.querySelector('#modalActionName').textContent = actionName;
-    modal.querySelector('#modalCurrentStatus').textContent = currentStatus;
-    
-    const statusSelect = modal.querySelector('#modalTargetStatus');
-    statusSelect.value = suggestedStatus; // Set suggested status if provided
-    
-    const form = modal.querySelector('#actionStatusForm');
-    form.action = `/maintenance/action/${actionId}/update-status`;
-    
-    const commentSection = modal.querySelector('#commentSection');
-    const commentRequired = modal.querySelector('#commentRequired');
-    const commentHelp = modal.querySelector('#commentHelp');
-    const commentField = modal.querySelector('#statusComment');
-    const editedCommentField = modal.querySelector('#editedComment');
-    
-    // Store original generated comment for comparison
-    let generatedComment = '';
-    let isUserEdited = false;
-    
-    // Function to generate comment based on status transition
-    function generateComment(fromStatus, toStatus) {
-        const statusTransitions = {
-            'Not Started -> In Progress': 'Action started',
-            'In Progress -> Complete': 'Action completed successfully',
-            'In Progress -> Failed': 'Action failed',
-            'In Progress -> Blocked': 'Action blocked',
-            'In Progress -> Skipped': 'Action skipped',
-            'Blocked -> In Progress': 'Action resumed after being blocked',
-            'Complete -> Failed': 'Action status changed from Complete to Failed',
-            'Failed -> Complete': 'Action status changed from Failed to Complete',
-            'Complete -> In Progress': 'Action reset to In Progress for retry',
-            'Failed -> In Progress': 'Action reset to In Progress for retry',
-            'Skipped -> In Progress': 'Action reset to In Progress',
-        };
-        
-        const transitionKey = `${fromStatus} -> ${toStatus}`;
-        return statusTransitions[transitionKey] || `Status changed from ${fromStatus} to ${toStatus}`;
-    }
-    
-    // Function to update comment based on selected status
-    function updateComment() {
-        const selectedStatus = statusSelect.value;
-        if (!selectedStatus) {
-            commentField.value = '';
-            generatedComment = '';
-            editedCommentField.value = '';
-            isUserEdited = false;
-            return;
-        }
-        
-        generatedComment = generateComment(currentStatus, selectedStatus);
-        
-        // Only update if user hasn't edited, or if they're changing the status again
-        if (!isUserEdited || commentField.value === '') {
-            commentField.value = generatedComment;
-            editedCommentField.value = '';
-        }
-        
-        // Check comment requirements
-        const requiresComment = selectedStatus === 'Blocked' || selectedStatus === 'Failed' || 
-                               (['Complete', 'Failed'].includes(currentStatus) && ['Complete', 'Failed'].includes(selectedStatus));
-        
-        if (requiresComment) {
-            commentField.required = true;
-            commentRequired.style.display = 'inline';
-            commentHelp.textContent = 'A comment is required for this status change. You can edit it before submitting.';
-        } else {
-            commentField.required = false;
-            commentRequired.style.display = 'none';
-            commentHelp.textContent = 'You can add a comment (optional). If you edit it, it will be marked as human-created.';
-        }
-        
-        // Show/hide part demand management section
-        const partDemandsSection = modal.querySelector('#partDemandsSection');
-        partDemandsSection.style.display = (selectedStatus === 'Failed' || selectedStatus === 'Skipped') ? 'block' : 'none';
-        
-        // Reset radio buttons when showing
-        if (partDemandsSection.style.display === 'block') {
-            modal.querySelector('#partDemandLeaveAsIs').checked = true;
-        }
-        
-        // Show/hide complete part demands section
-        const completeSection = modal.querySelector('#completePartDemandsSection');
-        completeSection.style.display = selectedStatus === 'Complete' ? 'block' : 'none';
-        
-        // Show billable hours for completion states
-        const billableSection = modal.querySelector('#billableHoursSection');
-        billableSection.style.display = ['Complete', 'Failed'].includes(selectedStatus) ? 'block' : 'none';
-        
-        // Show completion notes for completion states
-        const notesSection = modal.querySelector('#completionNotesSection');
-        notesSection.style.display = ['Complete', 'Failed', 'Skipped'].includes(selectedStatus) ? 'block' : 'none';
-    }
-    
-    // Track if comment is edited - use a single handler that checks the current generated comment
-    function handleCommentInput() {
-        if (this.value !== generatedComment && generatedComment !== '') {
-            isUserEdited = true;
-            editedCommentField.value = this.value;
-        } else {
-            isUserEdited = false;
-            editedCommentField.value = '';
-        }
-    }
-    
-    // Remove any existing listeners and add new one
-    commentField.removeEventListener('input', handleCommentInput);
-    commentField.addEventListener('input', handleCommentInput);
-    
-    // Update comment when status changes
-    statusSelect.removeEventListener('change', updateComment);
-    statusSelect.addEventListener('change', updateComment);
-    
-    // Initialize on modal open
-    commentField.value = '';
-    generatedComment = '';
-    editedCommentField.value = '';
-    isUserEdited = false;
-    
-    // Generate comment if suggested status is provided
-    if (suggestedStatus) {
-        updateComment();
-    }
-});
 
-// Edit Action Modal Handler
-document.getElementById('editActionModal').addEventListener('show.bs.modal', function (event) {
-    const button = event.relatedTarget;
-    const modal = this;
-    
-    // Get all data attributes
-    const actionId = button.getAttribute('data-action-id');
-    const actionName = button.getAttribute('data-action-name');
-    const currentStatus = button.getAttribute('data-current-status');
-    const maintenanceActionSetId = button.getAttribute('data-maintenance-action-set-id');
-    const templateActionItemId = button.getAttribute('data-template-action-item-id');
-    const assignedById = button.getAttribute('data-assigned-by-id');
-    const sequenceOrder = button.getAttribute('data-sequence-order');
-    const actionNameVal = button.getAttribute('data-action-name-val');
-    const description = button.getAttribute('data-description');
-    const scheduledStartTime = button.getAttribute('data-scheduled-start-time');
-    const startTime = button.getAttribute('data-start-time');
-    const endTime = button.getAttribute('data-end-time');
-    const billableHours = button.getAttribute('data-billable-hours');
-    const estimatedDuration = button.getAttribute('data-estimated-duration');
-    const expectedBillableHours = button.getAttribute('data-expected-billable-hours');
-    const completionNotes = button.getAttribute('data-completion-notes');
-    const safetyNotes = button.getAttribute('data-safety-notes');
-    const notes = button.getAttribute('data-notes');
-    const assignedUserId = button.getAttribute('data-assigned-user-id');
-    const createdAt = button.getAttribute('data-created-at');
-    const updatedAt = button.getAttribute('data-updated-at');
-    
-    // Set hidden fields
-    modal.querySelector('#editActionId').value = actionId;
-    
-    // Set read-only metadata fields
-    modal.querySelector('#editActionIdDisplay').value = actionId;
-    modal.querySelector('#editMaintenanceActionSetId').value = maintenanceActionSetId || '';
-    modal.querySelector('#editTemplateActionItemId').value = templateActionItemId || '';
-    modal.querySelector('#editAssignedById').value = assignedById || '';
-    modal.querySelector('#editCreatedAt').value = createdAt || '';
-    modal.querySelector('#editUpdatedAt').value = updatedAt || '';
-    
-    // Set editable fields
-    modal.querySelector('#editActionNameField').value = actionNameVal || '';
-    modal.querySelector('#editDescription').value = description || '';
-    modal.querySelector('#editStatus').value = currentStatus || 'Not Started';
-    modal.querySelector('#editSequenceOrder').value = sequenceOrder || '1';
-    modal.querySelector('#editScheduledStartTime').value = scheduledStartTime || '';
-    modal.querySelector('#editStartTime').value = startTime || '';
-    modal.querySelector('#editEndTime').value = endTime || '';
-    modal.querySelector('#editBillableHours').value = billableHours || '';
-    modal.querySelector('#editEstimatedDuration').value = estimatedDuration || '';
-    modal.querySelector('#editExpectedBillableHours').value = expectedBillableHours || '';
-    modal.querySelector('#editCompletionNotes').value = completionNotes || '';
-    modal.querySelector('#editSafetyNotes').value = safetyNotes || '';
-    modal.querySelector('#editNotes').value = notes || '';
-    modal.querySelector('#editAssignedUserId').value = assignedUserId || '';
-    
-    // Show/hide reset to In Progress option based on terminal states
-    const terminalStates = ['Complete', 'Failed', 'Skipped'];
-    const resetSection = modal.querySelector('#resetToInProgressSection');
-    const resetCheckbox = modal.querySelector('#resetToInProgress');
-    
-    if (terminalStates.includes(currentStatus)) {
-        resetSection.style.display = 'block';
-        resetCheckbox.checked = false; // Reset checkbox
-    } else {
-        resetSection.style.display = 'none';
-        resetCheckbox.checked = false;
-    }
-    
-    // Initialize tooltip for template_action_item_id warning
-    const templateIdField = modal.querySelector('#editTemplateActionItemId');
-    if (templateIdField) {
-        // Remove existing tooltip if any
-        const existingTooltip = bootstrap.Tooltip.getInstance(templateIdField);
-        if (existingTooltip) {
-            existingTooltip.dispose();
-        }
-        // Initialize new tooltip
-        new bootstrap.Tooltip(templateIdField);
-    }
-    
-    // Set form action
-    const form = modal.querySelector('#editActionForm');
-    form.action = `/maintenance/action/${actionId}/update`;
-});
-
-// Add Part Demand Modal Handler
-document.getElementById('addPartDemandModal').addEventListener('show.bs.modal', function (event) {
-    const button = event.relatedTarget;
-    const actionId = button.getAttribute('data-action-id');
-    const actionName = button.getAttribute('data-action-name');
-    
-    const modal = this;
-    modal.querySelector('#partDemandActionId').value = actionId;
-    modal.querySelector('#partDemandActionName').textContent = actionName;
-    
-    const form = modal.querySelector('#addPartDemandForm');
-    form.action = `/maintenance/action/${actionId}/part-demand/create`;
-});
-
-// Meter Verification Toggle Handler
-document.addEventListener('DOMContentLoaded', function() {
-    const meterInputs = document.querySelectorAll('.meter-input');
-    const verificationToggle = document.getElementById('meterVerificationToggle');
-    
-    if (meterInputs.length > 0 && verificationToggle) {
-        // Store original values
-        const originalValues = {};
-        meterInputs.forEach(function(input) {
-            originalValues[input.id] = input.value || '';
-        });
-        
-        // Function to check if any meter has changed
-        function checkMeterChanges() {
-            let hasChanges = false;
-            meterInputs.forEach(function(input) {
-                const currentValue = input.value || '';
-                const originalValue = originalValues[input.id] || '';
-                if (currentValue !== originalValue) {
-                    hasChanges = true;
-                }
-            });
-            return hasChanges;
-        }
-        
-        // Add event listeners to all meter inputs
-        meterInputs.forEach(function(input) {
-            input.addEventListener('input', function() {
-                if (checkMeterChanges()) {
-                    verificationToggle.checked = true;
-                }
-            });
-            
-            input.addEventListener('change', function() {
-                if (checkMeterChanges()) {
-                    verificationToggle.checked = true;
-                }
-            });
-        });
-    }
-});
-
-// Cancel Part Demand Modal Handler
-document.getElementById('cancelPartDemandModal').addEventListener('show.bs.modal', function (event) {
-    const button = event.relatedTarget;
-    const partDemandId = button.getAttribute('data-part-demand-id');
-    const partName = button.getAttribute('data-part-name');
-    const quantity = button.getAttribute('data-quantity');
-    
-    const modal = this;
-    modal.querySelector('#cancelPartDemandId').value = partDemandId;
-    modal.querySelector('#cancelPartName').textContent = partName;
-    modal.querySelector('#cancelQuantity').textContent = quantity;
-    
-    const form = modal.querySelector('#cancelPartDemandForm');
-    form.action = `/maintenance/part-demand/${partDemandId}/cancel`;
-});
-
-// Initialize Bootstrap tooltips
-document.addEventListener('DOMContentLoaded', function () {
-    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
-    });
-    
-    // Set blocked status start time to now when create blocked modal opens
-    const createBlockedModal = document.getElementById('createBlockedModal');
-    if (createBlockedModal) {
-        createBlockedModal.addEventListener('show.bs.modal', function () {
-            const blockerStartTimeInput = document.getElementById('blockerStartTime');
-            if (blockerStartTimeInput) {
-                const now = new Date();
-                // Format as YYYY-MM-DDTHH:mm for datetime-local input
-                const year = now.getFullYear();
-                const month = String(now.getMonth() + 1).padStart(2, '0');
-                const day = String(now.getDate()).padStart(2, '0');
-                const hours = String(now.getHours()).padStart(2, '0');
-                const minutes = String(now.getMinutes()).padStart(2, '0');
-                blockerStartTimeInput.value = `${year}-${month}-${day}T${hours}:${minutes}`;
-            }
-        });
-    }
-});
-</script>
+{% include 'maintenance/base/work_maintenance_components/scripts.html' %}
 {% endblock %}
-

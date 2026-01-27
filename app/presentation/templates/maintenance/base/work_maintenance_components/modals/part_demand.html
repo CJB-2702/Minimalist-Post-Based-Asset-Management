@@ -1,0 +1,71 @@
+<!-- Add Part Demand Modal -->
+<div class="modal fade" id="addPartDemandModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="" id="addPartDemandForm">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Part Demand</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="action_id" id="partDemandActionId">
+                    <p>Action: <strong id="partDemandActionName"></strong></p>
+                    
+                    <div class="mb-3">
+                        <label for="partId" class="form-label">Part <span class="text-danger">*</span></label>
+                        <select class="form-select" id="partId" name="part_id" required>
+                            <option value="">-- Select Part --</option>
+                            {% for part in parts %}
+                            <option value="{{ part.id }}">{{ part.part_name }} ({{ part.part_number }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="quantityRequired" class="form-label">Quantity Required <span class="text-danger">*</span></label>
+                        <input type="number" step="any" min="0.1" class="form-control" id="quantityRequired" name="quantity_required" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="partDemandNotes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="partDemandNotes" name="notes" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Part Demand</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Cancel Part Demand Modal -->
+<div class="modal fade" id="cancelPartDemandModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="" id="cancelPartDemandForm">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <div class="modal-header">
+                    <h5 class="modal-title">Cancel Part Demand</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="part_demand_id" id="cancelPartDemandId">
+                    <p>Part: <strong id="cancelPartName"></strong></p>
+                    <p>Quantity: <strong id="cancelQuantity"></strong></p>
+                    
+                    <div class="mb-3">
+                        <label for="cancellationComment" class="form-label">Cancellation Comment <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="cancellationComment" name="cancellation_comment" rows="3" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Cancel Part Demand</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

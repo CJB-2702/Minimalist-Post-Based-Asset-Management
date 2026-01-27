@@ -1,0 +1,759 @@
+{% extends "base.html" %}
+
+{% block title %}Move Inventory GUI{% endblock %}
+
+{% block head %}
+<style>
+    /* Form Card (Left 1/3) */
+    .form-card {
+        position: sticky;
+        top: 20px;
+        max-height: calc(100vh - 40px);
+        overflow-y: auto;
+    }
+    
+    /* Visual Selector (Right 2/3) */
+    .visual-selector-card {
+        min-height: 600px;
+    }
+    
+    /* Storeroom Cards Grid */
+    .storeroom-cards-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .storeroom-card-preview {
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: 2px solid transparent;
+        width: 200px;
+        height: 300px;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .storeroom-card-preview:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        border-color: #0d6efd;
+    }
+    
+    .storeroom-card-preview.selected {
+        border-color: #0d6efd;
+        background-color: #e7f1ff !important;
+    }
+    
+    .storeroom-card-preview .card-header {
+        padding: 0.5rem;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+        font-weight: 600;
+        font-size: 0.85rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        text-align: center;
+    }
+    
+    .storeroom-card-preview .card-body {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        padding: 0.75rem;
+        overflow: hidden;
+        flex: 1;
+    }
+    
+    .storeroom-svg-preview {
+        width: 100px;
+        height: 100px;
+        max-height: 100px;
+        max-width: 100px;
+        min-width: 100px;
+        min-height: 100px;
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        margin: 0 auto;
+        padding: 5px;
+        flex-shrink: 0;
+    }
+    
+    .storeroom-svg-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+    
+    .storeroom-card-details {
+        margin-top: 0.75rem;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+    
+    .storeroom-card-address {
+        font-size: 0.7rem;
+        line-height: 1.2;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        line-clamp: 3;
+        -webkit-box-orient: vertical;
+        margin-bottom: 0;
+        margin-top: auto;
+        flex-shrink: 1;
+        color: #6c757d;
+    }
+    
+    /* SVG Display Area */
+    .svg-display-area {
+        min-height: 400px;
+        max-height: 800px;
+        background: #f8f9fa;
+        border: 2px solid #dee2e6;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: auto;
+        padding: 20px;
+        box-sizing: border-box;
+    }
+    
+    .svg-display-area > svg,
+    .svg-display-area svg,
+    .svg-display-area img {
+        max-width: 100%;
+        max-height: 800px;
+        width: auto;
+        height: auto;
+        display: block;
+        object-fit: contain;
+        flex-shrink: 0;
+    }
+    
+    /* Bin Layout SVG */
+    .bin-layout-image {
+        height: 100%;
+        max-height: 400px;
+        background: #f8f9fa;
+        border: 2px solid #dee2e6;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: auto;
+        padding: 20px;
+    }
+    
+    .bin-layout-image > svg,
+    .bin-layout-image svg,
+    .bin-layout-image img {
+        max-width: 100%;
+        max-height: 100%;
+        width: auto;
+        height: auto;
+        display: block;
+        object-fit: contain;
+    }
+    
+    .locations-sidebar {
+        max-height: 350px;
+        overflow-y: auto;
+    }
+    
+    .location-card {
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: 2px solid transparent;
+    }
+    
+    .location-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    
+    .location-card.selected {
+        border-color: #0d6efd;
+        background-color: #add8e6 !important;
+    }
+    
+    .bin-card {
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: 2px solid transparent;
+    }
+    
+    .bin-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    
+    .bin-card.selected {
+        border-color: #0d6efd;
+        background-color: #add8e6 !important;
+    }
+    
+    /* SVG Location Element Styling */
+    .location-element {
+        cursor: pointer;
+        transition: fill 0.3s, stroke 0.3s;
+    }
+    
+    .location-element:hover {
+        fill: #ffcc00 !important;
+        stroke: #ffaa00 !important;
+    }
+    
+    .location-element.location-svg-selected,
+    [data-location-id].location-svg-selected,
+    .location-svg-selected {
+        fill: #ca3535 !important;
+        stroke: #ca3535 !important;
+    }
+    
+    /* SVG Bin Element Styling */
+    .bin-element {
+        cursor: pointer;
+        transition: fill 0.3s, stroke 0.3s;
+    }
+    
+    .bin-element:hover {
+        fill: #ffcc00 !important;
+        stroke: #ffaa00 !important;
+    }
+    
+    .bin-element.bin-svg-selected,
+    [data-bin-id].bin-svg-selected,
+    .bin-svg-selected {
+        fill: #0d6efd !important;
+        stroke: #0d6efd !important;
+    }
+    
+    .location-element.location-svg-selected path,
+    [data-location-id].location-svg-selected path {
+        fill: #ca3535 !important;
+        stroke: #ca3535 !important;
+    }
+    
+    .location-element.location-svg-selected rect,
+    [data-location-id].location-svg-selected rect {
+        fill: #ca3535 !important;
+        stroke: #ca3535 !important;
+    }
+    
+    /* Progressive disclosure */
+    .step-section {
+        display: none;
+    }
+    
+    .step-section.active {
+        display: block;
+    }
+    
+    /* Source location display */
+    .source-location-info {
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        padding: 0.75rem;
+        font-size: 0.9rem;
+    }
+    
+    /* Disabled form fields styling */
+    .form-control:disabled,
+    .form-control[disabled] {
+        background-color: #e9ecef;
+        opacity: 1;
+        cursor: not-allowed;
+    }
+    
+    .form-label.small {
+        font-size: 0.875rem;
+        font-weight: 500;
+        margin-bottom: 0.25rem;
+        color: #495057;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="bi bi-arrow-right-circle text-primary"></i> Move Inventory GUI
+                    </h1>
+                    <p class="text-muted mb-0">Select destination location for inventory movement</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('inventory.active_inventory_view') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Inventory
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Form Card (Left 1/3) -->
+        <div class="col-lg-4">
+            <div class="card form-card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-card-text"></i> Move Details</h5>
+                </div>
+                <div class="card-body">
+                    <form id="moveInventoryForm" method="POST" action="{{ url_for('inventory.submit_move_inventory_gui') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <!-- Part Information -->
+                        <div class="mb-3" data-part-info-section>
+                            <label class="form-label"><strong>Part:</strong></label>
+                            <div class="text-muted" data-part-info>
+                                {% if active_inventory.part %}
+                                    <div data-part-number><strong>{{ active_inventory.part.part_number }}</strong></div>
+                                    {% if active_inventory.part.part_name %}
+                                    <div class="small" data-part-name>{{ active_inventory.part.part_name }}</div>
+                                    {% endif %}
+                                {% else %}
+                                    <div data-part-number><strong>Part #{{ active_inventory.part_id }}</strong></div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Available Quantity -->
+                        <div class="mb-3" data-available-qty-section>
+                            <label class="form-label"><strong>Available Quantity:</strong></label>
+                            <div class="text-muted" data-available-quantity>{{ '%.2f'|format(available_quantity) }}</div>
+                        </div>
+                        
+                        <!-- Source Location Info -->
+                        <div class="mb-3" data-source-location-section>
+                            <label class="form-label"><strong>Source Location:</strong></label>
+                            <div class="source-location-info" data-source-location-info>
+                                <div data-source-major-location>
+                                    <strong>Major Location:</strong> {% if active_inventory.storeroom and active_inventory.storeroom.major_location %}{{ active_inventory.storeroom.major_location.name }}{% else %}N/A{% endif %}
+                                </div>
+                                <div data-source-storeroom>
+                                    <strong>Storeroom:</strong> {% if active_inventory.storeroom %}{{ active_inventory.storeroom.room_name }}{% else %}N/A{% endif %}
+                                </div>
+                                <div data-source-location>
+                                    <strong>Location:</strong> {% if active_inventory.location %}{{ active_inventory.location.display_name or active_inventory.location.location }}{% else %}<span class="text-muted">Unassigned</span>{% endif %}
+                                </div>
+                                <div data-source-bin>
+                                    <strong>Bin:</strong> {% if active_inventory.bin %}{{ active_inventory.bin.display_name or active_inventory.bin.bin_tag }}{% else %}<span class="text-muted">Unassigned</span>{% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Quantity to Move -->
+                        <div class="mb-3">
+                            <label for="moveQuantity" class="form-label">Quantity to Move <span class="text-danger">*</span></label>
+                            <input type="number" 
+                                   class="form-control" 
+                                   id="moveQuantity" 
+                                   name="quantity" 
+                                   data-move-quantity
+                                   step="0.01" 
+                                   min="0" 
+                                   max="{{ available_quantity }}"
+                                   value="{{ '%.2f'|format(available_quantity) }}"
+                                   required>
+                            <div class="form-text">Enter the quantity to move (min: 0, max: {{ '%.2f'|format(available_quantity) }})</div>
+                        </div>
+                        
+                        <!-- Destination Location Fields -->
+                        <div id="destinationFields" class="mb-3">
+                            <label class="form-label"><strong>Destination:</strong></label>
+                            
+                            <!-- Major Location -->
+                            <div class="mb-2">
+                                <label for="destMajorLocation" class="form-label small">Major Location</label>
+                                {% set selected_major_loc = major_locations|selectattr("id", "equalto", major_location_id)|first if major_location_id else none %}
+                                <input type="text" 
+                                       class="form-control form-control-sm" 
+                                       id="destMajorLocation"
+                                       value="{{ selected_major_loc.name if selected_major_loc else 'Not selected' }}"
+                                       disabled>
+                            </div>
+                            
+                            <!-- Storeroom -->
+                            <div class="mb-2">
+                                <label for="destStoreroom" class="form-label small">Storeroom</label>
+                                <input type="text" 
+                                       class="form-control form-control-sm" 
+                                       id="destStoreroom"
+                                       value="{% if storeroom_id and selected_storeroom %}{{ selected_storeroom.room_name }}{% else %}Not selected{% endif %}"
+                                       disabled>
+                            </div>
+                            
+                            <!-- Location -->
+                            <div class="mb-2">
+                                <label for="destLocation" class="form-label small">Location</label>
+                                <input type="text" 
+                                       class="form-control form-control-sm" 
+                                       id="destLocation"
+                                       value="{% if location_id and selected_location %}{{ selected_location.display_name or selected_location.location }}{% else %}Not selected{% endif %}"
+                                       disabled>
+                            </div>
+                            
+                            <!-- Bin -->
+                            <div class="mb-2">
+                                <label for="destBin" class="form-label small">Bin</label>
+                                {% set selected_bin = bins_list|selectattr("id", "equalto", bin_id)|first if (bin_id and bins_list) else none %}
+                                <input type="text" 
+                                       class="form-control form-control-sm" 
+                                       id="destBin"
+                                       value="{% if bin_id and selected_bin %}{{ selected_bin.display_name }}{% else %}Unassigned{% endif %}"
+                                       disabled>
+                            </div>
+                        </div>
+                        
+                        <!-- Hidden Inputs and Submit Button -->
+                        <div id="formControls">
+                            <input type="hidden" 
+                                   name="active_inventory_id" 
+                                   value="{{ active_inventory.id }}">
+                            <input type="hidden" 
+                                   name="to_major_location_id"
+                                   value="{{ major_location_id or '' }}">
+                            <input type="hidden" 
+                                   name="to_storeroom_id"
+                                   value="{{ storeroom_id or '' }}">
+                            <input type="hidden" 
+                                   name="to_location_id"
+                                   value="{{ location_id or '' }}">
+                            <input type="hidden" 
+                                   name="to_bin_id"
+                                   value="{{ bin_id or '' }}">
+                            
+                            <!-- Submit Button -->
+                            <div class="d-grid">
+                                <button type="submit" 
+                                        class="btn btn-primary btn-lg"
+                                        {% if not (major_location_id and storeroom_id and location_id) %}disabled{% endif %}>
+                                    <i class="bi bi-check-circle"></i> Move Inventory
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Visual Selector (Right 2/3) -->
+        <div class="col-lg-8" hx-boost="true" hx-push-url="true" hx-target="#destinationSelector" hx-select="#destinationSelector, #destinationFields, #formControls" hx-swap="outerHTML">
+            <div class="card visual-selector-card" id="destinationSelector">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="bi bi-diagram-3"></i> Destination Selector</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Step 1: Major Location Selection -->
+                    <div id="step1" class="step-section {% if not major_location_id %}active{% endif %}" data-step="1">
+                        <h6 class="mb-3">Step 1: Select Major Location</h6>
+                        <form method="GET" action="{{ url_for('inventory.move_inventory_gui') }}" id="majorLocationForm">
+                            <input type="hidden" name="initial_active_inventory_id" value="{{ active_inventory.id }}">
+                            <div class="mb-3">
+                                <label for="majorLocationSelect" class="form-label">Major Location <span class="text-danger">*</span></label>
+                                <select class="form-select" 
+                                        id="majorLocationSelect" 
+                                        name="major_location_id"
+                                        data-major-location-select
+                                        onchange="this.form.submit()">
+                                    <option value="">Select a major location</option>
+                                    {% for loc in major_locations %}
+                                    <option value="{{ loc.id }}" 
+                                            {% if major_location_id == loc.id %}selected{% endif %}>{{ loc.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <!-- Step 2: Storeroom Cards -->
+                    {% if major_location_id %}
+                    <div id="step2" class="step-section {% if major_location_id and not storeroom_id %}active{% endif %}" data-step="2">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="mb-0">Step 2: Select Storeroom</h6>
+                            <a href="{{ url_for('inventory.move_inventory_gui', initial_active_inventory_id=active_inventory.id) }}" 
+                               class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Change Location
+                            </a>
+                        </div>
+                        <div id="storeroomCardsContainer" data-storeroom-cards-container>
+                            {% if storerooms %}
+                                <div class="storeroom-cards-grid">
+                                    {% for storeroom in storerooms %}
+                                        <a href="{{ url_for('inventory.move_inventory_gui', initial_active_inventory_id=active_inventory.id, major_location_id=major_location_id, storeroom=storeroom.id) }}"
+                                           class="text-decoration-none"
+                                           data-storeroom-link="{{ storeroom.id }}">
+                                            <div class="card storeroom-card-preview {% if storeroom_id and storeroom_id == storeroom.id %}selected{% endif %}" 
+                                                 data-storeroom-id="{{ storeroom.id }}"
+                                                 data-storeroom-name="{{ storeroom.room_name }}"
+                                                 data-major-location-id="{{ storeroom.major_location_id }}"
+                                                 id="storeroom-card-{{ storeroom.id }}">
+                                                <div class="card-header" data-storeroom-header>{{ storeroom.room_name }}</div>
+                                                <div class="card-body text-center">
+                                                    <div class="storeroom-svg-preview" data-svg-preview>
+                                                        <img src="{{ url_for('inventory.storeroom_preview_svg', storeroom_id=storeroom.id) }}" 
+                                                             alt="Storeroom {{ storeroom.id }} layout" 
+                                                             width="100" 
+                                                             height="100"
+                                                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                                        <div style="display: none; width: 100%; height: 100%; align-items: center; justify-content: center;" 
+                                                             data-placeholder-icon>
+                                                            <i class="bi bi-building" style="font-size: 2rem; color: #6c757d;"></i>
+                                                        </div>
+                                                    </div>
+                                                    <div class="storeroom-card-details" data-card-details>
+                                                        {% if storeroom.address %}
+                                                        <p class="storeroom-card-address" data-address>{{ storeroom.address }}</p>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </a>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="text-center text-muted py-5">
+                                    <p>No storerooms found for this major location</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Step 3: Location Viewer -->
+                    {% if storeroom_id and selected_storeroom %}
+                    <div id="step3" class="step-section {% if storeroom_id and not location_id %}active{% endif %}" data-step="3">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="mb-0">Step 3: Select Location</h6>
+                            <a href="{{ url_for('inventory.move_inventory_gui', initial_active_inventory_id=active_inventory.id, major_location_id=major_location_id) }}" 
+                               class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Change Storeroom
+                            </a>
+                        </div>
+                        <div id="locationViewerContainer" data-location-viewer-container>
+                            {% macro location_card_url(loc_id) -%}
+                                {{ url_for('inventory.move_inventory_gui', initial_active_inventory_id=active_inventory.id, major_location_id=major_location_id, storeroom=storeroom_id, location=loc_id) }}
+                            {%- endmacro %}
+                            {% set svg_content = scaled_svg_content %}
+                            {% set selected_location_id = location_id %}
+                            {% set mode = 'htmx' %}
+                            {% set sidebar_heading = 'Locations' %}
+                            {% set card_col_class = 'col-12' %}
+                            {% set card_url_builder = location_card_url %}
+                            {% include 'inventory/shared/_location_viewer.html' %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Step 4: Bin Viewer -->
+                    {% if location_id and selected_location %}
+                    <div id="step4" class="step-section active" data-step="4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="mb-0">Step 4: Select Bin (Optional)</h6>
+                            <a href="{{ url_for('inventory.move_inventory_gui', initial_active_inventory_id=active_inventory.id, major_location_id=major_location_id, storeroom=storeroom_id) }}" 
+                               class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Change Location
+                            </a>
+                        </div>
+                        <div id="binViewerContainer" data-bin-viewer-container>
+                            {% macro bin_card_url(b_id) -%}
+                                {{ url_for('inventory.move_inventory_gui', initial_active_inventory_id=active_inventory.id, major_location_id=major_location_id, storeroom=storeroom_id, location=location_id, bin=b_id) }}
+                            {%- endmacro %}
+                            {% set selected_bin_id = bin_id %}
+                            {% set mode = 'htmx' %}
+                            {% set sidebar_heading = 'Bins (Optional)' %}
+                            {% set extra_sidebar_content %}
+                                <div class="mt-3">
+                                    <a href="{{ url_for('inventory.move_inventory_gui', initial_active_inventory_id=active_inventory.id, major_location_id=major_location_id, storeroom=storeroom_id, location=location_id) }}"
+                                       class="btn btn-outline-secondary w-100" 
+                                       data-skip-bin-btn>
+                                        <i class="bi bi-x-circle"></i> Skip Bin Selection
+                                    </a>
+                                </div>
+                            {% endset %}
+                            {% set card_url_builder = bin_card_url %}
+                            {% include 'inventory/shared/_bin_viewer.html' %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Global variables for current page state
+const currentActiveInventoryId = {{ active_inventory.id }};
+const currentMajorLocationId = {% if major_location_id %}{{ major_location_id }}{% else %}null{% endif %};
+const currentStoreroomId = {% if storeroom_id %}{{ storeroom_id }}{% else %}null{% endif %};
+const currentLocationId = {% if location_id %}{{ location_id }}{% else %}null{% endif %};
+const currentBinId = {% if bin_id %}{{ bin_id }}{% else %}null{% endif %};
+const baseMoveInventoryGuiUrl = '{{ url_for("inventory.move_inventory_gui") }}';
+
+// Function to handle location selection from SVG click
+function locationSelected(locationId) {
+    if (!currentActiveInventoryId || !currentMajorLocationId || !currentStoreroomId) {
+        console.error('Missing required parameters for location selection');
+        return;
+    }
+    
+    // Build URL matching the location card link structure
+    const params = new URLSearchParams();
+    params.set('initial_active_inventory_id', currentActiveInventoryId);
+    params.set('major_location_id', currentMajorLocationId);
+    params.set('storeroom', currentStoreroomId);
+    params.set('location', locationId);
+    
+    // Use HTMX to load content without page reload
+    const url = baseMoveInventoryGuiUrl + '?' + params.toString();
+    
+    // Update browser history
+    history.pushState({}, '', url);
+    
+    // Make HTMX request
+    htmx.ajax('GET', url, {
+        target: '#destinationSelector',
+        swap: 'outerHTML',
+        select: '#destinationSelector, #destinationFields, #formControls'
+    });
+}
+
+// Function to handle bin selection from SVG click
+function binSelected(binId) {
+    if (!currentActiveInventoryId || !currentMajorLocationId || !currentStoreroomId || !currentLocationId) {
+        console.error('Missing required parameters for bin selection');
+        return;
+    }
+    
+    // Build URL matching the bin card link structure
+    const params = new URLSearchParams();
+    params.set('initial_active_inventory_id', currentActiveInventoryId);
+    params.set('major_location_id', currentMajorLocationId);
+    params.set('storeroom', currentStoreroomId);
+    params.set('location', currentLocationId);
+    params.set('bin', binId);
+    
+    // Use HTMX to load content without page reload
+    const url = baseMoveInventoryGuiUrl + '?' + params.toString();
+    
+    // Update browser history
+    history.pushState({}, '', url);
+    
+    // Make HTMX request
+    htmx.ajax('GET', url, {
+        target: '#destinationSelector',
+        swap: 'outerHTML',
+        select: '#destinationSelector, #destinationFields, #formControls'
+    });
+}
+
+// Function to highlight selected location SVG elements
+function highlightSelectedLocationSVG(locationId) {
+    if (!locationId) return;
+    
+    // Find all SVG elements with data-location-id matching the selected location
+    const svgElements = document.querySelectorAll(`[data-location-id="${locationId}"]`);
+    
+    svgElements.forEach(function(svgElement) {
+        // Add class for CSS styling
+        svgElement.classList.add('location-svg-selected');
+        
+        // Set fill and stroke colors directly
+        svgElement.style.fill = '#ca3535';
+        svgElement.style.stroke = '#ca3535';
+        
+        // Also highlight child elements (path, rect, circle, etc.)
+        const childElements = svgElement.querySelectorAll('path, rect, circle, ellipse, polygon, polyline');
+        childElements.forEach(function(child) {
+            child.style.fill = '#ca3535';
+            child.style.stroke = '#ca3535';
+        });
+    });
+}
+
+// Function to highlight selected bin SVG elements
+function highlightSelectedBinSVG(binId) {
+    if (!binId) return;
+    
+    // Find all SVG elements with data-bin-id matching the selected bin
+    const binSvgElements = document.querySelectorAll(`[data-bin-id="${binId}"]`);
+    
+    binSvgElements.forEach(function(svgElement) {
+        // Add class for CSS styling
+        svgElement.classList.add('bin-svg-selected');
+        
+        // Set fill and stroke colors directly (using blue to distinguish from location highlighting)
+        svgElement.style.fill = '#0d6efd';
+        svgElement.style.stroke = '#0d6efd';
+        
+        // Also highlight child elements (path, rect, circle, etc.)
+        const childElements = svgElement.querySelectorAll('path, rect, circle, ellipse, polygon, polyline');
+        childElements.forEach(function(child) {
+            child.style.fill = '#0d6efd';
+            child.style.stroke = '#0d6efd';
+        });
+    });
+}
+
+// Function to apply all SVG highlighting based on current state
+function applyAllSVGHighlighting() {
+    {% if location_id %}
+    highlightSelectedLocationSVG({{ location_id }});
+    {% endif %}
+    
+    {% if bin_id %}
+    highlightSelectedBinSVG({{ bin_id }});
+    {% endif %}
+}
+
+// Highlight on initial page load
+document.addEventListener('DOMContentLoaded', function() {
+    applyAllSVGHighlighting();
+});
+
+// Re-highlight after HTMX settles (for AJAX navigation)
+// Use afterSettle instead of afterSwap to ensure DOM is fully processed
+document.body.addEventListener('htmx:afterSettle', function(event) {
+    // Only run for the destination selector updates
+    if (event.detail.target.id === 'destinationSelector' || 
+        event.detail.target.closest('#destinationSelector')) {
+        console.log('HTMX settle complete, waiting 1 second before re-applying SVG highlighting');
+        
+        // Update global state variables from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const newMajorLocationId = urlParams.get('major_location_id');
+        const newStoreroomId = urlParams.get('storeroom') || urlParams.get('storeroom_id');
+        const newLocationId = urlParams.get('location') || urlParams.get('location_id');
+        const newBinId = urlParams.get('bin') || urlParams.get('bin_id');
+        
+        // Update global variables
+        if (newMajorLocationId) window.currentMajorLocationId = parseInt(newMajorLocationId);
+        if (newStoreroomId) window.currentStoreroomId = parseInt(newStoreroomId);
+        if (newLocationId) window.currentLocationId = parseInt(newLocationId);
+        if (newBinId) window.currentBinId = parseInt(newBinId);
+        highlightSelectedLocationSVG(newLocationId);
+        highlightSelectedBinSVG(newBinId);
+
+    }
+});
+</script>
+{% endblock %}
+

@@ -103,6 +103,7 @@
             <span class="ms-2">Once you're satisfied with your template builder, click below to create the final template.</span>
         </div>
         <form method="POST" action="{{ url_for('template_builder.submit_template', builder_id=builder.builder_id) }}" class="d-inline ms-3" onsubmit="return confirm('Are you sure you want to create the template? This will finalize the template and you won\'t be able to edit it through the builder.')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <button type="submit" id="createTemplateBtn" class="btn btn-success btn-lg px-4 py-3">
                 <i class="bi bi-check-circle-fill"></i> Create Template from Build
             </button>
@@ -123,6 +124,7 @@
                         </div>
                         <div class="card-body">
                             <form id="metadataForm" method="POST" action="{{ url_for('template_builder.update_metadata', builder_id=builder.builder_id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                 <!-- Builder ID (Disabled) -->
                                 <div class="mb-3">
                                     <label for="builder_id" class="form-label text-muted">Builder ID</label>
@@ -330,12 +332,14 @@
                                         </div>
                                         <div class="btn-group-vertical btn-group-sm ms-2">
                                             <form method="POST" action="{{ url_for('template_builder.move_action', builder_id=builder.builder_id, action_index=action.index) }}" class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                                 <input type="hidden" name="direction" value="up">
                                                 <button type="submit" class="btn btn-sm btn-outline-secondary" {% if action.index == 0 %}disabled{% endif %} style="padding: 2px 6px;">
                                                     <i class="bi bi-arrow-up" style="font-size: 0.7rem;"></i>
                                                 </button>
                                             </form>
                                             <form method="POST" action="{{ url_for('template_builder.move_action', builder_id=builder.builder_id, action_index=action.index) }}" class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                                 <input type="hidden" name="direction" value="down">
                                                 <button type="submit" class="btn btn-sm btn-outline-secondary" {% if action.index == builder.actions|length - 1 %}disabled{% endif %} style="padding: 2px 6px;">
                                                     <i class="bi bi-arrow-down" style="font-size: 0.7rem;"></i>
@@ -356,6 +360,7 @@
                             <h6 class="fw-bold mb-3"><i class="bi bi-pencil-square"></i> Action Form Details</h6>
                             {% if selected_action %}
                             <form id="actionEditForm" method="POST" action="{{ url_for('template_builder.update_template_action', builder_id=builder.builder_id, action_index=selected_action_index) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                 <div class="mb-3">
                                     <label for="editActionName" class="form-label">Action Name <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" id="editActionName" name="action_name" value="{{ selected_action.action_name }}" required>
@@ -422,6 +427,7 @@
                             </form>
                             <!-- Delete form (separate from edit form) -->
                             <form id="deleteActionForm{{ selected_action_index }}" method="POST" action="{{ url_for('template_builder.delete_action', builder_id=builder.builder_id, action_index=selected_action_index) }}" style="display: none;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                             </form>
                             {% else %}
                             <p class="text-muted">Select an action from the list to edit it.</p>
@@ -481,6 +487,7 @@
                                                     <form method="POST" action="{{ url_for('template_builder.delete_part_demand', builder_id=builder.builder_id, action_index=selected_action_index, part_index=loop.index0) }}" 
                                                           class="d-inline" 
                                                           onsubmit="return confirm('Delete this part demand?')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                                         <button type="submit" class="btn btn-sm btn-link p-0" style="color: #dc3545;">
                                                             <i class="bi bi-trash-fill"></i>
                                                         </button>
@@ -490,6 +497,7 @@
                                             <!-- Dropdown Edit Panel -->
                                             <div id="partDemandEditPanel{{ loop.index0 }}" class="mt-2 p-2 border rounded" style="display: none; background-color: #fff3cd;">
                                                 <form method="POST" action="{{ url_for('template_builder.update_part_demand', builder_id=builder.builder_id, action_index=selected_action_index, part_index=loop.index0) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                                     <div class="mb-2">
                                                         <label class="form-label small">Part ID (read-only)</label>
                                                         <input type="number" class="form-control form-control-sm" value="{{ part_demand.part_id }}" disabled>
@@ -529,6 +537,7 @@
                                             </summary>
                                             <div class="mt-2">
                                                 <form method="POST" action="{{ url_for('template_builder.add_part_demand', builder_id=builder.builder_id, action_index=selected_action_index) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                                     <div class="mb-2">
                                                         <label class="form-label small">Part ID</label>
                                                         <div class="input-group input-group-sm">
@@ -606,6 +615,7 @@
                                                     <form method="POST" action="{{ url_for('template_builder.delete_tool', builder_id=builder.builder_id, action_index=selected_action_index, tool_index=loop.index0) }}" 
                                                           class="d-inline" 
                                                           onsubmit="return confirm('Delete this tool requirement?')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                                         <button type="submit" class="btn btn-sm btn-link p-0" style="color: #dc3545;">
                                                             <i class="bi bi-trash-fill"></i>
                                                         </button>
@@ -615,6 +625,7 @@
                                             <!-- Tool Edit Panel -->
                                             <div id="toolEditPanel{{ loop.index0 }}" style="display: none; background-color: #fff3cd; padding: 0.75rem; border-radius: 0.25rem; margin-top: 0.5rem;">
                                                 <form method="POST" action="{{ url_for('template_builder.update_tool', builder_id=builder.builder_id, action_index=selected_action_index, tool_index=loop.index0) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                                     <div class="mb-2">
                                                         <label class="form-label small">Tool ID</label>
                                                         <select class="form-select form-select-sm" name="tool_id" required>
@@ -653,6 +664,7 @@
                                             </summary>
                                             <div class="mt-2">
                                                 <form method="POST" action="{{ url_for('template_builder.add_tool', builder_id=builder.builder_id, action_index=selected_action_index) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                                     <div class="mb-2">
                                                         <label class="form-label small">Tool ID</label>
                                                         <select class="form-select form-select-sm" name="tool_id" required>
@@ -740,6 +752,7 @@
                 </div>
                 <div class="modal-body">
                     <form id="actionInsertForm" method="POST" action="">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                         <!-- Hidden fields for source -->
                         <input type="hidden" id="template_action_item_id" name="template_action_item_id" value="">
                         <input type="hidden" id="proto_action_item_id" name="proto_action_item_id" value="">

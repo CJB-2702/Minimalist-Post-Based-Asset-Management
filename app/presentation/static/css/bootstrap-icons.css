@@ -1751,8 +1751,8 @@
 .bi-capsule::before { content: "\f7df"; }
 .bi-car-front-fill::before { content: "\f7e0"; }
 .bi-car-front::before { content: "\f7e1"; }
-.bi-cassette-fill::before { content: "\f7e2"; }
-.bi-cassette::before { content: "\f7e3"; }
+.bi-cassete-fill::before { content: "\f7e2"; }
+.bi-cassete::before { content: "\f7e3"; }
 .bi-cc-circle-fill::before { content: "\f7e6"; }
 .bi-cc-circle::before { content: "\f7e7"; }
 .bi-cc-square-fill::before { content: "\f7e8"; }

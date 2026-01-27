@@ -91,45 +91,91 @@
                         {% endfor %}
                     </select>
                 </div>
+                <!-- Part Demand Date Range Filters -->
+                <div class="col-md-3">
+                    <label for="created_from" class="form-label">Created From</label>
+                    <input type="date" class="form-control" id="created_from" name="created_from" 
+                           value="{{ filters.created_from or '' }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="created_to" class="form-label">Created To</label>
+                    <input type="date" class="form-control" id="created_to" name="created_to" 
+                           value="{{ filters.created_to or '' }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="updated_from" class="form-label">Last Updated From</label>
+                    <input type="date" class="form-control" id="updated_from" name="updated_from" 
+                           value="{{ filters.updated_from or '' }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="updated_to" class="form-label">Last Updated To</label>
+                    <input type="date" class="form-control" id="updated_to" name="updated_to" 
+                           value="{{ filters.updated_to or '' }}">
+                </div>
                 
                 <!-- Maintenance Event Filters -->
                 <div class="col-12">
                     <hr class="my-2">
-                    <h6 class="text-muted mb-3">
-                        <i class="bi bi-tools"></i> Maintenance Event Filters
-                    </h6>
-                </div>
-                <div class="col-md-3">
-                    <label for="maintenance_event_id" class="form-label">Maintenance Event ID</label>
-                    <input type="number" class="form-control" id="maintenance_event_id" name="maintenance_event_id" 
-                           value="{{ filters.maintenance_event_id or '' }}" placeholder="Event ID">
-                </div>
-                <div class="col-md-3">
-                    <label for="asset_id" class="form-label">Asset ID</label>
-                    <input type="number" class="form-control" id="asset_id" name="asset_id" 
-                           value="{{ filters.asset_id or '' }}" placeholder="Asset ID">
-                </div>
-                <div class="col-md-3">
-                    <label for="assigned_to_id" class="form-label">Assigned To</label>
-                    <select class="form-select" id="assigned_to_id" name="assigned_to_id">
-                        <option value="">All Users</option>
-                        {% for user in users %}
-                        <option value="{{ user.id }}" {% if filters.assigned_to_id == user.id %}selected{% endif %}>
-                            {{ user.username }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label for="major_location_id" class="form-label">Major Location</label>
-                    <select class="form-select" id="major_location_id" name="major_location_id">
-                        <option value="">All Locations</option>
-                        {% for location in locations %}
-                        <option value="{{ location.id }}" {% if filters.major_location_id == location.id %}selected{% endif %}>
-                            {{ location.name }}
-                        </option>
-                        {% endfor %}
-                    </select>
+                    <details>
+                        <summary class="h6 text-muted mb-3" style="cursor: pointer;">
+                            <i class="bi bi-tools"></i> Maintenance Event Filters
+                        </summary>
+                        <div class="row g-3 mt-2">
+                            <div class="col-md-3">
+                                <label for="maintenance_event_id" class="form-label">Maintenance Event ID</label>
+                                <input type="number" class="form-control" id="maintenance_event_id" name="maintenance_event_id" 
+                                       value="{{ filters.maintenance_event_id or '' }}" placeholder="Event ID">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="asset_id" class="form-label">Asset ID</label>
+                                <input type="number" class="form-control" id="asset_id" name="asset_id" 
+                                       value="{{ filters.asset_id or '' }}" placeholder="Asset ID">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="assigned_to_id" class="form-label">Assigned To</label>
+                                <select class="form-select" id="assigned_to_id" name="assigned_to_id">
+                                    <option value="">All Users</option>
+                                    {% for user in users %}
+                                    <option value="{{ user.id }}" {% if filters.assigned_to_id == user.id %}selected{% endif %}>
+                                        {{ user.username }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="major_location_id" class="form-label">Major Location</label>
+                                <select class="form-select" id="major_location_id" name="major_location_id">
+                                    <option value="">All Locations</option>
+                                    {% for location in locations %}
+                                    <option value="{{ location.id }}" {% if filters.major_location_id == location.id %}selected{% endif %}>
+                                        {{ location.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <!-- Maintenance Event Date Range Filters -->
+                            <div class="col-md-3">
+                                <label for="maintenance_event_created_from" class="form-label">Event Created From</label>
+                                <input type="date" class="form-control" id="maintenance_event_created_from" name="maintenance_event_created_from" 
+                                       value="{{ filters.maintenance_event_created_from or '' }}">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="maintenance_event_created_to" class="form-label">Event Created To</label>
+                                <input type="date" class="form-control" id="maintenance_event_created_to" name="maintenance_event_created_to" 
+                                       value="{{ filters.maintenance_event_created_to or '' }}">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="maintenance_event_updated_from" class="form-label">Event Last Updated From</label>
+                                <input type="date" class="form-control" id="maintenance_event_updated_from" name="maintenance_event_updated_from" 
+                                       value="{{ filters.maintenance_event_updated_from or '' }}">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="maintenance_event_updated_to" class="form-label">Event Last Updated To</label>
+                                <input type="date" class="form-control" id="maintenance_event_updated_to" name="maintenance_event_updated_to" 
+                                       value="{{ filters.maintenance_event_updated_to or '' }}">
+                            </div>
+                        </div>
+                    </details>
                 </div>
                 
                 <!-- Action Buttons -->
@@ -201,6 +247,7 @@
                             <th>ID</th>
                             <th>Part</th>
                             <th>Quantity</th>
+                            <th>Price</th>
                             <th>Status</th>
                             <th>Priority</th>
                             <th>Maintenance Event</th>
@@ -230,6 +277,18 @@
                                     {% endif %}
                                 </td>
                                 <td>{{ pd.quantity_required }}</td>
+                                <td>
+                                    {% if pd.part and pd.part.last_unit_cost %}
+                                        <div>
+                                            <strong>${{ "%.2f"|format(pd.part.last_unit_cost) }}</strong>
+                                            <small class="text-muted d-block">
+                                                Total: ${{ "%.2f"|format(pd.quantity_required * pd.part.last_unit_cost) }}
+                                            </small>
+                                        </div>
+                                    {% else %}
+                                        <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </td>
                                 <td>
                                     <span class="badge status-badge 
                                         {% if pd.status == 'Pending Manager Approval' or pd.status == 'Requested' %}bg-warning
@@ -317,6 +376,7 @@
                                 <div class="modal-dialog">
                                     <div class="modal-content">
                                         <form method="POST" action="{{ url_for('manager_portal.approve_part_demand') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                             <input type="hidden" name="part_demand_id" value="{{ pd.id }}">
                                             {% for key, value in filters.items() %}
                                                 {% if value %}
@@ -352,6 +412,7 @@
                                 <div class="modal-dialog">
                                     <div class="modal-content">
                                         <form method="POST" action="{{ url_for('manager_portal.reject_part_demand') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                             <input type="hidden" name="part_demand_id" value="{{ pd.id }}">
                                             {% for key, value in filters.items() %}
                                                 {% if value %}
@@ -384,7 +445,7 @@
                             {% endfor %}
                         {% else %}
                             <tr>
-                                <td colspan="12" class="text-center text-muted py-4">
+                                <td colspan="13" class="text-center text-muted py-4">
                                     <i class="bi bi-inbox"></i> No part demands found
                                 </td>
                             </tr>
@@ -401,6 +462,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <form method="POST" action="{{ url_for('manager_portal.bulk_approve_part_demands') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 {% for key, value in filters.items() %}
                     {% if value %}
                         <input type="hidden" name="{{ key }}" value="{{ value }}">
@@ -432,6 +494,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <form method="POST" action="{{ url_for('manager_portal.bulk_reject_part_demands') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 {% for key, value in filters.items() %}
                     {% if value %}
                         <input type="hidden" name="{{ key }}" value="{{ value }}">
@@ -463,6 +526,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <form method="POST" action="{{ url_for('manager_portal.bulk_change_part_id') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 {% for key, value in filters.items() %}
                     {% if value %}
                         <input type="hidden" name="{{ key }}" value="{{ value }}">

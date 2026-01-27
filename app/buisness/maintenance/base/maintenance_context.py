@@ -35,9 +35,12 @@ class MaintenanceContext:
         
         # Lazy-initialized managers (all use the same struct)
         self._blocker_manager = None
+        self._limitation_manager = None
         self._billable_hours_manager = None
         self._assignment_manager = None
         self._action_orchestrator = None
+        self._action_creation_manager = None
+        self._blocker_creation_manager = None
 
     @classmethod
     def from_event(cls, event: Union[Event, int]) -> 'MaintenanceContext':
@@ -221,7 +224,7 @@ class MaintenanceContext:
                     # Add comment about auto-assignment
                     self.add_comment(
                         user_id=user_id,
-                        content=f"Auto-assigned to user (completed maintenance)",
+                        content="Auto-assigned to user (completed maintenance)",
                         is_human_made=False
                     )
             if notes:
@@ -461,9 +464,16 @@ class MaintenanceContext:
     def get_blocker_manager(self):
         """Get MaintenanceBlockerManager (lazy initialization)"""
         if self._blocker_manager is None:
-            from app.buisness.maintenance.base.maintenance_blocker_manager import MaintenanceBlockerManager
+            from app.buisness.maintenance.base.capablities_and_blockers.maintenance_blocker_manager import MaintenanceBlockerManager
             self._blocker_manager = MaintenanceBlockerManager(self._struct)
         return self._blocker_manager
+    
+    def get_limitation_manager(self):
+        """Get AssetLimitationManager (lazy initialization)"""
+        if self._limitation_manager is None:
+            from app.buisness.maintenance.base.capablities_and_blockers.asset_limitation_manager import AssetLimitationManager
+            self._limitation_manager = AssetLimitationManager(self.maintenance_action_set_id)
+        return self._limitation_manager
     
     def get_billable_hours_manager(self):
         """Get BillableHoursManager (lazy initialization)"""
@@ -482,9 +492,23 @@ class MaintenanceContext:
     def get_action_orchestrator(self):
         """Get MaintenanceActionOrchestrator (lazy initialization)"""
         if self._action_orchestrator is None:
-            from app.buisness.maintenance.base.maintenance_action_orchestrator import MaintenanceActionOrchestrator
+            from app.buisness.maintenance.base.action_managment.maintenance_action_orchestrator import MaintenanceActionOrchestrator
             self._action_orchestrator = MaintenanceActionOrchestrator(self._struct)
         return self._action_orchestrator
+
+    def get_action_creation_manager(self):
+        """Get MaintenanceActionCreationManager (lazy initialization)"""
+        if self._action_creation_manager is None:
+            from app.buisness.maintenance.base.action_managment.maintenance_action_creation_manager import MaintenanceActionCreationManager
+            self._action_creation_manager = MaintenanceActionCreationManager(self)
+        return self._action_creation_manager
+
+    def get_blocker_creation_manager(self):
+        """Get MaintenanceBlockerCreationManager (lazy initialization)"""
+        if self._blocker_creation_manager is None:
+            from app.buisness.maintenance.base.capablities_and_blockers.maintenance_blocker_creation_manager import MaintenanceBlockerCreationManager
+            self._blocker_creation_manager = MaintenanceBlockerCreationManager(self)
+        return self._blocker_creation_manager
     
     
     def refresh(self):

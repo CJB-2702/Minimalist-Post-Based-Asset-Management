@@ -1,28 +1,68 @@
-<tr id="line-row-{{ line.id }}">
-    <td>{{ line.line_number }}</td>
-    <td>{{ line.part.part_number if line.part else 'N/A' }}</td>
-    <td>{{ line.part.part_name if line.part else 'N/A' }}</td>
-    <td>{{ line.quantity_ordered }}</td>
-    <td>${{ "%.2f"|format(line.unit_cost) }}</td>
-    <td><strong>${{ "%.2f"|format(line.line_total) }}</strong></td>
-    <td>
+<tr id="line-row-{{ line.id }}" data-line-item-edit="true" data-line-item-id="{{ line.id }}">
+    <!-- Display Mode -->
+    <td class="line-display">{{ line.line_number }}</td>
+    <td class="line-display">{{ line.part.part_number if line.part else 'N/A' }}</td>
+    <td class="line-display">{{ line.part.part_name if line.part else 'N/A' }}</td>
+    <td class="line-display">{{ line.quantity_ordered }}</td>
+    <td class="line-display">${{ "%.2f"|format(line.unit_cost) }}</td>
+    <td class="line-display"><strong>${{ "%.2f"|format(line.line_total) }}</strong></td>
+    <td class="line-display">
         <button type="button" 
                 class="btn btn-sm btn-outline-primary me-1"
-                hx-get="{{ url_for('inventory.purchase_order_line_edit_form', po_id=po_context.purchase_order_id, line_id=line.id) }}"
-                hx-target="#line-row-{{ line.id }}"
-                hx-swap="outerHTML">
+                onclick="toggle_line_item(true, {{ line.id }})">
             <i class="bi bi-pencil"></i> Edit
         </button>
-        <form method="POST" action="{{ url_for('inventory.purchase_order_edit', po_id=po_context.purchase_order_id) }}" 
-              style="display: inline;" 
-              onsubmit="return confirm('Remove this line item?');">
-            <input type="hidden" name="action" value="remove_line">
-            <input type="hidden" name="line_id" value="{{ line.id }}">
-            <button type="submit" class="btn btn-sm btn-outline-danger">
-                <i class="bi bi-trash"></i> Remove
-            </button>
-        </form>
+        <button type="button" 
+                class="btn btn-sm btn-outline-danger"
+                hx-delete="{{ url_for('inventory.purchase_order_line_delete', po_id=po_context.purchase_order_id, line_id=line.id) }}"
+                hx-target="#line-row-{{ line.id }}"
+                hx-swap="outerHTML swap:0.5s"
+                hx-confirm="Remove this line item?">
+            <i class="bi bi-trash"></i> Remove
+        </button>
+    </td>
+
+    <!-- Edit Mode (hidden by default) -->
+    <td class="line-edit" style="display: none;">{{ line.line_number }}</td>
+    <td class="line-edit" style="display: none;">{{ line.part.part_number if line.part else 'N/A' }}</td>
+    <td class="line-edit" style="display: none;">{{ line.part.part_name if line.part else 'N/A' }}</td>
+    <td class="line-edit" style="display: none;">
+        <input type="number" 
+               class="form-control form-control-sm" 
+               name="quantity"
+               value="{{ line.quantity_ordered }}" 
+               step="0.01" 
+               min="0.01" 
+               required
+               style="width: 100px;">
+    </td>
+    <td class="line-edit" style="display: none;">
+        <div class="input-group input-group-sm">
+            <span class="input-group-text">$</span>
+            <input type="number" 
+                   class="form-control" 
+                   name="unit_cost"
+                   value="{{ "%.2f"|format(line.unit_cost) }}" 
+                   step="0.01" 
+                   min="0" 
+                   required
+                   style="width: 100px;">
+        </div>
+    </td>
+    <td class="line-edit" style="display: none;"><strong>${{ "%.2f"|format(line.line_total) }}</strong></td>
+    <td class="line-edit" style="display: none;">
+        <button type="button" 
+                class="btn btn-sm btn-success me-1"
+                hx-post="{{ url_for('inventory.purchase_order_update_line', po_id=po_context.purchase_order_id, line_id=line.id) }}"
+                hx-include="closest tr"
+                hx-target="#line-row-{{ line.id }}"
+                hx-swap="outerHTML">
+            <i class="bi bi-check"></i> Save
+        </button>
+        <button type="button" 
+                class="btn btn-sm btn-outline-secondary"
+                onclick="toggle_line_item(false, {{ line.id }})">
+            <i class="bi bi-x"></i> Cancel
+        </button>
     </td>
 </tr>
-
-

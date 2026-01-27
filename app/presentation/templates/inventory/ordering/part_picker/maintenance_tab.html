@@ -50,8 +50,12 @@
                             {% endif %}
                         </div>
                     </div>
-                    <button class="select-part-btn" 
-                            onclick="selectPartForPO({{ part.id }}, '{{ part.part_number }}', '{{ part.part_name }}', {{ part.last_unit_cost or 0 }})">
+                    <button type="button"
+                            class="select-part-btn" 
+                            hx-post="{{ url_for('inventory.purchase_order_add_part', po_id=po_id) }}"
+                            hx-vals='{"part_id": "{{ part.id }}", "quantity": "1", "unit_cost": "{{ part.last_unit_cost or 0 }}"}'
+                            hx-target="#line-items-table"
+                            hx-swap="outerHTML">
                         <i class="bi bi-check"></i> Select
                     </button>
                 </div>

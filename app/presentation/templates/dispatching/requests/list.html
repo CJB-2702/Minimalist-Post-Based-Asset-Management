@@ -1,0 +1,296 @@
+{% extends 'base.html' %}
+{% block title %}Dispatch Requests{% endblock %}
+
+{% block content %}
+<div class="container mt-3">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Dispatch Requests</h2>
+    <div>
+      <a class="btn btn-primary" href="{{ url_for('dispatching.requests_new') }}">
+        <i class="bi bi-plus-circle"></i> New Request
+      </a>
+      <a href="{{ url_for('dispatching.index') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Dispatching
+      </a>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="card mb-3">
+    <div class="card-header">
+      <h5 class="mb-0"><i class="bi bi-funnel"></i> Filters & Search</h5>
+    </div>
+    <div class="card-body">
+      <form method="GET" action="{{ url_for('dispatching.requests_list') }}">
+        <!-- Row 1: Status and Workflow -->
+        <div class="row">
+          <div class="col-md-3">
+            <label for="status" class="form-label">Status (Legacy)</label>
+            <select class="form-select form-select-sm" id="status" name="status">
+              <option value="">All Statuses</option>
+              {% for status in filter_options['statuses'] %}
+              <option value="{{ status }}" {% if request.args.get('status') == status %}selected{% endif %}>
+                {{ status }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          
+          <div class="col-md-3">
+            <label for="workflow_status" class="form-label">Workflow Status</label>
+            <select class="form-select form-select-sm" id="workflow_status" name="workflow_status">
+              <option value="">All Workflow Statuses</option>
+              {% for ws in filter_options['workflow_statuses'] %}
+              <option value="{{ ws }}" {% if request.args.get('workflow_status') == ws %}selected{% endif %}>
+                {{ ws }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          
+          <div class="col-md-3">
+            <label for="active_outcome_type" class="form-label">Outcome Type</label>
+            <select class="form-select form-select-sm" id="active_outcome_type" name="active_outcome_type">
+              <option value="">All Outcome Types</option>
+              {% for ot in filter_options['outcome_types'] %}
+              <option value="{{ ot }}" {% if request.args.get('active_outcome_type') == ot %}selected{% endif %}>
+                {% if ot == 'none' %}
+                  No Outcome
+                {% else %}
+                  {{ ot|capitalize }}
+                {% endif %}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          
+          <div class="col-md-3">
+            <label for="dispatch_scope" class="form-label">Scope</label>
+            <select class="form-select form-select-sm" id="dispatch_scope" name="dispatch_scope">
+              <option value="">All Scopes</option>
+              {% for scope in filter_options['scopes'] %}
+              <option value="{{ scope }}" {% if request.args.get('dispatch_scope') == scope %}selected{% endif %}>
+                {{ scope }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        
+        <!-- Row 2: Asset Filters and Location -->
+        <div class="row mt-2">
+          <div class="col-md-2">
+            <label for="asset_type_id" class="form-label">Asset Type</label>
+            <select class="form-select form-select-sm" id="asset_type_id" name="asset_type_id">
+              <option value="">All Asset Types</option>
+              {% for asset_type in filter_options['asset_types'] %}
+              <option value="{{ asset_type.id }}" {% if request.args.get('asset_type_id')|int == asset_type.id %}selected{% endif %}>
+                {{ asset_type.name }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          
+          <div class="col-md-2">
+            <label for="asset_id" class="form-label">Asset ID</label>
+            <input type="number" class="form-control form-control-sm" id="asset_id" name="asset_id" 
+                   value="{{ request.args.get('asset_id', '') }}" placeholder="Asset ID" min="1">
+          </div>
+          
+          <div class="col-md-2">
+            <label for="asset_name" class="form-label">Asset Name</label>
+            <input type="text" class="form-control form-control-sm" id="asset_name" name="asset_name" 
+                   value="{{ request.args.get('asset_name', '') }}" placeholder="Asset name">
+          </div>
+          
+          <div class="col-md-2">
+            <label for="major_location_id" class="form-label">Location</label>
+            <select class="form-select form-select-sm" id="major_location_id" name="major_location_id">
+              <option value="">All Locations</option>
+              {% for location in filter_options['locations'] %}
+              <option value="{{ location.id }}" {% if request.args.get('major_location_id')|int == location.id %}selected{% endif %}>
+                {{ location.name }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          
+          <div class="col-md-2">
+            <label for="requested_by" class="form-label">Requested By</label>
+            <select class="form-select form-select-sm" id="requested_by" name="requested_by">
+              <option value="">All Users</option>
+              {% for user in filter_options['users'] %}
+              <option value="{{ user.id }}" {% if request.args.get('requested_by')|int == user.id %}selected{% endif %}>
+                {{ user.username }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          
+          <div class="col-md-2">
+            <label for="requested_for" class="form-label">Requested For</label>
+            <select class="form-select form-select-sm" id="requested_for" name="requested_for">
+              <option value="">All Users</option>
+              {% for user in filter_options['users'] %}
+              <option value="{{ user.id }}" {% if request.args.get('requested_for')|int == user.id %}selected{% endif %}>
+                {{ user.username }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        
+        <!-- Row 3: Date Range and Search -->
+        <div class="row mt-2">
+          <div class="col-md-3">
+            <label for="desired_start_from" class="form-label">Desired Start From</label>
+            <input type="date" class="form-control form-control-sm" id="desired_start_from" name="desired_start_from" 
+                   value="{{ request.args.get('desired_start_from', '') }}">
+          </div>
+          
+          <div class="col-md-3">
+            <label for="desired_start_to" class="form-label">Desired Start To</label>
+            <input type="date" class="form-control form-control-sm" id="desired_start_to" name="desired_start_to" 
+                   value="{{ request.args.get('desired_start_to', '') }}">
+          </div>
+          
+          <div class="col-md-6">
+            <label for="search" class="form-label">Search (General Text)</label>
+            <input type="text" class="form-control form-control-sm" id="search" name="search" 
+                   value="{{ request.args.get('search', '') }}" placeholder="Search notes, location, names, asset serial #...">
+            <small class="form-text text-muted">Searches notes, location, names, asset serial #, and asset name</small>
+          </div>
+        </div>
+        
+        <div class="row mt-3">
+          <div class="col-12">
+            <button type="submit" class="btn btn-primary btn-sm">
+              <i class="bi bi-search"></i> Apply Filters
+            </button>
+            <a href="{{ url_for('dispatching.requests_list') }}" class="btn btn-outline-secondary btn-sm">
+              <i class="bi bi-x-circle"></i> Clear Filters
+            </a>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="card">
+    <div class="card-header">
+      <h5 class="mb-0">Requests ({{ requests.total }} total)</h5>
+    </div>
+    <div class="card-body">
+      {% if requests.items %}
+      <div class="table-responsive">
+        <table class="table table-hover table-sm">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Workflow</th>
+              <th>Outcome</th>
+              <th>Requested For</th>
+              <th>Desired Start</th>
+              <th>Desired End</th>
+              <th>Asset Type</th>
+              <th>Location</th>
+              <th>Scope</th>
+              <th>Created</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in requests.items %}
+            <tr>
+              <td><small class="text-muted"><code>{{ r.id }}</code></small></td>
+              <td>
+                <span class="badge bg-{% if r.workflow_status == 'Resolved' %}success{% elif r.workflow_status == 'Cancelled' %}danger{% elif r.workflow_status == 'Requested' %}secondary{% else %}warning{% endif %}">
+                  {{ r.workflow_status }}
+                </span>
+              </td>
+              <td>
+                {% if r.active_outcome_type %}
+                  <span class="badge bg-{% if r.active_outcome_type == 'dispatch' %}primary{% elif r.active_outcome_type == 'contract' %}info{% elif r.active_outcome_type == 'reimbursement' %}success{% elif r.active_outcome_type == 'reject' %}danger{% else %}secondary{% endif %}">
+                    {{ r.active_outcome_type|capitalize }}
+                  </span>
+                {% else %}
+                  <small class="text-muted">None</small>
+                {% endif %}
+              </td>
+              <td>
+                <small>{{ r.requested_for_user.username if r.requested_for_user else 'N/A' }}</small>
+              </td>
+              <td><small>{{ r.desired_start.strftime('%Y-%m-%d %H:%M') if r.desired_start else 'N/A' }}</small></td>
+              <td><small>{{ r.desired_end.strftime('%Y-%m-%d %H:%M') if r.desired_end else 'N/A' }}</small></td>
+              <td><small>{{ r.asset_type.name if r.asset_type else 'N/A' }}</small></td>
+              <td><small>{{ r.major_location.name if r.major_location else 'N/A' }}</small></td>
+              <td><span class="badge bg-info">{{ r.dispatch_scope }}</span></td>
+              <td><small class="text-muted">{{ r.created_at.strftime('%Y-%m-%d') if r.created_at else 'N/A' }}</small></td>
+              <td>
+                <a href="{{ url_for('dispatching.requests_detail', item_id=r.id) }}" 
+                   class="btn btn-sm btn-outline-primary" title="View Details">
+                  <i class="bi bi-eye"></i>
+                </a>
+                <a href="{{ url_for('dispatching.requests_edit', item_id=r.id) }}" 
+                   class="btn btn-sm btn-outline-secondary" title="Edit Request">
+                  <i class="bi bi-pencil"></i>
+                </a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      {% if requests.pages > 1 %}
+      <nav aria-label="Requests pagination">
+        <ul class="pagination justify-content-center">
+          {% if requests.has_prev %}
+          <li class="page-item">
+            <a class="page-link" href="{{ url_for('dispatching.requests_list', page=requests.prev_num, **request.args) }}">Previous</a>
+          </li>
+          {% endif %}
+          
+          {% for page_num in requests.iter_pages() %}
+            {% if page_num %}
+              {% if page_num != requests.page %}
+              <li class="page-item">
+                <a class="page-link" href="{{ url_for('dispatching.requests_list', page=page_num, **request.args) }}">{{ page_num }}</a>
+              </li>
+              {% else %}
+              <li class="page-item active">
+                <span class="page-link">{{ page_num }}</span>
+              </li>
+              {% endif %}
+            {% else %}
+            <li class="page-item disabled">
+              <span class="page-link">...</span>
+            </li>
+            {% endif %}
+          {% endfor %}
+          
+          {% if requests.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="{{ url_for('dispatching.requests_list', page=requests.next_num, **request.args) }}">Next</a>
+          </li>
+          {% endif %}
+        </ul>
+      </nav>
+      {% endif %}
+      
+      {% else %}
+      <div class="text-center py-5">
+        <i class="bi bi-inbox display-1 text-muted"></i>
+        <h3 class="mt-3">No Requests Found</h3>
+        <p class="text-muted">No dispatch requests match the current filters.</p>
+        <a href="{{ url_for('dispatching.requests_new') }}" class="btn btn-primary">
+          <i class="bi bi-plus-circle"></i> Create First Request
+        </a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -109,13 +109,38 @@ def render_event_activity(event_id, user_id, filter_human_only=None, event_conte
     else:
         comments = event_context.comments
     
-
-    pre_rendered_comments = [render_single_comment(comment, user_id) for comment in comments]
+    # Prepare metadata for each comment (for use in template)
+    # Attach metadata as an attribute to each comment object for template access
+    for comment in comments:
+        comment.metadata = EventService.get_comment_json_string(comment.id)
+        comment.show_delete = comment.created_by_id == user_id
+        comment.show_edit = comment.created_by_id == user_id
+        
+        # Attach edit history if user owns the comment
+        if comment.created_by_id == user_id:
+            try:
+                history_comments = EventContext.get_comment_edit_history(comment)
+                comment.edit_history = [
+                    {
+                        'id': h.id,
+                        'content': h.content,
+                        'created_at': h.created_at.isoformat() if h.created_at else None,
+                        'created_by_id': h.created_by_id,
+                        'created_by_username': h.created_by.username if h.created_by else None,
+                        'is_current': h.id == comment.id,
+                    }
+                    for h in history_comments
+                ]
+            except Exception as e:
+                logger.error(f"Error getting edit history for comment {comment.id}: {e}")
+                comment.edit_history = []
+        else:
+            comment.edit_history = []
+    
     return render_template(
         'core/events/event_activity.html',
         event=event_context.event,
         comments=comments,
-        pre_rendered_comments=pre_rendered_comments,
         filter_human_only=filter_human_only,
     ), status_code
 

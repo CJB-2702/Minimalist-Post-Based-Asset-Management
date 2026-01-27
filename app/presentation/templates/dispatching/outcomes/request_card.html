@@ -16,10 +16,11 @@
             <dt class="col-sm-4">Status</dt>
             <dd class="col-sm-8">
                 <span class="badge 
-                    {% if request.status == 'Completed' or request.status == 'Contracted' or request.status == 'Reimbursed' %}bg-success
-                    {% elif request.status == 'Active' or request.status == 'Submitted' %}bg-primary
-                    {% elif request.status == 'Draft' %}bg-secondary
-                    {% elif request.status == 'Rejected' %}bg-danger
+                    {% if request.status == 'Completed' or request.status == 'Contracted' or request.status == 'Reimbursed' or request.status == 'Resolved' %}bg-success
+                    {% elif request.status == 'Submitted' or request.status == 'UnderReview' %}bg-primary
+                    {% elif request.status == 'Planned' %}bg-info
+                    {% elif request.status == 'Rejected' or request.status == 'Cancelled' %}bg-danger
+                    {% elif request.status == 'FixesRequested' %}bg-warning
                     {% else %}bg-secondary{% endif %}">
                     {{ request.status }}
                 </span>

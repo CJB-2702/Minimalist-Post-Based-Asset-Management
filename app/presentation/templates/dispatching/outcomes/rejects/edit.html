@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+{% block title %}Edit Rejection {{ item.id }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-3">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="bi bi-pencil text-primary"></i> Edit Rejection #{{ item.id }}
+                    </h1>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="{{ url_for('dispatching.index') }}">Dispatching</a></li>
+                            <li class="breadcrumb-item"><a href="{{ url_for('dispatching.rejects_list') }}">Rejections</a></li>
+                            <li class="breadcrumb-item"><a href="{{ url_for('dispatching.rejects_detail', item_id=item.id) }}">Rejection #{{ item.id }}</a></li>
+                            <li class="breadcrumb-item active">Edit</li>
+                        </ol>
+                    </nav>
+                </div>
+                <div>
+                    <a href="{{ url_for('dispatching.rejects_detail', item_id=item.id) }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Rejection
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Rejection Information</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <div class="mb-3">
+                            <label for="reason" class="form-label">Reason <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="reason" name="reason" rows="3" required>{{ request.form.get('reason', reject.reason) }}</textarea>
+                            <div class="form-text">Primary reason for rejection</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="rejection_category" class="form-label">Rejection Category</label>
+                            <select class="form-select" id="rejection_category" name="rejection_category">
+                                <option value="">Select a category</option>
+                                <option value="Resource Unavailable" {% if request.form.get('rejection_category', reject.rejection_category) == 'Resource Unavailable' %}selected{% endif %}>Resource Unavailable</option>
+                                <option value="Policy Violation" {% if request.form.get('rejection_category', reject.rejection_category) == 'Policy Violation' %}selected{% endif %}>Policy Violation</option>
+                                <option value="Timing Conflict" {% if request.form.get('rejection_category', reject.rejection_category) == 'Timing Conflict' %}selected{% endif %}>Timing Conflict</option>
+                                <option value="Budget Constraints" {% if request.form.get('rejection_category', reject.rejection_category) == 'Budget Constraints' %}selected{% endif %}>Budget Constraints</option>
+                                <option value="Other" {% if request.form.get('rejection_category', reject.rejection_category) == 'Other' %}selected{% endif %}>Other</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Additional Notes</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3">{{ request.form.get('notes', reject.notes or '') }}</textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="alternative_suggestion" class="form-label">Alternative Suggestion</label>
+                            <textarea class="form-control" id="alternative_suggestion" name="alternative_suggestion" rows="2">{{ request.form.get('alternative_suggestion', reject.alternative_suggestion or '') }}</textarea>
+                            <div class="form-text">Suggested alternatives or workarounds</div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <h6 class="mb-3">Resubmission Options</h6>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="can_resubmit" class="form-label">Can Resubmit</label>
+                                    <select class="form-select" id="can_resubmit" name="can_resubmit">
+                                        <option value="0" {% if not request.form.get('can_resubmit', reject.can_resubmit) %}selected{% endif %}>No</option>
+                                        <option value="1" {% if request.form.get('can_resubmit', reject.can_resubmit) %}selected{% endif %}>Yes</option>
+                                    </select>
+                                    <div class="form-text">Whether the request can be resubmitted</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="resubmit_after" class="form-label">Resubmit After</label>
+                                    <input type="date" class="form-control" id="resubmit_after" name="resubmit_after" 
+                                           value="{{ request.form.get('resubmit_after', reject.resubmit_after.strftime('%Y-%m-%d') if reject.resubmit_after else '') }}">
+                                    <div class="form-text">Date after which resubmission is allowed</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <a href="{{ url_for('dispatching.rejects_detail', item_id=item.id) }}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-left"></i> Go Back
+                                </a>
+                                <button type="button" class="btn btn-outline-danger" onclick="showCancelModal()">
+                                    <i class="bi bi-x-octagon"></i> Cancel Outcome
+                                </button>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i> Update Rejection
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cancel Outcome Confirmation Modal -->
+<div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="cancelModalLabel">
+                    <i class="bi bi-exclamation-triangle"></i> Cancel Rejection Outcome
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="cancelForm" method="POST" action="{{ url_for('dispatching.rejects_cancel', item_id=item.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <strong>Warning:</strong> This will cancel the rejection outcome and return the request to "Under Review" status.
+                        This action is irreversible once a different outcome type is assigned to this request.
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="cancel_reason" class="form-label">Reason for Cancellation <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="cancel_reason" name="reason" rows="3" required 
+                                  placeholder="Explain why this outcome is being cancelled..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Close
+                    </button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-x-octagon"></i> Cancel Outcome
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function showCancelModal() {
+    new bootstrap.Modal(document.getElementById('cancelModal')).show();
+}
+</script>
+{% endblock %}

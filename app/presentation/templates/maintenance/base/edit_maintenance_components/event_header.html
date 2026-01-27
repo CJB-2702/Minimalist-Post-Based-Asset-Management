@@ -1,0 +1,24 @@
+<!-- Event Header -->
+<div class="event-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="h3 mb-2">
+                <i class="bi bi-pencil-square"></i> Edit Maintenance Event
+            </h1>
+            <p class="mb-0 opacity-75">
+                <span class="badge bg-light text-dark me-2" style="font-size: 1.1rem; padding: 0.5rem 0.75rem;">
+                    {{ maintenance.status }}
+                </span>
+                <span>{{ maintenance.task_name or 'Maintenance Event' }}</span>
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#assignWarningModal">
+                <i class="bi bi-person-check"></i> Assign Event
+            </button>
+            <a href="{{ url_for('maintenance_event_view.view_maintenance_event', event_id=event.id) }}" class="btn btn-light">
+                <i class="bi bi-arrow-left"></i> Back to View
+            </a>
+        </div>
+    </div>
+</div>

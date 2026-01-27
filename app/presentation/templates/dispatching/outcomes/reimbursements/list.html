@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+{% block title %}Reimbursements{% endblock %}
+{% block content %}
+<div class="container mt-3">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Reimbursements</h2>
+    <a href="{{ url_for('dispatching.index') }}" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left"></i> Back to Dispatching
+    </a>
+  </div>
+
+  <!-- Filters -->
+  <div class="card mb-3">
+    <div class="card-header">
+      <h5 class="mb-0"><i class="bi bi-funnel"></i> Filters & Search</h5>
+    </div>
+    <div class="card-body">
+      <form method="GET" action="{{ url_for('dispatching.reimbursements_list') }}">
+        <div class="row">
+          <div class="col-md-3">
+            <label for="from_account" class="form-label">From Account</label>
+            <input type="text" class="form-control form-control-sm" id="from_account" name="from_account" 
+                   value="{{ request.args.get('from_account', '') }}" placeholder="Search account...">
+          </div>
+          
+          <div class="col-md-3">
+            <label for="to_account" class="form-label">To Account</label>
+            <input type="text" class="form-control form-control-sm" id="to_account" name="to_account" 
+                   value="{{ request.args.get('to_account', '') }}" placeholder="Search account...">
+          </div>
+          
+          <div class="col-md-2">
+            <label for="min_amount" class="form-label">Min Amount</label>
+            <input type="number" step="0.01" class="form-control form-control-sm" id="min_amount" name="min_amount" 
+                   value="{{ request.args.get('min_amount', '') }}" placeholder="0.00">
+          </div>
+          
+          <div class="col-md-2">
+            <label for="max_amount" class="form-label">Max Amount</label>
+            <input type="number" step="0.01" class="form-control form-control-sm" id="max_amount" name="max_amount" 
+                   value="{{ request.args.get('max_amount', '') }}" placeholder="99999.99">
+          </div>
+          
+          <div class="col-md-2">
+            <label for="search" class="form-label">Search</label>
+            <input type="text" class="form-control form-control-sm" id="search" name="search" 
+                   value="{{ request.args.get('search', '') }}" placeholder="Reason, policy...">
+          </div>
+        </div>
+        
+        <div class="row mt-2">
+          <div class="col-12">
+            <button type="submit" class="btn btn-primary btn-sm">
+              <i class="bi bi-search"></i> Apply Filters
+            </button>
+            <a href="{{ url_for('dispatching.reimbursements_list') }}" class="btn btn-outline-secondary btn-sm">
+              <i class="bi bi-x-circle"></i> Clear Filters
+            </a>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="card">
+    <div class="card-header">
+      <h5 class="mb-0">Reimbursements ({{ items.total }} total)</h5>
+    </div>
+    <div class="card-body">
+      {% if items.items %}
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Amount</th>
+              <th>From Account</th>
+              <th>To Account</th>
+              <th>Reason</th>
+              <th>Request</th>
+              <th>Created</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for reimbursement in items.items %}
+            {% set ctx = contexts[loop.index0] %}
+            <tr>
+              <td><small class="text-muted"><code>{{ reimbursement.id }}</code></small></td>
+              <td><strong class="text-success">{{ "{:,.2f}".format(reimbursement.amount) }}</strong></td>
+              <td><code>{{ reimbursement.from_account }}</code></td>
+              <td><code>{{ reimbursement.to_account }}</code></td>
+              <td>
+                <small>{{ reimbursement.reason[:50] }}{% if reimbursement.reason|length > 50 %}...{% endif %}</small>
+              </td>
+              <td><a href="{{ url_for('dispatching.requests_detail', item_id=ctx.request_id) }}">Request #{{ ctx.request_id }}</a></td>
+              <td><small class="text-muted">{{ reimbursement.created_at.strftime('%Y-%m-%d %H:%M') if reimbursement.created_at else '' }}</small></td>
+              <td>
+                <div class="btn-group btn-group-sm" role="group">
+                  <a href="{{ url_for('dispatching.reimbursements_detail', item_id=reimbursement.id) }}" 
+                     class="btn btn-outline-primary" title="View Details">
+                    <i class="bi bi-eye"></i>
+                  </a>
+                  <a href="{{ url_for('dispatching.reimbursements_edit', item_id=reimbursement.id) }}" 
+                     class="btn btn-outline-secondary" title="Edit">
+                    <i class="bi bi-pencil"></i>
+                  </a>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      {% if items.pages > 1 %}
+      <nav aria-label="Reimbursements pagination">
+        <ul class="pagination justify-content-center">
+          {% if items.has_prev %}
+          <li class="page-item">
+            <a class="page-link" href="{{ url_for('dispatching.reimbursements_list', page=items.prev_num, **request.args) }}">Previous</a>
+          </li>
+          {% endif %}
+          
+          {% for page_num in items.iter_pages() %}
+            {% if page_num %}
+              {% if page_num != items.page %}
+              <li class="page-item">
+                <a class="page-link" href="{{ url_for('dispatching.reimbursements_list', page=page_num, **request.args) }}">{{ page_num }}</a>
+              </li>
+              {% else %}
+              <li class="page-item active">
+                <span class="page-link">{{ page_num }}</span>
+              </li>
+              {% endif %}
+            {% else %}
+            <li class="page-item disabled">
+              <span class="page-link">...</span>
+            </li>
+            {% endif %}
+          {% endfor %}
+          
+          {% if items.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="{{ url_for('dispatching.reimbursements_list', page=items.next_num, **request.args) }}">Next</a>
+          </li>
+          {% endif %}
+        </ul>
+      </nav>
+      {% endif %}
+      
+      {% else %}
+      <div class="text-center py-5">
+        <i class="bi bi-cash-coin display-1 text-muted"></i>
+        <h3 class="mt-3">No Reimbursements Found</h3>
+        <p class="text-muted">No reimbursement outcomes match the current filters.</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

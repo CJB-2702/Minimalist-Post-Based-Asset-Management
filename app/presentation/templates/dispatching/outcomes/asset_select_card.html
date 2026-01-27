@@ -1,9 +1,14 @@
 <div id="asset-select-card-container">
 <div class="card mb-4">
-  <div class="card-header bg-success text-white">
+  <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
     <h5 class="mb-0">
       <i class="bi bi-truck"></i> Asset Selection
     </h5>
+    <a href="{{ url_for('dispatching.visual_dispatch_selector', request_id=request_id) }}" 
+       class="btn btn-sm btn-light" 
+       title="Visual Dispatch Selector (Timeline View)">
+      <i class="bi bi-calendar3"></i> Visual Dispatch Selector
+    </a>
   </div>
   <div class="card-body">
     <!-- Filters -->
@@ -13,6 +18,40 @@
           hx-target="#asset-select-card-container"
           hx-swap="outerHTML"
           hx-trigger="change from:select, input from:input delay:300ms">
+      
+      <!-- Availability Filtering Section -->
+      <div class="card mb-3 bg-light">
+        <div class="card-body py-2">
+          <h6 class="mb-2"><i class="bi bi-clock-history"></i> Availability Filtering</h6>
+          <div class="row g-2">
+            <div class="col-md-4">
+              <label class="form-label small">Availability Mode</label>
+              <select class="form-select form-select-sm" name="availability_mode" id="availability_mode_filter">
+                <option value="all" {% if current_filters.availability_mode == 'all' %}selected{% endif %}>Show All Assets</option>
+                <option value="no_active" {% if current_filters.availability_mode == 'no_active' %}selected{% endif %}>Hide Active Dispatches</option>
+                <option value="no_planned" {% if current_filters.availability_mode == 'no_planned' %}selected{% endif %}>Hide Planned Dispatches</option>
+              </select>
+              <small class="form-text text-muted">Filter assets by dispatch availability</small>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small">Availability Start</label>
+              <input type="datetime-local" 
+                     class="form-control form-control-sm" 
+                     name="availability_start" 
+                     value="{{ current_filters.availability_start.strftime('%Y-%m-%dT%H:%M') if current_filters.availability_start else '' }}">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small">Availability End</label>
+              <input type="datetime-local" 
+                     class="form-control form-control-sm" 
+                     name="availability_end" 
+                     value="{{ current_filters.availability_end.strftime('%Y-%m-%dT%H:%M') if current_filters.availability_end else '' }}">
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Standard Filters -->
       <div class="row g-2 mb-3">
         <div class="col-md-3">
           <label class="form-label small">Asset Type</label>

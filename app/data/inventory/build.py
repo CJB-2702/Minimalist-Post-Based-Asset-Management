@@ -6,14 +6,14 @@ This module handles the initialization and setup of Phase 6 inventory models.
 
 from pathlib import Path
 from app import db
-from app.data.inventory.ordering import (
+from app.data.inventory.purchasing import (
     PurchaseOrderHeader,
     PurchaseOrderLine,
     PartDemandPurchaseOrderLink
 )
 from app.data.inventory.arrivals import (
-    PackageHeader,
-    PartArrival
+    ArrivalHeader,
+    ArrivalLine
 )
 from app.data.inventory.inventory import (
     Storeroom,
@@ -35,8 +35,8 @@ def build_models():
         PurchaseOrderHeader,
         PurchaseOrderLine,
         PartDemandPurchaseOrderLink,
-        PackageHeader,
-        PartArrival,
+        ArrivalHeader,
+        ArrivalLine,
         Storeroom,
         ActiveInventory,
         InventoryMovement
@@ -92,11 +92,11 @@ def verify_relationships():
         assert hasattr(PurchaseOrderLine, 'part_demands')
         assert hasattr(PurchaseOrderLine, 'part_arrivals')
         
-        # Test PartArrival relationships
-        assert hasattr(PartArrival, 'package_header')
-        assert hasattr(PartArrival, 'purchase_order_line')
-        assert hasattr(PartArrival, 'part')
-        assert hasattr(PartArrival, 'inventory_movements')
+        # Test ArrivalLine relationships
+        assert hasattr(ArrivalLine, 'package_header')
+        assert hasattr(ArrivalLine, 'purchase_order_line')
+        assert hasattr(ArrivalLine, 'part')
+        assert hasattr(ArrivalLine, 'inventory_movements')
         
         # Test InventoryMovement traceability fields
         assert hasattr(InventoryMovement, 'initial_arrival_id')
@@ -144,16 +144,16 @@ def get_model_info():
             },
             {
                 'name': 'PartDemandPurchaseOrderLink',
-                'table': 'part_demand_purchase_order_lines',
+                'table': 'part_demand_purchase_order_links',
                 'description': 'Links part demands to PO lines'
             },
             {
-                'name': 'PackageHeader',
+                'name': 'ArrivalHeader',
                 'table': 'package_headers',
                 'description': 'Physical packages/shipments'
             },
             {
-                'name': 'PartArrival',
+                'name': 'ArrivalLine',
                 'table': 'part_arrivals',
                 'description': 'Individual part receipts'
             },

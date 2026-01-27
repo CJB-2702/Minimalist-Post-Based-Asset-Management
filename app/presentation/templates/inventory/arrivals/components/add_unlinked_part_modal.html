@@ -1,0 +1,174 @@
+<!-- Add Unlinked Part Modal -->
+<div class="modal fade" id="addUnlinkedPartModal" tabindex="-1" aria-labelledby="addUnlinkedPartModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+          <h5 class="modal-title" id="addUnlinkedPartModalLabel">
+          <i class="bi bi-plus-circle"></i> Add Part
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="add-unlinked-part-form" 
+              method="POST" 
+              action="{{ url_for('inventory.create_arrival_add_part') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <!-- Part Search -->
+          <div class="mb-3">
+            <label for="unlinked_part_search" class="form-label">Search Part *</label>
+            <div class="position-relative" id="unlinked_part_searchbar_container">
+              <input type="hidden" id="unlinked_part_id" name="part_id" required>
+              <input type="text"
+                     class="form-control"
+                     id="unlinked_part_search"
+                     name="unlinked_part_search"
+                     placeholder="Search by part number, name, or description..."
+                     autocomplete="off"
+                     hx-get="{{ url_for('inventory.search_bars_parts_arrival') }}"
+                     hx-trigger="keyup changed delay:300ms"
+                     hx-target="#unlinked_part_dropdown"
+                     hx-swap="innerHTML"
+                     hx-include="#unlinked_part_search">
+              <div id="unlinked_part_dropdown" class="dropdown-menu w-100" style="display:none; max-height: 260px; overflow:auto; position: absolute; z-index: 1050;">
+                <div class="dropdown-item-text text-muted">
+                  Start typing to search for parts...
+                </div>
+              </div>
+            </div>
+            <small class="text-muted">Type at least 1 character to search.</small>
+          </div>
+          
+          <!-- Selected Part Display -->
+          <div id="selected-part-display" class="alert alert-info" style="display: none;">
+            <strong id="selected-part-number"></strong> - <span id="selected-part-name"></span>
+            <button type="button" class="btn btn-sm btn-outline-secondary float-end" onclick="clearSelectedPart()">Change</button>
+          </div>
+          
+          <div class="alert alert-secondary mb-0">
+            <i class="bi bi-info-circle"></i> <small>Quantity can be edited in the lines summary after adding.</small>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" 
+                id="add-unlinked-part-submit-btn"
+                class="btn btn-primary"
+                hx-post="{{ url_for('inventory.create_arrival_add_part') }}"
+                hx-include="#add-unlinked-part-form"
+                hx-target="body"
+                hx-swap="none"
+                hx-on="htmx:afterRequest: if(event.detail.xhr.status === 200) { window.location.reload(); }">
+          <i class="bi bi-plus-circle"></i> Add Part
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Handle part selection from dropdown
+  function selectUnlinkedPart(element) {
+    const partId = element.getAttribute('data-part-id');
+    const partNumber = element.getAttribute('data-part-number');
+    const partName = element.getAttribute('data-part-name');
+    
+    // Set hidden input
+    document.getElementById('unlinked_part_id').value = partId;
+    
+    // Update display
+    document.getElementById('selected-part-number').textContent = partNumber;
+    document.getElementById('selected-part-name').textContent = partName;
+    document.getElementById('selected-part-display').style.display = 'block';
+    
+    // Hide search input
+    document.getElementById('unlinked_part_search').style.display = 'none';
+    
+    // Hide dropdown
+    const dropdown = document.getElementById('unlinked_part_dropdown');
+    if (dropdown) {
+      dropdown.style.display = 'none';
+    }
+  }
+  
+  function clearSelectedPart() {
+    document.getElementById('unlinked_part_id').value = '';
+    document.getElementById('selected-part-display').style.display = 'none';
+    document.getElementById('unlinked_part_search').style.display = 'block';
+    document.getElementById('unlinked_part_search').value = '';
+  }
+  
+  // Reset modal when closed
+  const modalElement = document.getElementById('addUnlinkedPartModal');
+  if (modalElement) {
+    modalElement.addEventListener('hidden.bs.modal', function() {
+      clearSelectedPart();
+    });
+  }
+  
+  // Handle HTMX swap to show/hide dropdown
+  document.body.addEventListener('htmx:afterSwap', function(event) {
+    if (event.detail.target.id === 'unlinked_part_dropdown') {
+      const dropdown = document.getElementById('unlinked_part_dropdown');
+      const results = document.getElementById('unlinked_part_results');
+      if (dropdown && results) {
+        const hasResults = results.querySelectorAll('.dropdown-item[data-part-id]').length > 0;
+        dropdown.style.display = hasResults ? 'block' : 'none';
+      }
+    }
+  });
+  
+  // Close dropdown on outside click
+  document.addEventListener('click', function(event) {
+    const container = document.getElementById('unlinked_part_searchbar_container');
+    const dropdown = document.getElementById('unlinked_part_dropdown');
+    if (container && dropdown && 
+        !container.contains(event.target) && 
+        !dropdown.contains(event.target)) {
+      dropdown.style.display = 'none';
+    }
+  });
+  
+  // Prevent form submission when Enter is pressed in the search input
+  function setupFormPreventSubmit() {
+    const form = document.getElementById('add-unlinked-part-form');
+    const searchInput = document.getElementById('unlinked_part_search');
+    
+    // Prevent form submission on Enter key in any input field
+    if (form) {
+      form.addEventListener('keydown', function(event) {
+        if (event.key === 'Enter' && event.target.tagName !== 'BUTTON') {
+          event.preventDefault();
+          event.stopPropagation();
+          return false;
+        }
+      });
+      
+      // Prevent default form submission (we use HTMX on the button instead)
+      form.addEventListener('submit', function(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        return false;
+      });
+    }
+    
+    // Specifically prevent Enter in search input
+    if (searchInput) {
+      searchInput.addEventListener('keydown', function(event) {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          event.stopPropagation();
+          return false;
+        }
+      });
+    }
+  }
+  
+  // Setup when modal is shown (handles dynamic loading)
+  if (modalElement) {
+    modalElement.addEventListener('shown.bs.modal', setupFormPreventSubmit);
+  }
+  
+  // Also setup immediately if modal is already in DOM
+  setupFormPreventSubmit();
+</script>

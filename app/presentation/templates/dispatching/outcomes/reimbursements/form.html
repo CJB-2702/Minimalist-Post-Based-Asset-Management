@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block title %}Create Reimbursement Outcome{% endblock %}
+
+{% block content %}
+<div class="container mt-3">
+  <div class="card">
+    <div class="card-header bg-secondary text-white">
+      <h4 class="mb-0">
+        <i class="bi bi-currency-exchange"></i> Create Reimbursement Outcome
+      </h4>
+      <small>Request #{{ request_id }}</small>
+    </div>
+    <div class="card-body">
+      <form method="post" action="{{ url_for('dispatching.outcome_create', request_id=request_id, outcome_type='reimbursement') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <div class="row g-3">
+          <!-- Created By (Read-only) -->
+          <div class="col-md-12">
+            <label class="form-label">Created By</label>
+            <input class="form-control" type="text" 
+                   value="{{ current_user.first_name }} {{ current_user.last_name }} ({{ current_user.username }})" 
+                   disabled>
+            <input type="hidden" name="created_by_id" value="{{ current_user.id }}">
+            <div class="form-text">Automatically set to the current logged-in user</div>
+          </div>
+          
+          <!-- Account Information -->
+          <div class="col-md-6">
+            <label class="form-label">From Account <span class="text-danger">*</span></label>
+            <input class="form-control" type="text" name="from_account" required placeholder="Source account code or name">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">To Account <span class="text-danger">*</span></label>
+            <input class="form-control" type="text" name="to_account" required placeholder="Destination account code or name">
+          </div>
+          
+          <!-- Amount -->
+          <div class="col-md-6">
+            <label class="form-label">Amount <span class="text-danger">*</span></label>
+            <input class="form-control" type="number" step="0.01" name="amount" required placeholder="0.00">
+          </div>
+          
+          <!-- Policy Reference -->
+          <div class="col-md-6">
+            <label class="form-label">Policy Reference</label>
+            <input class="form-control" type="text" name="policy_reference" placeholder="Policy number or reference">
+          </div>
+          
+          <!-- Reason -->
+          <div class="col-12">
+            <label class="form-label">Reason <span class="text-danger">*</span></label>
+            <textarea class="form-control" name="reason" rows="4" required placeholder="Reason for reimbursement"></textarea>
+          </div>
+        </div>
+        
+        <div class="mt-4">
+          <button class="btn btn-secondary" type="submit">
+            <i class="bi bi-check-circle"></i> Create Reimbursement
+          </button>
+          <a class="btn btn-outline-secondary" href="{{ url_for('dispatching.requests_detail', item_id=request_id) }}">
+            Cancel
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

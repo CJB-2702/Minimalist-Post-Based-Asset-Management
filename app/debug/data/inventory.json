@@ -231,26 +231,29 @@
   ],
   "PurchaseOrders": [
     {
-      "vendor_name": "AutoZone",
-      "vendor_contact": "sales@autozone.com",
-      "shipping_cost": 15.00,
-      "tax_amount": 12.50,
-      "notes": "Initial stock order for common parts",
-      "major_location_name": "SanDiegoHQ",
-      "expected_delivery_date": "2024-02-15",
-      "status": "Draft",
-      "lines": [
+      "header": {
+        "vendor_name": "AutoZone",
+        "vendor_contact": "sales@autozone.com",
+        "major_location_name": "SanDiegoHQ",
+        "shipping_cost": 15.00,
+        "tax_amount": 12.50,
+        "notes": "Initial stock order for common parts",
+        "expected_delivery_date": "2024-02-15"
+      },
+      "line_items": [
         {
           "part_number": "OIL-001",
-          "quantity_ordered": 20.0,
+          "quantity": 20.0,
           "unit_cost": 8.99,
-          "notes": "Bulk order for oil changes"
+          "confirmed": true,
+          "linked_demands": []
         },
         {
           "part_number": "FIL-001",
-          "quantity_ordered": 15.0,
+          "quantity": 15.0,
           "unit_cost": 12.50,
-          "notes": "Oil filter stock replenishment"
+          "confirmed": true,
+          "linked_demands": []
         }
       ]
     }

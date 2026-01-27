@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+{% block title %}Edit Contract {{ item.id }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-3">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="bi bi-pencil text-primary"></i> Edit Contract #{{ item.id }}
+                    </h1>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="{{ url_for('dispatching.index') }}">Dispatching</a></li>
+                            <li class="breadcrumb-item"><a href="{{ url_for('dispatching.contracts_list') }}">Contracts</a></li>
+                            <li class="breadcrumb-item"><a href="{{ url_for('dispatching.contracts_detail', item_id=item.id) }}">Contract #{{ item.id }}</a></li>
+                            <li class="breadcrumb-item active">Edit</li>
+                        </ol>
+                    </nav>
+                </div>
+                <div>
+                    <a href="{{ url_for('dispatching.contracts_detail', item_id=item.id) }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Contract
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Contract Information</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <div class="mb-3">
+                            <label for="company_name" class="form-label">Company Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="company_name" name="company_name" 
+                                   value="{{ request.form.get('company_name', contract.company_name) }}" required>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="cost_currency" class="form-label">Currency <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="cost_currency" name="cost_currency" 
+                                           value="{{ request.form.get('cost_currency', contract.cost_currency) }}" required maxlength="10">
+                                    <div class="form-text">e.g., USD, EUR, GBP</div>
+                                </div>
+                            </div>
+                            <div class="col-md-8">
+                                <div class="mb-3">
+                                    <label for="cost_amount" class="form-label">Cost Amount <span class="text-danger">*</span></label>
+                                    <input type="number" step="0.01" class="form-control" id="cost_amount" name="cost_amount" 
+                                           value="{{ request.form.get('cost_amount', contract.cost_amount) }}" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="contract_reference" class="form-label">Contract Reference</label>
+                            <input type="text" class="form-control" id="contract_reference" name="contract_reference" 
+                                   value="{{ request.form.get('contract_reference', contract.contract_reference or '') }}">
+                            <div class="form-text">Contract number, purchase order, or other reference</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Notes</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="4">{{ request.form.get('notes', contract.notes or '') }}</textarea>
+                        </div>
+
+                        <hr>
+
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <a href="{{ url_for('dispatching.contracts_detail', item_id=item.id) }}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-left"></i> Go Back
+                                </a>
+                                <button type="button" class="btn btn-outline-danger" onclick="showCancelModal()">
+                                    <i class="bi bi-x-octagon"></i> Cancel Outcome
+                                </button>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i> Update Contract
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cancel Outcome Confirmation Modal -->
+<div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="cancelModalLabel">
+                    <i class="bi bi-exclamation-triangle"></i> Cancel Contract Outcome
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="cancelForm" method="POST" action="{{ url_for('dispatching.contracts_cancel', item_id=item.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <strong>Warning:</strong> This will cancel the contract outcome and return the request to "Under Review" status.
+                        This action is irreversible once a different outcome type is assigned to this request.
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="cancel_reason" class="form-label">Reason for Cancellation <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="cancel_reason" name="reason" rows="3" required 
+                                  placeholder="Explain why this outcome is being cancelled..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Close
+                    </button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-x-octagon"></i> Cancel Outcome
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function showCancelModal() {
+    new bootstrap.Modal(document.getElementById('cancelModal')).show();
+}
+</script>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% if active_blockers %}
+<!-- Active Blockers Card -->
+<div class="card mb-4 border-danger" style="background-color: #ffebee;">
+    <div class="card-header bg-danger bg-opacity-10">
+        <h5 class="mb-0">
+            <i class="bi bi-exclamation-triangle text-danger"></i> Active Blockers
+        </h5>
+    </div>
+    <div class="card-body">
+        {% for blocker in active_blockers %}
+        <div class="mb-3 pb-3 {% if not loop.last %}border-bottom{% endif %}">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                    {% if blocker.priority %}
+                    <span class="badge bg-{% if blocker.priority == 'Critical' %}danger{% elif blocker.priority == 'High' %}warning{% elif blocker.priority == 'Medium' %}info{% else %}secondary{% endif %}">
+                        {{ blocker.priority }} Priority
+                    </span>
+                    {% endif %}
+                    <span class="badge bg-danger">ACTIVE</span>
+                </div>
+                <form method="POST" action="{{ url_for('maintenance.end_blocked_status', blocked_status_id=blocker.id) }}" class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('End this blocked status and resume work?')">
+                        <i class="bi bi-check-circle"></i> End Blocked Status
+                    </button>
+                </form>
+            </div>
+            {% if blocker.reason %}
+            <p class="mb-2"><strong>Reason:</strong> {{ blocker.reason }}</p>
+            {% endif %}
+            {% if blocker.start_date %}
+            <small class="text-muted">
+                <i class="bi bi-calendar"></i> Started: {{ blocker.start_date.strftime('%Y-%m-%d %H:%M') }}
+            </small>
+            {% endif %}
+            {% if blocker.notes %}
+            <p class="mb-0 mt-2 text-muted small"><em>{{ blocker.notes }}</em></p>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}

@@ -1,0 +1,106 @@
+<!-- Middle Panel: Action Edit Form -->
+<div class="col-lg-4 col-md-12 border-responsive">
+    <div class="p-3">
+        <h6 class="fw-bold mb-3"><i class="bi bi-pencil-square"></i> Action Form Details</h6>
+        {% if selected_action %}
+        <form id="actionEditForm" method="POST" action="{{ url_for('maintenance.edit_action', action_id=selected_action.action_id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <input type="hidden" name="redirect_to" value="edit">
+            <div class="mb-3">
+                <label for="editActionName" class="form-label">Action Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="editActionName" name="action_name" value="{{ selected_action.action_name }}" required>
+            </div>
+            
+            <div class="mb-3">
+                <label for="editActionDescription" class="form-label">Description</label>
+                <textarea class="form-control" id="editActionDescription" name="description" rows="3">{{ selected_action.description or '' }}</textarea>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="editStatus" class="form-label">Status</label>
+                    <select class="form-select" id="editStatus" name="status">
+                        {% set statuses = ['Not Started', 'In Progress', 'Complete', 'Failed', 'Skipped', 'Blocked'] %}
+                        {% for s in statuses %}
+                            <option value="{{ s }}" {% if selected_action.status == s %}selected{% endif %}>{{ s }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="editSequenceOrder" class="form-label">Sequence Order</label>
+                    <input type="number" min="1" class="form-control" id="editSequenceOrder" name="sequence_order" value="{{ selected_action.sequence_order }}">
+                </div>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="editEstimatedDuration" class="form-label">Estimated Duration (hours)</label>
+                    <input type="number" step="any" class="form-control" id="editEstimatedDuration" name="estimated_duration" 
+                           value="{{ selected_action.action.estimated_duration or '' }}">
+                </div>
+                <div class="col-md-6">
+                    <label for="editExpectedBillableHours" class="form-label">Expected Billable Hours</label>
+                    <input type="number" step="any" class="form-control" id="editExpectedBillableHours" name="expected_billable_hours" 
+                           value="{{ selected_action.action.expected_billable_hours or '' }}">
+                </div>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="editScheduledStartTime" class="form-label">Scheduled Start Time</label>
+                    <input type="datetime-local" class="form-control" id="editScheduledStartTime" name="scheduled_start_time"
+                           value="{% if selected_action.action.scheduled_start_time %}{{ selected_action.action.scheduled_start_time.strftime('%Y-%m-%dT%H:%M') }}{% endif %}">
+                </div>
+                <div class="col-md-6">
+                    <label for="editStartTime" class="form-label">Start Time</label>
+                    <input type="datetime-local" class="form-control" id="editStartTime" name="start_time"
+                           value="{% if selected_action.action.start_time %}{{ selected_action.action.start_time.strftime('%Y-%m-%dT%H:%M') }}{% endif %}">
+                </div>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="editEndTime" class="form-label">End Time</label>
+                    <input type="datetime-local" class="form-control" id="editEndTime" name="end_time"
+                           value="{% if selected_action.action.end_time %}{{ selected_action.action.end_time.strftime('%Y-%m-%dT%H:%M') }}{% endif %}">
+                </div>
+                <div class="col-md-6">
+                    <label for="editBillableHours" class="form-label">Billable Hours</label>
+                    <input type="number" step="any" class="form-control" id="editBillableHours" name="billable_hours"
+                           value="{{ selected_action.action.billable_hours or '' }}">
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="editSafetyNotes" class="form-label">Safety Notes</label>
+                <textarea class="form-control" id="editSafetyNotes" name="safety_notes" rows="2">{{ selected_action.action.safety_notes or '' }}</textarea>
+            </div>
+            
+            <div class="mb-3">
+                <label for="editCompletionNotes" class="form-label">Completion Notes</label>
+                <textarea class="form-control" id="editCompletionNotes" name="completion_notes" rows="2">{{ selected_action.action.completion_notes or '' }}</textarea>
+            </div>
+            
+            <div class="mb-3">
+                <label for="editNotes" class="form-label">Notes</label>
+                <textarea class="form-control" id="editNotes" name="notes" rows="2">{{ selected_action.action.notes or '' }}</textarea>
+            </div>
+            
+            <div class="d-flex justify-content-start gap-2 mt-4">
+                <button type="button" class="btn btn-danger" style="width: 25%;" onclick="deleteAction({{ selected_action.action_id }})">
+                    <i class="bi bi-trash"></i> Delete
+                </button>
+                <button type="submit" class="btn btn-primary" style="width: 75%;">
+                    <i class="bi bi-check-circle"></i> Submit
+                </button>
+            </div>
+        </form>
+        <!-- Delete form (separate from edit form) -->
+        <form id="deleteActionForm{{ selected_action.action_id }}" method="POST" action="{{ url_for('maintenance.delete_action', action_id=selected_action.action_id) }}" style="display: none;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        </form>
+        {% else %}
+        <p class="text-muted">No actions available. Use the Action Creator Portal below to add actions.</p>
+        {% endif %}
+    </div>
+</div>

@@ -79,7 +79,7 @@
                     
                     <div class="mb-3">
                         <h6 class="text-muted mb-2">View Portal</h6>
-                        <a href="{{ url_for('inventory.purchase_orders_list') }}" class="btn btn-primary btn-sm w-100">
+                        <a href="{{ url_for('inventory.purchase_orders_list') }}" class="btn btn-primary btn-xl w-100 py-5">
                             <i class="bi bi-list-ul"></i> View Purchase Orders
                         </a>
                     </div>
@@ -87,25 +87,15 @@
                     <div class="mb-3">
                         <h6 class="text-muted mb-2">Create Purchase Orders</h6>
                         <div>
-                            <a href="{{ url_for('inventory.create_po_from_single_maintenance') }}" class="action-link btn btn-outline-primary">
-                                <i class="bi bi-wrench"></i> From Single Maintenance Event
-                            </a>
-                        </div>
-                        <div>
-                            <a href="{{ url_for('inventory.create_po_from_part_demands') }}" class="action-link btn btn-outline-primary">
-                                <i class="bi bi-list-check"></i> From Part Demands
-                            </a>
-                        </div>
-                        <div>
-                            <a href="{{ url_for('inventory.create_unlinked_purchase_order') }}" class="action-link btn btn-outline-primary">
-                                <i class="bi bi-file-plus"></i> Create Unlinked PO
+                            <a href="{{ url_for('inventory.create_po') }}" class="action-link btn btn-outline-primary w-100">
+                                <i class="bi bi-list-check"></i> Purchasing Portal
                             </a>
                         </div>
                     </div>
                     
                     <div class="mb-0">
                         <h6 class="text-muted mb-2">Linkage Portal</h6>
-                        <a href="{{ url_for('inventory.purchase_orders_list') }}" class="action-link btn btn-outline-secondary">
+                        <a href="{{ url_for('inventory.purchase_orders_list') }}" class="action-link btn btn-outline-warning">
                             <i class="bi bi-link-45deg"></i> Link Demands to PO
                         </a>
                     </div>
@@ -125,7 +115,7 @@
                     
                     <div class="mb-3">
                         <h6 class="text-muted mb-2">View Portal</h6>
-                        <a href="{{ url_for('inventory.po_arrivals') }}" class="btn btn-success btn-sm w-100">
+                        <a href="{{ url_for('inventory.po_arrivals') }}" class="btn btn-success btn-xl w-100 py-5">
                             <i class="bi bi-list-ul"></i> View Arrivals
                         </a>
                     </div>
@@ -133,25 +123,15 @@
                     <div class="mb-3">
                         <h6 class="text-muted mb-2">Create Arrivals</h6>
                         <div>
-                            <a href="{{ url_for('inventory.arrivals_index') }}" class="action-link btn btn-outline-success">
-                                <i class="bi bi-check-circle"></i> From Single Purchase Order
-                            </a>
-                        </div>
-                        <div>
-                            <a href="{{ url_for('inventory.arrivals_index') }}" class="action-link btn btn-outline-success">
-                                <i class="bi bi-list-check"></i> From PO Lines
-                            </a>
-                        </div>
-                        <div>
-                            <a href="{{ url_for('inventory.create_unlinked_arrival') }}" class="action-link btn btn-outline-success">
-                                <i class="bi bi-file-plus"></i> Create Unlinked Arrival
+                            <a href="{{ url_for('inventory.create_arrival') }}" class="action-link btn btn-outline-success w-100">
+                                <i class="bi bi-box-arrow-in-down"></i> Arrivals portal
                             </a>
                         </div>
                     </div>
                     
                     <div class="mb-0">
                         <h6 class="text-muted mb-2">Linkage Portal</h6>
-                        <a href="{{ url_for('inventory.po_arrivals') }}" class="action-link btn btn-outline-secondary">
+                        <a href="{{ url_for('inventory.po_arrivals') }}" class="action-link btn btn-outline-warning">
                             <i class="bi bi-link-45deg"></i> Link Arrivals to PO
                         </a>
                     </div>
@@ -171,7 +151,7 @@
                     
                     <div class="mb-3">
                         <h6 class="text-muted mb-2">View Inventory</h6>
-                        <a href="{{ url_for('inventory.active_inventory_view') }}" class="btn btn-info btn-sm w-100">
+                        <a href="{{ url_for('inventory.active_inventory_view') }}" class="btn btn-info btn-xl w-100 py-5">
                             <i class="bi bi-eye"></i> View Active Inventory
                         </a>
                     </div>
@@ -186,23 +166,24 @@
                     <div class="mb-3">
                         <h6 class="text-muted mb-2">Inventory Operations</h6>
                         <div>
-                            <a href="{{ url_for('inventory.initial_stocking') }}" class="action-link btn btn-outline-info">
+                            <a href="{{ url_for('inventory.initial_stocking') }}" class="action-link btn btn-outline-info w-100">
                                 <i class="bi bi-box-arrow-in-down"></i> Initial Stocking Portal
                             </a>
                         </div>
-                        <div>
-                            <a href="{{ url_for('inventory.issue_parts') }}" class="action-link btn btn-outline-info">
-                                <i class="bi bi-box-arrow-right"></i> Issue Portal
-                            </a>
-                        </div>
-                        <div>
-                            <a href="{{ url_for('inventory.part_issues_list') }}" class="action-link btn btn-outline-info">
-                                <i class="bi bi-list-ul"></i> View Part Issues
-                            </a>
-                        </div>
-                        <div>
-                            <div class="action-link btn btn-outline-secondary coming-soon" disabled>
-                                <i class="bi bi-hourglass-split"></i> Inventory Creation or Deletion Without Arrivals or Issues
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6 class="text-muted mb-2">Linkage and Issuance Portals</h6>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <a href="{{ url_for('inventory.issue_parts') }}" class="action-link btn btn-warning w-100">
+                                    <i class="bi bi-box-arrow-right"></i> Issue Portal
+                                </a>
+                            </div>
+                            <div class="col-6">
+                                <a href="{{ url_for('inventory.part_issues_list') }}" class="action-link btn btn-outline-warning w-100">
+                                    <i class="bi bi-list-ul"></i> View Part Issues
+                                </a>
                             </div>
                         </div>
                     </div>

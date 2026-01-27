@@ -1,0 +1,44 @@
+<!-- Dispatch Outcome Card for View Pages -->
+<div class="card info-card primary mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0">
+            <i class="bi bi-calendar-event text-primary"></i> Dispatch #{{ dispatch.id }}
+        </h6>
+        <span class="badge bg-{{ 'success' if dispatch.status in ['Active', 'Dispatched'] else 'info' if dispatch.status == 'Planned' else 'secondary' }}">
+            {{ dispatch.status }}
+        </span>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <small class="text-muted d-block">Scheduled Start</small>
+                <strong>{{ dispatch.scheduled_start.strftime('%Y-%m-%d %H:%M') if dispatch.scheduled_start else 'N/A' }}</strong>
+            </div>
+            <div class="col-md-6">
+                <small class="text-muted d-block">Scheduled End</small>
+                <strong>{{ dispatch.scheduled_end.strftime('%Y-%m-%d %H:%M') if dispatch.scheduled_end else 'N/A' }}</strong>
+            </div>
+        </div>
+        
+        {% if dispatch.assigned_person %}
+        <div class="mt-2">
+            <small class="text-muted d-block">Assigned Person</small>
+            <strong>{{ dispatch.assigned_person.username }}</strong>
+        </div>
+        {% endif %}
+        
+        {% if dispatch.asset_dispatched %}
+        <div class="mt-2">
+            <small class="text-muted d-block">Asset</small>
+            <strong>{{ dispatch.asset_dispatched.name }} ({{ dispatch.asset_dispatched.serial_number }})</strong>
+        </div>
+        {% endif %}
+        
+        <div class="mt-3">
+            <a href="{{ url_for('dispatching.dispatches_detail', item_id=dispatch.id) }}" 
+               class="btn btn-sm btn-primary w-100">
+                <i class="bi bi-eye"></i> View Dispatch Details
+            </a>
+        </div>
+    </div>
+</div>

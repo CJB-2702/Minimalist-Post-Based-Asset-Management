@@ -1,0 +1,21 @@
+<select class="form-select" 
+        name="classic_storeroom_id" 
+        id="classicStoreroomSelect" 
+        required
+        hx-get="{{ url_for('inventory.initial_stocking_locations') }}"
+        hx-trigger="change"
+        hx-target="#classicLocationSelectContainer"
+        hx-include="[name='classic_storeroom_id']"
+        hx-swap="innerHTML">
+    <option value="">Select a storeroom</option>
+    {% for s in storerooms %}
+    <option value="{{ s.id }}" {% if selected_storeroom_id == s.id %}selected{% endif %}>
+        {{ s.room_name }} {% if s.major_location %}({{ s.major_location.name }}){% endif %}
+    </option>
+    {% endfor %}
+</select>
+{% if error %}
+<div class="alert alert-danger mt-2">
+    <small>Error loading storerooms: {{ error }}</small>
+</div>
+{% endif %}

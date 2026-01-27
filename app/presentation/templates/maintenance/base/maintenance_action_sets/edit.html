@@ -25,6 +25,7 @@
             </div>
             <div class="card-body">
                 <form method="POST" action="{{ url_for('maintenance_action_sets.edit', action_set_id=action_set.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <div class="mb-3">
                         <label for="task_name" class="form-label">Task Name</label>
                         <input type="text"
@@ -165,6 +166,7 @@
                                               hx-target="#actions-card"
                                               hx-select="#actions-card"
                                               hx-swap="outerHTML">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                             <input type="hidden" name="direction" value="up">
                                             <button type="submit"
                                                     class="btn btn-sm btn-outline-secondary"
@@ -179,6 +181,7 @@
                                               hx-target="#actions-card"
                                               hx-select="#actions-card"
                                               hx-swap="outerHTML">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                             <input type="hidden" name="direction" value="down">
                                             <button type="submit"
                                                     class="btn btn-sm btn-outline-secondary"
@@ -211,6 +214,7 @@
                                               hx-target="#actions-card"
                                               hx-select="#actions-card"
                                               hx-swap="outerHTML">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                             <button type="submit"
                                                     class="btn btn-sm btn-outline-danger">
                                                 <i class="bi bi-trash"></i>
@@ -312,6 +316,7 @@
                       hx-select="#actions-card"
                       hx-swap="outerHTML"
                       onsubmit="return confirm('You are about to add a nonstandard action that is not defined in any template. This is not recommended unless you have a strong reason, as it may bypass standard work instructions and reporting.\n\nDo you want to continue?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <button type="submit" class="btn btn-outline-warning btn-sm">
                         Add Nonstandard Action
                     </button>

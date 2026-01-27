@@ -66,6 +66,7 @@
             <div class="card-body">
                 {% if not delay.is_resolved %}
                 <form method="POST" action="{{ url_for('blockers.resolve', delay_id=delay.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <button type="submit" class="btn btn-success w-100">Resolve Blocked Status</button>
                 </form>
                 {% endif %}

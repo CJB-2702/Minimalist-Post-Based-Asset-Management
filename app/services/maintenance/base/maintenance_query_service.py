@@ -7,7 +7,7 @@ Handles all query methods for MaintenanceContext, MaintenancePlanContext, and Ac
 from typing import List, Optional
 from app.buisness.maintenance.base.maintenance_context import MaintenanceContext
 from app.buisness.maintenance.planning.maintenance_plan_context import MaintenancePlanContext
-from app.buisness.maintenance.base.action_context import ActionContext
+from app.buisness.maintenance.base.action_managment.action_context import ActionContext
 from app.buisness.maintenance.base.structs.maintenance_action_set_struct import MaintenanceActionSetStruct
 from app.data.maintenance.base.maintenance_action_sets import MaintenanceActionSet
 from app.data.maintenance.planning.maintenance_plans import MaintenancePlan

@@ -1,0 +1,279 @@
+{% extends "public/base.html" %}
+
+{% block title %}Learn More - EBAMS{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="hero-section">
+    <div class="container">
+        <h1 class="hero-title">Learn More About EBAMS</h1>
+        <p class="hero-subtitle">Event-Based Asset Maintenance System - Complete system overview</p>
+    </div>
+</div>
+
+<!-- Learn More Content -->
+<div class="content-section">
+    <div class="container">
+        <!-- Overview -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <h2 class="section-title">System Overview</h2>
+                <div class="feature-card">
+                    <p class="lead">
+                        EBAMS is a comprehensive fleet and asset management system designed to streamline operations 
+                        and simplify tasks. Built on an event-driven architecture, EBAMS tracks all changes and 
+                        activities across your asset fleet, providing complete visibility and control.
+                    </p>
+                    <p class="text-muted">
+                        The system is organized into five integrated modules that work together to provide a complete 
+                        solution for managing assets, maintenance workflows, inventory, dispatching, and operational planning.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Key Benefits -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <h2 class="section-title">Why Choose EBAMS?</h2>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="feature-card text-center">
+                    <div class="feature-icon blue">
+                        <i class="bi bi-clock-history"></i>
+                    </div>
+                    <h4>Reduce Downtime</h4>
+                    <p class="text-muted">
+                        Proactive maintenance scheduling and tracking helps minimize asset downtime and maximize availability.
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="feature-card text-center">
+                    <div class="feature-icon green">
+                        <i class="bi bi-speedometer2"></i>
+                    </div>
+                    <h4>Increase Efficiency</h4>
+                    <p class="text-muted">
+                        Streamlined workflows and automated processes reduce manual work and improve operational efficiency.
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="feature-card text-center">
+                    <div class="feature-icon yellow">
+                        <i class="bi bi-clipboard-data"></i>
+                    </div>
+                    <h4>Data-Driven Decisions</h4>
+                    <p class="text-muted">
+                        Comprehensive reporting and analytics provide insights for informed decision-making.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Architecture -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <h2 class="section-title">System Architecture</h2>
+                <div class="feature-card">
+                    <p class="lead mb-4">EBAMS follows a layered architecture pattern for maintainability and scalability:</p>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <h5><i class="bi bi-database text-primary"></i> Data Layer</h5>
+                            <p class="text-muted">
+                                SQLAlchemy models defining database schema, organized by business domain. 
+                                Handles all data persistence and relationships.
+                            </p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <h5><i class="bi bi-gear text-success"></i> Business Layer</h5>
+                            <p class="text-muted">
+                                Business logic, validation, context managers, and factories. 
+                                Implements all business rules and workflows.
+                            </p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <h5><i class="bi bi-server text-warning"></i> Service Layer</h5>
+                            <p class="text-muted">
+                                Application services and orchestration for cross-domain operations. 
+                                Provides API-like interfaces.
+                            </p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <h5><i class="bi bi-window text-danger"></i> Presentation Layer</h5>
+                            <p class="text-muted">
+                                Flask routes, HTML templates with HTMX, and RESTful endpoints. 
+                                Handles all user interactions.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Technology Stack -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <h2 class="section-title">Technology Stack</h2>
+                <div class="feature-card">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5 class="mb-3">Backend</h5>
+                            <ul class="list-unstyled">
+                                <li class="mb-2"><i class="bi bi-check-circle text-success"></i> <strong>Flask 2.x</strong> - Web framework</li>
+                                <li class="mb-2"><i class="bi bi-check-circle text-success"></i> <strong>SQLAlchemy</strong> - ORM and database management</li>
+                                <li class="mb-2"><i class="bi bi-check-circle text-success"></i> <strong>SQLite/PostgreSQL</strong> - Database options</li>
+                                <li class="mb-2"><i class="bi bi-check-circle text-success"></i> <strong>Flask-Login</strong> - Authentication</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h5 class="mb-3">Frontend</h5>
+                            <ul class="list-unstyled">
+                                <li class="mb-2"><i class="bi bi-check-circle text-success"></i> <strong>HTMX</strong> - Dynamic interactions</li>
+                                <li class="mb-2"><i class="bi bi-check-circle text-success"></i> <strong>Bootstrap 5</strong> - Responsive UI</li>
+                                <li class="mb-2"><i class="bi bi-check-circle text-success"></i> <strong>Alpine.js</strong> - Lightweight reactivity</li>
+                                <li class="mb-2"><i class="bi bi-check-circle text-success"></i> <strong>Minimal JavaScript</strong> - Performance focused</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Key Features -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <h2 class="section-title">Key Features</h2>
+            </div>
+            <div class="col-md-6 mb-4">
+                <div class="feature-card">
+                    <h5><i class="bi bi-file-earmark-text text-primary"></i> Asset Management</h5>
+                    <ul class="text-muted">
+                        <li>Create and track assets with customizable types</li>
+                        <li>Link assets to makes/models with automatic detail population</li>
+                        <li>Track asset parent-child relationships</li>
+                        <li>Complete audit trail of all changes</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-6 mb-4">
+                <div class="feature-card">
+                    <h5><i class="bi bi-wrench text-warning"></i> Maintenance System</h5>
+                    <ul class="text-muted">
+                        <li>Event-based maintenance tracking</li>
+                        <li>Template-based maintenance workflows</li>
+                        <li>Action items with checklist functionality</li>
+                        <li>Technician, manager, and fleet portals</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-6 mb-4">
+                <div class="feature-card">
+                    <h5><i class="bi bi-boxes text-success"></i> Inventory Management</h5>
+                    <ul class="text-muted">
+                        <li>Multi-location inventory tracking</li>
+                        <li>Purchase order management</li>
+                        <li>Arrival processing and receiving</li>
+                        <li>Part linking to maintenance events</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-6 mb-4">
+                <div class="feature-card">
+                    <h5><i class="bi bi-truck text-purple"></i> Dispatching</h5>
+                    <ul class="text-muted">
+                        <li>Work order creation and assignment</li>
+                        <li>Status tracking with history</li>
+                        <li>Asset-dispatch relationships</li>
+                        <li>Outcome recording and documentation</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Roles -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <h2 class="section-title">User Roles</h2>
+                <div class="feature-card">
+                    <div class="row">
+                        <div class="col-md-3 text-center mb-3">
+                            <div class="feature-icon blue">
+                                <i class="bi bi-shield-check"></i>
+                            </div>
+                            <h5>Admin</h5>
+                            <p class="text-muted small">Full system access, user management, configuration</p>
+                        </div>
+                        <div class="col-md-3 text-center mb-3">
+                            <div class="feature-icon green">
+                                <i class="bi bi-person-badge"></i>
+                            </div>
+                            <h5>Manager</h5>
+                            <p class="text-muted small">Asset management, maintenance planning, reporting</p>
+                        </div>
+                        <div class="col-md-3 text-center mb-3">
+                            <div class="feature-icon yellow">
+                                <i class="bi bi-tools"></i>
+                            </div>
+                            <h5>Technician</h5>
+                            <p class="text-muted small">Maintenance execution, inventory access</p>
+                        </div>
+                        <div class="col-md-3 text-center mb-3">
+                            <div class="feature-icon red">
+                                <i class="bi bi-eye"></i>
+                            </div>
+                            <h5>Viewer</h5>
+                            <p class="text-muted small">Read-only access to assigned areas</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Development Principles -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <h2 class="section-title">Development Principles</h2>
+                <div class="feature-card">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <ul class="list-unstyled">
+                                <li class="mb-2"><i class="bi bi-arrow-right text-primary"></i> <strong>Atomic Models</strong> - Each table has its own model file</li>
+                                <li class="mb-2"><i class="bi bi-arrow-right text-primary"></i> <strong>Domain-Driven Design</strong> - Code organized by business domain</li>
+                                <li class="mb-2"><i class="bi bi-arrow-right text-primary"></i> <strong>Separation of Concerns</strong> - Clear boundaries between layers</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <ul class="list-unstyled">
+                                <li class="mb-2"><i class="bi bi-arrow-right text-primary"></i> <strong>Audit Trail</strong> - All user actions tracked</li>
+                                <li class="mb-2"><i class="bi bi-arrow-right text-primary"></i> <strong>HTMX-First</strong> - Minimize JavaScript usage</li>
+                                <li class="mb-2"><i class="bi bi-arrow-right text-primary"></i> <strong>Event-Driven</strong> - Complete activity logging</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Call to Action -->
+        <div class="row">
+            <div class="col-12 text-center">
+                <div class="feature-card bg-light">
+                    <h2 class="mb-3">Ready to Get Started?</h2>
+                    <p class="lead mb-4">Follow our quick start guide to begin using EBAMS</p>
+                    <a href="{{ url_for('public.get_started') }}" class="btn btn-primary btn-lg me-3">
+                        <i class="bi bi-rocket"></i> Get Started
+                    </a>
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary btn-lg">
+                        <i class="bi bi-box-arrow-in-right"></i> Login
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+

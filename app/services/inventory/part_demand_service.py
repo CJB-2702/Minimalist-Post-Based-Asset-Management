@@ -100,7 +100,7 @@ class PartDemandInventoryService:
         Returns:
             List of PartDemand objects
         """
-        from app.data.inventory.ordering import PurchaseOrderHeader
+        from app.data.inventory.purchasing import PurchaseOrderHeader
         
         po = PurchaseOrderHeader.query.get(po_id)
         if not po:

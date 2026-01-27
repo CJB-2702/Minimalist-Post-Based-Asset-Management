@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Arrivals Creation Portal{% endblock %}
+
+{% block extra_css %}
+<style>
+  .table-xs td, .table-xs th {
+    padding-top: .4rem;
+    padding-bottom: .4rem;
+  }
+  /* HTMX loading indicator */
+  .htmx-indicator {
+    opacity: 0;
+    transition: opacity 200ms ease-in;
+  }
+  .htmx-request .htmx-indicator {
+    opacity: 1;
+  }
+  .htmx-request.htmx-indicator {
+    opacity: 1;
+  }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='inventory/utils/alerts.js') }}"></script>
+<script src="{{ url_for('inventory.create_arrival_js') }}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <h1 class="h3 mb-1">
+            <i class="bi bi-box-arrow-in-down text-success"></i> Create Arrival from Purchase Order Lines
+          </h1>
+          <p class="text-muted mb-0">Search and select unfulfilled PO lines. All selected lines will be received into inventory.</p>
+        </div>
+        <div>
+          <a href="{{ url_for('inventory.arrivals_index') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Arrivals
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Package Header Form -->
+  <form method="POST" 
+        action="{{ url_for('inventory.create_arrival_submit', **filters) }}" 
+        id="arrival-submit-form" 
+        class="arrival-form-from-lines"
+        hx-post="{{ url_for('inventory.create_arrival_submit', **filters) }}"
+        hx-target="#form-messages"
+        hx-swap="innerHTML"
+        hx-indicator="#submit-indicator"
+        hx-disabled-elt="button[type='submit']"
+        hx-on::after-request="handleFormResponse(event)">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+    {% include 'inventory/arrivals/components/arrival_header_form.html' %}
+  </form>
+
+  <!-- Form Messages (for flash messages/errors) -->
+  <div id="form-messages"></div>
+
+  <!-- Filters & Search Results -->
+  {% include 'inventory/arrivals/components/filters_section.html' %}
+
+  <!-- Lines Summary -->
+  {% include 'inventory/arrivals/components/lines_summary.html' %}
+</div>
+
+<script src="{{ url_for('static', filename='js/inventory/storeroom_filter.js') }}"></script>
+{% endblock %}

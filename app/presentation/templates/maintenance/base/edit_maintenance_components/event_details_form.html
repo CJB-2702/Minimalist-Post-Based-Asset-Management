@@ -1,0 +1,223 @@
+<!-- Event Details Form -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-info-circle"></i> Maintenance Event Details</h5>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('maintenance_event_edit.edit_template_action_set', event_id=event.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <!-- Maintenance Action Set ID (Disabled) -->
+            <div class="mb-3">
+                <label for="maintenance_action_set_id" class="form-label text-muted">Maintenance Action Set ID</label>
+                <input type="text"
+                       class="form-control"
+                       id="maintenance_action_set_id"
+                       name="maintenance_action_set_id"
+                       value="{{ maintenance.id }}"
+                       disabled
+                       style="background-color: #e9ecef; cursor: not-allowed;">
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="task_name" class="form-label">Task Name <span class="text-danger">*</span></label>
+                    <input type="text"
+                           class="form-control"
+                           id="task_name"
+                           name="task_name"
+                           value="{{ maintenance.task_name or '' }}"
+                           required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="estimated_duration" class="form-label">Estimated Duration (hours)</label>
+                    <input type="number"
+                           step="any"
+                           class="form-control"
+                           id="estimated_duration"
+                           name="estimated_duration"
+                           value="{{ maintenance.estimated_duration or '' }}">
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="description" class="form-label">Description</label>
+                <textarea class="form-control"
+                          id="description"
+                          name="description"
+                          rows="3"
+                          placeholder="Describe this maintenance task...">{{ maintenance.description or '' }}</textarea>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label for="status" class="form-label">Status</label>
+                    <select id="status" name="status" class="form-select">
+                        {% set statuses = ['Planned', 'In Progress', 'Complete', 'Cancelled', 'Blocked'] %}
+                        {% for s in statuses %}
+                            <option value="{{ s }}" {% if maintenance.status == s %}selected{% endif %}>{{ s }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="priority" class="form-label">Priority</label>
+                    <select id="priority" name="priority" class="form-select">
+                        {% set priorities = ['Low', 'Medium', 'High', 'Critical'] %}
+                        {% for p in priorities %}
+                            <option value="{{ p }}" {% if maintenance.priority == p %}selected{% endif %}>{{ p }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="planned_start_datetime" class="form-label">Planned Start</label>
+                    <input type="datetime-local"
+                           class="form-control"
+                           id="planned_start_datetime"
+                           name="planned_start_datetime"
+                           value="{% if maintenance.planned_start_datetime %}{{ maintenance.planned_start_datetime.strftime('%Y-%m-%dT%H:%M') }}{% endif %}">
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="start_date" class="form-label">Start Date</label>
+                    <input type="datetime-local"
+                           class="form-control"
+                           id="start_date"
+                           name="start_date"
+                           value="{% if maintenance.maintenance_action_set.start_date %}{{ maintenance.maintenance_action_set.start_date.strftime('%Y-%m-%dT%H:%M') }}{% endif %}">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="end_date" class="form-label">End Date</label>
+                    <input type="datetime-local"
+                           class="form-control"
+                           id="end_date"
+                           name="end_date"
+                           value="{% if maintenance.maintenance_action_set.end_date %}{{ maintenance.maintenance_action_set.end_date.strftime('%Y-%m-%dT%H:%M') }}{% endif %}">
+                </div>
+            </div>
+
+            <details class="mb-3">
+                <summary class="fw-bold mb-3" style="cursor: pointer;">
+                    <i class="bi bi-chevron-down"></i> Additional Details
+                </summary>
+                
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" 
+                               type="checkbox" 
+                               id="safety_review_required" 
+                               name="safety_review_required"
+                               {% if maintenance.maintenance_action_set.safety_review_required %}checked{% endif %}>
+                        <label class="form-check-label" for="safety_review_required">
+                            Safety Review Required
+                        </label>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="staff_count" class="form-label">Staff Count</label>
+                        <input type="number"
+                               class="form-control"
+                               id="staff_count"
+                               name="staff_count"
+                               value="{{ maintenance.maintenance_action_set.staff_count or '' }}">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="labor_hours" class="form-label">Labor Hours</label>
+                        <input type="number"
+                               step="any"
+                               class="form-control"
+                               id="labor_hours"
+                               name="labor_hours"
+                               value="{{ maintenance.maintenance_action_set.labor_hours or '' }}">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="parts_cost" class="form-label">Parts Cost</label>
+                        <input type="number"
+                               step="any"
+                               class="form-control"
+                               id="parts_cost"
+                               name="parts_cost"
+                               value="{{ maintenance.maintenance_action_set.parts_cost or '' }}">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="actual_billable_hours" class="form-label">Actual Billable Hours</label>
+                        <input type="number"
+                               step="any"
+                               class="form-control"
+                               id="actual_billable_hours"
+                               name="actual_billable_hours"
+                               value="{{ maintenance.maintenance_action_set.actual_billable_hours or '' }}">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="assigned_user_id" class="form-label">Assigned User</label>
+                        <select id="assigned_user_id" name="assigned_user_id" class="form-select">
+                            <option value="">-- None --</option>
+                            {% for user in users %}
+                                <option value="{{ user.id }}" {% if maintenance.maintenance_action_set.assigned_user_id == user.id %}selected{% endif %}>
+                                    {{ user.username }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="assigned_by_id" class="form-label">Assigned By</label>
+                        <select id="assigned_by_id" name="assigned_by_id" class="form-select">
+                            <option value="">-- None --</option>
+                            {% for user in users %}
+                                <option value="{{ user.id }}" {% if maintenance.maintenance_action_set.assigned_by_id == user.id %}selected{% endif %}>
+                                    {{ user.username }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="completed_by_id" class="form-label">Completed By</label>
+                        <select id="completed_by_id" name="completed_by_id" class="form-select">
+                            <option value="">-- None --</option>
+                            {% for user in users %}
+                                <option value="{{ user.id }}" {% if maintenance.maintenance_action_set.completed_by_id == user.id %}selected{% endif %}>
+                                    {{ user.username }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="completion_notes" class="form-label">Completion Notes</label>
+                    <textarea class="form-control"
+                              id="completion_notes"
+                              name="completion_notes"
+                              rows="3"
+                              placeholder="Add completion notes...">{{ maintenance.maintenance_action_set.completion_notes or '' }}</textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label for="delay_notes" class="form-label">Blocker Notes</label>
+                    <textarea class="form-control" 
+                              id="delay_notes"
+                              name="delay_notes"
+                              rows="3"
+                              placeholder="Add blocker notes...">{{ maintenance.maintenance_action_set.blocker_notes or '' }}</textarea>
+                </div>
+            </details>
+
+            <div class="d-flex justify-content-between">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save"></i> Save Changes
+                </button>
+                <a href="{{ url_for('maintenance_event_view.view_maintenance_event', event_id=event.id) }}" class="btn btn-outline-secondary">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>

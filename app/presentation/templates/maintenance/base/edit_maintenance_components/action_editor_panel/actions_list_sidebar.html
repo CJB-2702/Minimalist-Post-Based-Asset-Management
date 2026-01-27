@@ -1,0 +1,44 @@
+<!-- Left Panel: Condensed Action List -->
+<div class="col-lg-4 col-md-12 border-responsive">
+    <div class="p-3">
+        <h6 class="fw-bold mb-3"><i class="bi bi-list-ul"></i> Action Details</h6>
+        <div class="list-group list-group-flush">
+            {% for action_struct in actions %}
+            <div class="list-group-item action-item px-2 py-2 {% if selected_action and action_struct.action_id == selected_action.action_id %}selected{% elif not selected_action and loop.index0 == 0 %}selected{% endif %}" 
+                 style="cursor: pointer;" 
+                 onclick="selectAction({{ action_struct.action_id }})"
+                 data-action-id="{{ action_struct.action_id }}">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <div class="d-flex align-items-center mb-1">
+                            <span class="badge bg-secondary me-2">#{{ action_struct.sequence_order }}</span>
+                            <strong class="small">{{ action_struct.action_name }}</strong>
+                            <span class="badge bg-{% if action_struct.status == 'Complete' %}success{% elif action_struct.status == 'In Progress' %}primary{% else %}secondary{% endif %} ms-2 small">
+                                {{ action_struct.status }}
+                            </span>
+                        </div>
+                        {% if action_struct.action.estimated_duration %}
+                        <small class="text-muted">Est: {{ action_struct.action.estimated_duration }}h</small>
+                        {% endif %}
+                    </div>
+                    <div class="btn-group-vertical btn-group-sm ms-2">
+                        <form method="POST" action="{{ url_for('maintenance.move_action_up', action_id=action_struct.action_id) }}" class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                            <button type="submit" class="btn btn-sm btn-outline-secondary" {% if action_struct.sequence_order == 1 %}disabled{% endif %} style="padding: 2px 6px;">
+                                <i class="bi bi-arrow-up" style="font-size: 0.7rem;"></i>
+                            </button>
+                        </form>
+                        <form method="POST" action="{{ url_for('maintenance.move_action_down', action_id=action_struct.action_id) }}" class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                            <button type="submit" class="btn btn-sm btn-outline-secondary" {% if action_struct.sequence_order == actions|length %}disabled{% endif %} style="padding: 2px 6px;">
+                                <i class="bi bi-arrow-down" style="font-size: 0.7rem;"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <hr class="my-3">
+    </div>
+</div>

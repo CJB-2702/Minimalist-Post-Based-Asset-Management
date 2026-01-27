@@ -8,7 +8,7 @@
         "is_active": true,
         "is_system": false,
         "is_admin": false,
-        "password": "Generic_User"
+        "password": "GenericUser123!"
       },
       "Brandon": {
         "username": "Brandon",
@@ -16,7 +16,7 @@
         "is_active": true,
         "is_system": false,
         "is_admin": false,
-        "password": "BrandonRocks9876"
+        "password": "BrandonRocks9876!"
       },
       "Ron": {
         "username": "Ron",
@@ -24,7 +24,7 @@
         "is_active": true,
         "is_system": false,
         "is_admin": false,
-        "password": "RonRocks9876"
+        "password": "RonRocks9876!"
       }
 
     },

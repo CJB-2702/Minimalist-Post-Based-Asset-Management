@@ -30,7 +30,7 @@
                     <h5 class="mb-0"><i class="bi bi-funnel"></i> Filters</h5>
                 </div>
                 <div class="card-body">
-                    <form method="GET" action="{{ url_for('inventory.movements_view') }}" class="row g-3">
+                    <form method="GET" action="{{ url_for('inventory.movements_view') }}" class="movements-filter-form row g-3">
                         <div class="col-md-2">
                             <label class="form-label">Part Number</label>
                             <input type="text" class="form-control" name="part_number" value="{{ current_filters.part_number }}" placeholder="Part number">
@@ -50,10 +50,12 @@
                         </div>
                         <div class="col-md-2">
                             <label class="form-label">Location</label>
-                            <select class="form-select" name="location_id">
+                            <select class="form-select" name="location_id"
+                                    onchange="filter_storeroom_dropdowns_by_major_location_id(this.value, 'movements-filter-form')">
                                 <option value="">All Locations</option>
                                 {% for loc in locations %}
-                                <option value="{{ loc.id }}" {% if current_filters.location_id == loc.id %}selected{% endif %}>{{ loc.name }}</option>
+                                <option value="{{ loc.id }}" {% if current_filters.location_id == loc.id %}selected{% endif %}
+                                        data-location-id="{{ loc.id }}" data-major-location-name="{{ loc.name }}">{{ loc.name }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -62,7 +64,12 @@
                             <select class="form-select" name="storeroom_id">
                                 <option value="">All Storerooms</option>
                                 {% for s in storerooms %}
-                                <option value="{{ s.id }}" {% if current_filters.storeroom_id == s.id %}selected{% endif %}>{{ s.room_name }}</option>
+                                <option value="{{ s.id }}" {% if current_filters.storeroom_id == s.id %}selected{% endif %}
+                                        class="storeroom-dropdown-item"
+                                        data-storeroom-id="{{ s.id }}"
+                                        data-storeroom-name="{{ s.room_name }}"
+                                        data-major-location-id="{{ s.major_location_id }}"
+                                        data-major-location-name="{% if s.major_location %}{{ s.major_location.name }}{% endif %}">{{ s.room_name }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -257,6 +264,8 @@
         </div>
     </div>
 </div>
+
+<script src="{{ url_for('static', filename='js/inventory/storeroom_filter.js') }}"></script>
 {% endblock %}
 
 

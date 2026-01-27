@@ -1,0 +1,56 @@
+<div id="line-items-table">
+    {% if po_context.lines %}
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Line #</th>
+                    <th>Part Number</th>
+                    <th>Part Name</th>
+                    <th>Quantity</th>
+                    <th>Unit Cost</th>
+                    <th>Line Total</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="line-items-tbody">
+                {% for line in po_context.lines %}
+                {% include 'inventory/ordering/_line_item_row.html' %}
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr class="table-secondary">
+                    <th colspan="5" class="text-end">Subtotal:</th>
+                    <td><strong>${{ "%.2f"|format(po_context.subtotal) }}</strong></td>
+                    <td></td>
+                </tr>
+                <tr class="table-secondary">
+                    <th colspan="5" class="text-end">Shipping:</th>
+                    <td><strong>${{ "%.2f"|format(po_context.header.shipping_cost or 0) }}</strong></td>
+                    <td></td>
+                </tr>
+                <tr class="table-secondary">
+                    <th colspan="5" class="text-end">Tax:</th>
+                    <td><strong>${{ "%.2f"|format(po_context.header.tax_amount or 0) }}</strong></td>
+                    <td></td>
+                </tr>
+                <tr class="table-secondary">
+                    <th colspan="5" class="text-end">Other:</th>
+                    <td><strong>${{ "%.2f"|format(po_context.header.other_amount or 0) }}</strong></td>
+                    <td></td>
+                </tr>
+                <tr class="table-primary">
+                    <th colspan="5" class="text-end">Total:</th>
+                    <td><strong>${{ "%.2f"|format(po_context.header.total_cost or 0) }}</strong></td>
+                    <td></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> No line items. Add line items above.
+    </div>
+    {% endif %}
+</div>
+

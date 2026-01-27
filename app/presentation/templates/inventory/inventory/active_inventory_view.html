@@ -30,7 +30,7 @@
                     <h5 class="mb-0"><i class="bi bi-funnel"></i> Filters</h5>
                 </div>
                 <div class="card-body">
-                    <form method="GET" action="{{ url_for('inventory.active_inventory_view') }}" class="row g-3">
+                    <form method="GET" action="{{ url_for('inventory.active_inventory_view') }}" class="active-inventory-filter-form row g-3">
                         <div class="col-md-3">
                             <label class="form-label">Part Number</label>
                             <input type="text" class="form-control" name="part_number" value="{{ current_filters.part_number }}" placeholder="Part number">
@@ -41,10 +41,12 @@
                         </div>
                         <div class="col-md-2">
                             <label class="form-label">Location</label>
-                            <select class="form-select" name="location_id">
+                            <select class="form-select" name="location_id"
+                                    onchange="filter_storeroom_dropdowns_by_major_location_id(this.value, 'active-inventory-filter-form')">
                                 <option value="">All Locations</option>
                                 {% for loc in locations %}
-                                <option value="{{ loc.id }}" {% if current_filters.location_id == loc.id %}selected{% endif %}>{{ loc.name }}</option>
+                                <option value="{{ loc.id }}" {% if current_filters.location_id == loc.id %}selected{% endif %}
+                                        data-location-id="{{ loc.id }}" data-major-location-name="{{ loc.name }}">{{ loc.name }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -53,7 +55,12 @@
                             <select class="form-select" name="storeroom_id">
                                 <option value="">All Storerooms</option>
                                 {% for s in storerooms %}
-                                <option value="{{ s.id }}" {% if current_filters.storeroom_id == s.id %}selected{% endif %}>{{ s.room_name }}</option>
+                                <option value="{{ s.id }}" {% if current_filters.storeroom_id == s.id %}selected{% endif %}
+                                        class="storeroom-dropdown-item"
+                                        data-storeroom-id="{{ s.id }}"
+                                        data-storeroom-name="{{ s.room_name }}"
+                                        data-major-location-id="{{ s.major_location_id }}"
+                                        data-major-location-name="{% if s.major_location %}{{ s.major_location.name }}{% endif %}">{{ s.room_name }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -181,20 +188,42 @@
                                         {% endif %}
                                     </td>
                                     <td>
-                                        <button type="button" class="btn btn-sm btn-outline-primary" 
-                                                data-bs-toggle="modal" 
-                                                data-bs-target="#moveInventoryModal"
-                                                data-inventory-id="{{ inv.id }}"
-                                                data-part-number="{% if inv.part %}{{ inv.part.part_number }}{% else %}Part #{{ inv.part_id }}{% endif %}"
-                                                data-part-name="{% if inv.part %}{{ inv.part.part_name }}{% endif %}"
-                                                data-available-qty="{{ inv.quantity_on_hand - inv.quantity_allocated }}"
-                                                data-quantity-on-hand="{{ inv.quantity_on_hand }}"
-                                                data-source-major-location-id="{% if inv.storeroom and inv.storeroom.major_location %}{{ inv.storeroom.major_location.id }}{% endif %}"
-                                                data-source-storeroom-id="{% if inv.storeroom %}{{ inv.storeroom.id }}{% endif %}"
-                                                data-source-location="{% if inv.location %}{{ inv.location.location }}{% endif %}"
-                                                data-source-bin="{% if inv.bin %}{{ inv.bin.bin_tag }}{% endif %}">
-                                            <i class="bi bi-arrow-right"></i> Move
-                                        </button>
+                                        <div class="btn-group" role="group">
+                                            <button type="button" class="btn btn-sm btn-outline-primary" 
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#moveInventoryModal"
+                                                    data-inventory-id="{{ inv.id }}"
+                                                    data-part-number="{% if inv.part %}{{ inv.part.part_number }}{% else %}Part #{{ inv.part_id }}{% endif %}"
+                                                    data-part-name="{% if inv.part %}{{ inv.part.part_name }}{% endif %}"
+                                                    data-available-qty="{{ inv.quantity_on_hand - inv.quantity_allocated }}"
+                                                    data-quantity-on-hand="{{ inv.quantity_on_hand }}"
+                                                    data-source-major-location-id="{% if inv.storeroom and inv.storeroom.major_location %}{{ inv.storeroom.major_location.id }}{% endif %}"
+                                                    data-source-storeroom-id="{% if inv.storeroom %}{{ inv.storeroom.id }}{% endif %}"
+                                                    data-source-location="{% if inv.location %}{{ inv.location.location }}{% endif %}"
+                                                    data-source-bin="{% if inv.bin %}{{ inv.bin.bin_tag }}{% endif %}">
+                                                <i class="bi bi-arrow-right"></i> Move
+                                            </button>
+                                            {% set base_url = url_for('inventory.move_inventory_gui', initial_active_inventory_id=inv.id) %}
+                                            {% set query_parts = [] %}
+                                            {% if inv.storeroom and inv.storeroom.major_location_id %}
+                                                {% set _ = query_parts.append('major_location_id=' ~ inv.storeroom.major_location_id) %}
+                                            {% endif %}
+                                            {% if inv.storeroom_id %}
+                                                {% set _ = query_parts.append('storeroom=' ~ inv.storeroom_id) %}
+                                            {% endif %}
+                                            {% if inv.location_id %}
+                                                {% set _ = query_parts.append('location=' ~ inv.location_id) %}
+                                            {% endif %}
+                                            {% if inv.bin_id %}
+                                                {% set _ = query_parts.append('bin=' ~ inv.bin_id) %}
+                                            {% endif %}
+                                            {% set query_string = query_parts|join('&') %}
+                                            <a href="{{ base_url }}{% if query_string %}?{{ query_string }}{% endif %}" 
+                                               class="btn btn-sm btn-outline-info"
+                                               title="Move using visual GUI">
+                                                <i class="bi bi-diagram-3"></i> Move (GUI)
+                                            </a>
+                                        </div>
                                     </td>
                                 </tr>
                                 {% endfor %}
@@ -267,7 +296,8 @@
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="moveInventoryForm">
+            <form id="moveInventoryForm" class="move-inventory-modal" method="POST" action="{{ url_for('inventory.move_inventory') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 <div class="modal-body">
                     <div class="mb-3">
                         <label class="form-label"><strong>Part:</strong></label>
@@ -289,10 +319,11 @@
                     
                     <div class="mb-3">
                         <label for="moveMajorLocation" class="form-label">Major Location <span class="text-danger">*</span></label>
-                        <select class="form-select" id="moveMajorLocation" name="to_major_location_id" required>
+                        <select class="form-select" id="moveMajorLocation" name="to_major_location_id" required
+                                onchange="filter_storeroom_dropdowns_by_major_location_id(this.value, 'move-inventory-modal')">
                             <option value="">Select Major Location</option>
                             {% for loc in locations %}
-                            <option value="{{ loc.id }}">{{ loc.name }}</option>
+                            <option value="{{ loc.id }}" data-location-id="{{ loc.id }}" data-major-location-name="{{ loc.name }}">{{ loc.name }}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -302,7 +333,11 @@
                         <select class="form-select" id="moveStoreroom" name="to_storeroom_id" required>
                             <option value="">Select Storeroom</option>
                             {% for s in storerooms %}
-                            <option value="{{ s.id }}" data-major-location-id="{{ s.major_location_id }}">{{ s.room_name }}</option>
+                            <option value="{{ s.id }}" class="storeroom-dropdown-item"
+                                    data-storeroom-id="{{ s.id }}"
+                                    data-storeroom-name="{{ s.room_name }}"
+                                    data-major-location-id="{{ s.major_location_id }}"
+                                    data-major-location-name="{% if s.major_location %}{{ s.major_location.name }}{% endif %}">{{ s.room_name }}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -320,8 +355,6 @@
                                placeholder="Enter bin tag or leave blank">
                         <div class="form-text">Leave blank for unassigned bin. Requires a location. Will be created if it doesn't exist.</div>
                     </div>
-                    
-                    <div id="moveErrorAlert" class="alert alert-danger d-none" role="alert"></div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -338,7 +371,6 @@
 document.addEventListener('DOMContentLoaded', function() {
     const modal = document.getElementById('moveInventoryModal');
     const form = document.getElementById('moveInventoryForm');
-    const errorAlert = document.getElementById('moveErrorAlert');
     const partInfo = document.getElementById('movePartInfo');
     const availableQty = document.getElementById('moveAvailableQty');
     const quantityInput = document.getElementById('moveQuantity');
@@ -347,233 +379,89 @@ document.addEventListener('DOMContentLoaded', function() {
     const locationInput = document.getElementById('moveLocation');
     const binInput = document.getElementById('moveBin');
     
-    // Store source location info for validation
-    let sourceStoreroomId = null;
-    let sourceLocation = null;
-    let sourceBin = null;
+    // Storeroom filtering is now handled by the global filter_storeroom_dropdowns_by_major_location_id function
     
-    // Filter storerooms based on selected major location
-    majorLocationSelect.addEventListener('change', function() {
-        const selectedMajorLocationId = this.value;
-        const options = storeroomSelect.querySelectorAll('option');
+    // Template function to populate form with inventory data
+    function populateMoveForm(data) {
+        // Reset form and button state
+        form.reset();
+        const submitButton = form.querySelector('button[type="submit"]');
+        submitButton.disabled = false;
+        submitButton.innerHTML = '<i class="bi bi-arrow-right"></i> Move Inventory';
         
-        options.forEach(option => {
-            if (option.value === '') {
-                option.style.display = '';
-            } else {
-                const optionMajorLocationId = option.getAttribute('data-major-location-id');
-                if (selectedMajorLocationId && optionMajorLocationId !== selectedMajorLocationId) {
-                    option.style.display = 'none';
-                } else {
-                    option.style.display = '';
+        // Populate display sections using template
+        partInfo.innerHTML = data.partName 
+            ? `<strong>${data.partNumber}</strong> - ${data.partName}`
+            : `<strong>${data.partNumber}</strong>`;
+        availableQty.innerHTML = `<strong>${data.availableQty.toFixed(2)}</strong>`;
+        
+        // Populate form fields from data object
+        document.getElementById('moveActiveInventoryId').value = data.inventoryId;
+        quantityInput.value = data.availableQty.toFixed(2);
+        quantityInput.setAttribute('max', data.availableQty);
+        quantityInput.setAttribute('placeholder', `Max: ${data.availableQty.toFixed(2)}`);
+        
+        // Pre-fill location fields if available
+        if (data.sourceLocation) locationInput.value = data.sourceLocation;
+        if (data.sourceBin) binInput.value = data.sourceBin;
+        
+        // Pre-fill major location and storeroom if available
+        if (data.sourceMajorLocationId) {
+            majorLocationSelect.value = data.sourceMajorLocationId;
+            majorLocationSelect.dispatchEvent(new Event('change'));
+            
+            // Pre-fill storeroom after filtering completes
+            setTimeout(() => {
+                if (data.sourceStoreroomId) {
+                    storeroomSelect.value = data.sourceStoreroomId;
                 }
-            }
-        });
-        
-        // Reset storeroom selection if it doesn't match
-        if (selectedMajorLocationId) {
-            const selectedStoreroomMajorLocation = storeroomSelect.options[storeroomSelect.selectedIndex]?.getAttribute('data-major-location-id');
-            if (selectedStoreroomMajorLocation && selectedStoreroomMajorLocation !== selectedMajorLocationId) {
-                storeroomSelect.value = '';
-            }
-        }
-    });
-    
-    // Validate bin requires location
-    binInput.addEventListener('blur', function() {
-        const binValue = this.value.trim();
-        const locationValue = locationInput.value.trim();
-        
-        if (binValue && !locationValue) {
-            this.setCustomValidity('Bin requires a location');
-            this.reportValidity();
+            }, 0);
         } else {
-            this.setCustomValidity('');
+            majorLocationSelect.dispatchEvent(new Event('change'));
         }
-    });
-    
-    locationInput.addEventListener('blur', function() {
-        binInput.dispatchEvent(new Event('blur'));
-    });
+    }
     
     // Handle modal show event
     modal.addEventListener('show.bs.modal', function(event) {
         const button = event.relatedTarget;
-        const inventoryId = button.getAttribute('data-inventory-id');
-        const partNumber = button.getAttribute('data-part-number');
-        const partName = button.getAttribute('data-part-name');
-        const availableQtyValue = parseFloat(button.getAttribute('data-available-qty'));
-        const quantityOnHandValue = parseFloat(button.getAttribute('data-quantity-on-hand')) || availableQtyValue;
+        const formData = {
+            inventoryId: button.getAttribute('data-inventory-id'),
+            partNumber: button.getAttribute('data-part-number'),
+            partName: button.getAttribute('data-part-name'),
+            availableQty: parseFloat(button.getAttribute('data-available-qty')),
+            sourceMajorLocationId: button.getAttribute('data-source-major-location-id') 
+                ? parseInt(button.getAttribute('data-source-major-location-id')) : null,
+            sourceStoreroomId: button.getAttribute('data-source-storeroom-id') 
+                ? parseInt(button.getAttribute('data-source-storeroom-id')) : null,
+            sourceLocation: button.getAttribute('data-source-location') || null,
+            sourceBin: button.getAttribute('data-source-bin') || null
+        };
         
-        // Store source location info
-        const sourceMajorLocationIdAttr = button.getAttribute('data-source-major-location-id');
-        const sourceStoreroomIdAttr = button.getAttribute('data-source-storeroom-id');
-        const sourceLocationAttr = button.getAttribute('data-source-location');
-        const sourceBinAttr = button.getAttribute('data-source-bin');
-        
-        sourceStoreroomId = sourceStoreroomIdAttr ? parseInt(sourceStoreroomIdAttr) : null;
-        sourceLocation = sourceLocationAttr || null;
-        sourceBin = sourceBinAttr || null;
-        
-        // Reset form
-        form.reset();
-        errorAlert.classList.add('d-none');
-        errorAlert.textContent = '';
-        
-        // Set part info
-        let partInfoText = partNumber;
-        if (partName) {
-            partInfoText += ' - ' + partName;
-        }
-        partInfo.textContent = partInfoText;
-        
-        // Set available quantity
-        availableQty.textContent = availableQtyValue.toFixed(2);
-        
-        // Pre-fill quantity with available quantity
-        quantityInput.value = availableQtyValue.toFixed(2);
-        quantityInput.setAttribute('max', availableQtyValue);
-        quantityInput.setAttribute('placeholder', `Max: ${availableQtyValue.toFixed(2)}`);
-        
-        // Set hidden inventory ID
-        document.getElementById('moveActiveInventoryId').value = inventoryId;
-        
-        // Pre-fill major location if available
-        if (sourceMajorLocationIdAttr) {
-            const sourceMajorLocationId = parseInt(sourceMajorLocationIdAttr);
-            majorLocationSelect.value = sourceMajorLocationId;
-            // Trigger change to filter storerooms
-            majorLocationSelect.dispatchEvent(new Event('change'));
-            
-            // Pre-fill storeroom if available (use setTimeout to ensure filtering happens first)
-            setTimeout(function() {
-                if (sourceStoreroomId) {
-                    storeroomSelect.value = sourceStoreroomId;
-                }
-            }, 0);
-        } else {
-            // Reset storeroom filter if no major location
-            majorLocationSelect.dispatchEvent(new Event('change'));
-        }
-        
-        // Pre-fill location if available
-        if (sourceLocation) {
-            locationInput.value = sourceLocation;
-        }
-        
-        // Pre-fill bin if available
-        if (sourceBin) {
-            binInput.value = sourceBin;
-        }
+        populateMoveForm(formData);
     });
     
-    // Handle form submission
+    // Handle form submission - trim whitespace and let form submit normally
     form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        // Hide previous errors
-        errorAlert.classList.add('d-none');
-        errorAlert.textContent = '';
-        
-        // Strip trailing whitespace from location and bin
+        // Strip trailing whitespace from location and bin before submission
         const locationValue = locationInput.value.trim();
         const binValue = binInput.value.trim();
         
         locationInput.value = locationValue;
         binInput.value = binValue;
         
-        // Validate bin requires location
-        if (binValue && !locationValue) {
-            errorAlert.textContent = 'Bin requires a location';
-            errorAlert.classList.remove('d-none');
-            locationInput.focus();
-            return;
-        }
-        
-        // Get form data
-        const formData = {
-            active_inventory_id: document.getElementById('moveActiveInventoryId').value,
-            quantity: parseFloat(quantityInput.value),
-            to_major_location_id: parseInt(majorLocationSelect.value),
-            to_storeroom_id: parseInt(storeroomSelect.value),
-            to_location: locationValue || null,
-            to_bin: binValue || null
-        };
-        
-        // Validate required fields
-        if (!formData.quantity || formData.quantity <= 0) {
-            errorAlert.textContent = 'Quantity must be greater than 0';
-            errorAlert.classList.remove('d-none');
-            quantityInput.focus();
-            return;
-        }
-        
-        if (!formData.to_major_location_id || !formData.to_storeroom_id) {
-            errorAlert.textContent = 'Major location and storeroom are required';
-            errorAlert.classList.remove('d-none');
-            return;
-        }
-        
-        // Validate: prevent transfer to self (same location)
-        const toStoreroomId = formData.to_storeroom_id;
-        const toLocation = locationValue || null;
-        const toBin = binValue || null;
-        
-        // Compare source and destination
-        // Both storerooms must match
-        const storeroomsMatch = sourceStoreroomId && toStoreroomId && sourceStoreroomId === toStoreroomId;
-        
-        // Both locations must match (both null or both same value)
-        const locationsMatch = (sourceLocation === null && toLocation === null) || 
-                               (sourceLocation && toLocation && sourceLocation === toLocation);
-        
-        // Both bins must match (both null or both same value)
-        const binsMatch = (sourceBin === null && toBin === null) || 
-                          (sourceBin && toBin && sourceBin === toBin);
-        
-        if (storeroomsMatch && locationsMatch && binsMatch) {
-            errorAlert.textContent = 'Cannot transfer inventory to the same location';
-            errorAlert.classList.remove('d-none');
-            return;
-        }
-        
-        // Disable submit button
+        // Show loading state on submit button
         const submitButton = form.querySelector('button[type="submit"]');
         submitButton.disabled = true;
         submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Moving...';
         
-        // Submit form
-        fetch('{{ url_for("inventory.move_inventory") }}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(formData)
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Close modal and reload page
-                const modalInstance = bootstrap.Modal.getInstance(modal);
-                modalInstance.hide();
-                window.location.reload();
-            } else {
-                // Show error
-                errorAlert.textContent = data.error || 'An error occurred';
-                errorAlert.classList.remove('d-none');
-                submitButton.disabled = false;
-                submitButton.innerHTML = '<i class="bi bi-arrow-right"></i> Move Inventory';
-            }
-        })
-        .catch(error => {
-            errorAlert.textContent = 'An unexpected error occurred: ' + error.message;
-            errorAlert.classList.remove('d-none');
-            submitButton.disabled = false;
-            submitButton.innerHTML = '<i class="bi bi-arrow-right"></i> Move Inventory';
-        });
+        // Form will submit normally - backend will handle validation and flash errors/success
+        // If there are errors, the page will reload and flash messages will be displayed
+        // If successful, the page will reload and success message will be displayed
     });
 });
 </script>
+<script src="{{ url_for('static', filename='js/inventory/storeroom_filter.js') }}"></script>
+<script src="{{ url_for('static', filename='inventory/utils/alerts.js') }}"></script>
 {% endblock %}
 
 

@@ -1,0 +1,124 @@
+<script>
+// Template Action Set selection
+function selectTemplateActionSet(templateSetId, maintenanceActionSetId) {
+    // Remove selected class from all items
+    document.querySelectorAll('[data-template-set-id]').forEach(item => {
+        item.classList.remove('selected');
+        item.style.backgroundColor = '';
+    });
+    
+    // Add selected class
+    const selectedItem = document.querySelector(`[data-template-set-id="${templateSetId}"]`);
+    if (selectedItem) {
+        selectedItem.classList.add('selected');
+        selectedItem.style.backgroundColor = '#cfe2ff';
+    }
+    
+    // Load template action items via HTMX
+    const container = document.getElementById('template-action-items-container');
+    const list = document.getElementById('template-action-items-list');
+    
+    const url = `/maintenance/action-creator-portal/list-template-action-items/${templateSetId}?maintenance_action_set_id=${maintenanceActionSetId}`;
+    htmx.ajax('GET', url, {
+        target: list,
+        swap: 'innerHTML'
+    }).then(() => {
+        container.style.display = 'block';
+    });
+}
+
+// Action selection handlers - open pre-rendered modals
+function selectTemplateAction(templateActionId, maintenanceActionSetId) {
+    const modal = new bootstrap.Modal(document.getElementById(`templateActionModal${templateActionId}`));
+    modal.show();
+}
+
+function selectProtoAction(protoActionId, maintenanceActionSetId) {
+    const modal = new bootstrap.Modal(document.getElementById(`protoActionModal${protoActionId}`));
+    modal.show();
+}
+
+function selectCurrentAction(sourceActionId, maintenanceActionSetId) {
+    const modal = new bootstrap.Modal(document.getElementById(`currentActionModal${sourceActionId}`));
+    modal.show();
+}
+
+function selectBlankAction() {
+    const modal = new bootstrap.Modal(document.getElementById('blankActionModal'));
+    modal.show();
+}
+
+// JavaScript filtering for current actions
+function filterCurrentActions(searchTerm) {
+    const searchLower = searchTerm.toLowerCase();
+    const items = document.querySelectorAll('.current-action-item');
+    let visibleCount = 0;
+    
+    items.forEach(item => {
+        const actionName = item.getAttribute('data-action-name') || '';
+        const actionDescription = item.getAttribute('data-action-description') || '';
+        
+        if (!searchTerm || actionName.includes(searchLower) || actionDescription.includes(searchLower)) {
+            item.style.display = '';
+            visibleCount++;
+        } else {
+            item.style.display = 'none';
+        }
+    });
+    
+    // Show/hide "no results" message if needed
+    const listContainer = document.getElementById('current-actions-list');
+    let noResultsMsg = listContainer.querySelector('.no-results-message');
+    if (visibleCount === 0 && searchTerm) {
+        if (!noResultsMsg) {
+            noResultsMsg = document.createElement('div');
+            noResultsMsg.className = 'list-group-item text-muted no-results-message';
+            noResultsMsg.textContent = 'No actions match your search.';
+            listContainer.appendChild(noResultsMsg);
+        }
+    } else if (noResultsMsg) {
+        noResultsMsg.remove();
+    }
+}
+
+// Insert position update helpers
+function updateInsertPosition(actionId, value) {
+    document.getElementById(`insertPosition${actionId}`).value = value;
+    const afterSelect = document.getElementById(`afterActionSelect${actionId}`);
+    if (value === 'after') {
+        afterSelect.style.display = 'block';
+    } else {
+        afterSelect.style.display = 'none';
+    }
+}
+
+function updateInsertPositionProto(actionId, value) {
+    document.getElementById(`insertPositionProto${actionId}`).value = value;
+    const afterSelect = document.getElementById(`afterActionSelectProto${actionId}`);
+    if (value === 'after') {
+        afterSelect.style.display = 'block';
+    } else {
+        afterSelect.style.display = 'none';
+    }
+}
+
+function updateInsertPositionCurrent(actionId, value) {
+    document.getElementById(`insertPositionCurrent${actionId}`).value = value;
+    const afterSelect = document.getElementById(`afterActionSelectCurrent${actionId}`);
+    if (value === 'after') {
+        afterSelect.style.display = 'block';
+    } else {
+        afterSelect.style.display = 'none';
+    }
+}
+
+function updateInsertPositionBlank(value) {
+    document.getElementById('insertPositionBlank').value = value;
+    const afterSelect = document.getElementById('afterActionSelectBlank');
+    if (value === 'after') {
+        afterSelect.style.display = 'block';
+    } else {
+        afterSelect.style.display = 'none';
+    }
+}
+</script>

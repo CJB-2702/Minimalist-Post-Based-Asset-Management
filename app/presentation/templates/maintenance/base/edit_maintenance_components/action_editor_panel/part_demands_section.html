@@ -1,0 +1,159 @@
+<!-- Part Demands Section -->
+<div class="card mb-3 border-info">
+    <div class="card-header bg-info bg-opacity-10">
+        <h6 class="mb-0">
+            <i class="bi bi-box-seam"></i> Part Demands
+        </h6>
+    </div>
+    <div class="card-body">
+        <!-- Part Demands List -->
+        <div class="list-group list-group-flush mb-3">
+            {% for part_demand in selected_action.part_demands %}
+            <div class="list-group-item px-0 py-2" data-part-demand-id="{{ part_demand.id }}">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div class="flex-grow-1">
+                        <div class="d-flex align-items-center mb-1">
+                            <strong>
+                                {% if part_demand.part %}
+                                    {{ part_demand.part.part_name }}
+                                {% else %}
+                                    Part #{{ part_demand.part_id }}
+                                {% endif %}
+                            </strong>
+                            <span class="badge bg-{% if part_demand.status == 'Issued' %}success{% elif part_demand.status == 'Rejected' or 'Cancelled' in part_demand.status %}danger{% elif 'Pending' in part_demand.status %}warning{% else %}secondary{% endif %} ms-2 small">
+                                {{ part_demand.status }}
+                            </span>
+                            {% if part_demand.priority %}
+                            <span class="badge bg-{% if part_demand.priority == 'Critical' %}danger{% elif part_demand.priority == 'High' %}warning{% else %}info{% endif %} ms-1 small">
+                                {{ part_demand.priority }}
+                            </span>
+                            {% endif %}
+                        </div>
+                        <div class="small text-muted">
+                            {% if part_demand.part %}
+                            {% if part_demand.part.part_number %}
+                            <div><i class="bi bi-upc"></i> Part #: {{ part_demand.part.part_number }}</div>
+                            {% endif %}
+                            {% if part_demand.part.category %}
+                            <div><i class="bi bi-tag"></i> Category: {{ part_demand.part.category }}</div>
+                            {% endif %}
+                            {% if part_demand.part.manufacturer %}
+                            <div><i class="bi bi-building"></i> Manufacturer: {{ part_demand.part.manufacturer }}</div>
+                            {% endif %}
+                            {% endif %}
+                            <div><i class="bi bi-123"></i> Quantity: {{ part_demand.quantity_required }} units</div>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-1">
+                        <button type="button" 
+                                class="btn btn-sm btn-link p-0 edit-part-demand-btn"
+                                data-part-demand-id="{{ part_demand.id }}"
+                                data-action="toggle-edit"
+                                style="color: #ffc107;">
+                            <i class="bi bi-pencil-fill"></i>
+                        </button>
+                        <form method="POST" action="{{ url_for('maintenance_event_work.work_maintenance_event', event_id=event.id) }}" 
+                              class="d-inline" 
+                              onsubmit="return confirm('Delete this part demand?')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                            <input type="hidden" name="delete_part_demand_id" value="{{ part_demand.id }}">
+                            <button type="submit" class="btn btn-sm btn-link p-0" style="color: #dc3545;">
+                                <i class="bi bi-trash-fill"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Inline Edit Panel -->
+                <div class="edit-panel mt-2 p-2 border rounded" 
+                     data-edit-panel="part-demand-{{ part_demand.id }}"
+                     style="display: none; background-color: #fff3cd;">
+                    <form method="POST" action="{{ url_for('maintenance.update_part_demand', part_demand_id=part_demand.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <div class="mb-2">
+                            <label class="form-label small">Part ID (read-only)</label>
+                            <input type="number" class="form-control form-control-sm" value="{{ part_demand.part_id }}" disabled>
+                            <small class="text-muted">To change the part, cancel this demand and create a new one.</small>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small">Quantity</label>
+                            <input type="number" step="any" min="0.1" class="form-control form-control-sm" name="quantity_required" value="{{ part_demand.quantity_required }}" required>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small">Status</label>
+                            <select class="form-select form-select-sm" name="status">
+                                {% set part_statuses = ['Planned', 'Pending Manager Approval', 'Pending Inventory Approval', 'Ordered', 'Issued', 'Rejected', 'Backordered', 'Cancelled by Technician', 'Cancelled by Supply'] %}
+                                {% for ps in part_statuses %}
+                                    <option value="{{ ps }}" {% if part_demand.status == ps %}selected{% endif %}>{{ ps }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small">Priority</label>
+                            <select class="form-select form-select-sm" name="priority">
+                                {% for p in ['Low', 'Medium', 'High', 'Critical'] %}
+                                    <option value="{{ p }}" {% if part_demand.priority == p %}selected{% endif %}>{{ p }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small">Notes</label>
+                            <textarea class="form-control form-control-sm" name="notes" rows="2">{{ part_demand.notes or '' }}</textarea>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-sm btn-primary">
+                                <i class="bi bi-check-circle"></i> Submit
+                            </button>
+                            <button type="button" 
+                                    class="btn btn-sm btn-outline-secondary cancel-edit-btn"
+                                    data-part-demand-id="{{ part_demand.id }}"
+                                    data-action="cancel-edit">
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Add Part Demand Form -->
+        <div class="border-top pt-3">
+            <details style="background-color: #d1e7dd; padding: 0.5rem; border-radius: 0.25rem;">
+                <summary class="small fw-bold mb-2" style="cursor: pointer;">
+                    <i class="bi bi-plus-circle"></i> Add Part Demand
+                </summary>
+                <div class="mt-2">
+                    <form method="POST" action="{{ url_for('maintenance.create_part_demand', action_id=selected_action.action_id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <div class="mb-2">
+                            <label class="form-label small">Part ID</label>
+                            <div class="input-group input-group-sm">
+                                <select class="form-select" name="part_id" required>
+                                    <option value="">-- Select Part --</option>
+                                    {% for part in parts %}
+                                    <option value="{{ part.id }}">{{ part.part_name }}{% if part.part_number %} ({{ part.part_number }}){% endif %}</option>
+                                    {% endfor %}
+                                </select>
+                                <a href="{{ url_for('core_supply_parts.list') }}" target="_blank" class="btn btn-outline-secondary" title="Open Parts Lookup">
+                                    <i class="bi bi-search"></i>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small">Quantity</label>
+                            <input type="number" step="any" min="0.1" class="form-control form-control-sm" name="quantity_required" placeholder="Quantity" required>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small">Notes</label>
+                            <textarea class="form-control form-control-sm" name="notes" rows="2" placeholder="Optional notes..."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-sm btn-primary w-100">
+                            <i class="bi bi-plus-circle"></i> Submit
+                        </button>
+                    </form>
+                </div>
+            </details>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,102 @@
+<!-- Status Card -->
+<div class="card mb-4 border-primary">
+    <div class="card-header bg-primary bg-opacity-10">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="mb-0">
+                    <i class="bi bi-clipboard-check text-primary"></i> Maintenance Status
+                </h5>
+            </div>
+            <div>
+                <span class="badge bg-{% if maintenance.status == 'Complete' %}success{% elif maintenance.status == 'In Progress' %}primary{% elif maintenance.status == 'Delayed' or maintenance.status == 'Blocked' %}danger{% else %}secondary{% endif %} fs-6">
+                    {{ maintenance.status }}
+                </span>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Completion Progress</span>
+                        <span class="fw-bold">{{ "%.0f"|format(maintenance_context.completion_percentage) }}%</span>
+                    </div>
+                    <div class="progress" style="height: 25px;">
+                        <div class="progress-bar {% if maintenance_context.completion_percentage == 100 %}bg-success{% elif maintenance_context.completion_percentage > 0 %}bg-primary{% else %}bg-secondary{% endif %}" 
+                             role="progressbar" 
+                             style="width: {{ maintenance_context.completion_percentage }}%"
+                             aria-valuenow="{{ maintenance_context.completion_percentage }}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100">
+                            {{ maintenance_context.completed_actions }} / {{ maintenance_context.total_actions }} Actions
+                        </div>
+                    </div>
+                </div>
+                <div class="row g-2 text-center">
+                    <div class="col-4">
+                        <div class="border rounded p-2">
+                            <div class="fw-bold text-primary">{{ actions|length }}</div>
+                            <small class="text-muted">Total</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="border rounded p-2">
+                            <div class="fw-bold text-info">{{ actions|selectattr('action.status', 'equalto', 'In Progress')|list|length }}</div>
+                            <small class="text-muted">In Progress</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="border rounded p-2">
+                            <div class="fw-bold text-success">{{ actions|selectattr('action.status', 'equalto', 'Complete')|list|length }}</div>
+                            <small class="text-muted">Complete</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="d-grid gap-2">
+                    <!-- Mark Complete - Full Width -->
+                    {% if maintenance.status in ['In Progress', 'Planned'] %}
+                    {% if all_actions_terminal %}
+                    <button type="button" class="btn btn-success btn-lg" data-bs-toggle="modal" data-bs-target="#completeMaintenanceModal">
+                        <i class="bi bi-check-circle"></i> Mark Complete
+                    </button>
+                    {% else %}
+                    <button type="button" class="btn btn-success btn-lg" disabled 
+                            data-bs-toggle="tooltip" 
+                            data-bs-placement="top" 
+                            title="Mark all actions as completed, skipped, or failed to submit">
+                        <i class="bi bi-check-circle"></i> Mark Complete
+                    </button>
+                    {% endif %}
+                    {% endif %}
+                    
+                    <!-- Place in Blocked Status and Add Capability Limitation - Half Width Each -->
+                    <div class="row g-2">
+                        {% if maintenance.status in ['In Progress', 'Planned'] or active_blockers %}
+                        <div class="col-6">
+                            <button type="button" class="btn btn-warning btn-lg w-100" data-bs-toggle="modal" data-bs-target="#createBlockedModal">
+                                <i class="bi bi-pause-circle"></i> Place in Blocked Status
+                            </button>
+                        </div>
+                        {% endif %}
+                        {% if maintenance.status in ['In Progress', 'Planned', 'Blocked'] %}
+                        <div class="col-6">
+                            {% if active_limitations %}
+                            <button type="button" class="btn btn-danger btn-lg w-100" disabled title="Cannot add a new limitation while an active limitation exists">
+                                <i class="bi bi-exclamation-diamond"></i> Add Capability Limitation
+                            </button>
+                            {% else %}
+                            <button type="button" class="btn btn-danger btn-lg w-100" data-bs-toggle="modal" data-bs-target="#createLimitationModal">
+                                <i class="bi bi-exclamation-diamond"></i> Add Capability Limitation
+                            </button>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

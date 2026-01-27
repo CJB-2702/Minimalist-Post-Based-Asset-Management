@@ -9,8 +9,11 @@ Handles:
 """
 
 from typing import Dict, List, Optional, Tuple
+from datetime import datetime
 from flask import Request
 from flask_sqlalchemy.pagination import Pagination
+from sqlalchemy import and_, or_
+from app import db
 from app.data.core.asset_info.asset import Asset
 from app.data.core.asset_info.asset_type import AssetType
 from app.data.core.asset_info.make_model import MakeModel
@@ -35,7 +38,10 @@ class AssetService:
         make_model_id: Optional[int] = None,
         status: Optional[str] = None,
         serial_number: Optional[str] = None,
-        name: Optional[str] = None
+        name: Optional[str] = None,
+        availability_mode: Optional[str] = None,
+        availability_start: Optional[datetime] = None,
+        availability_end: Optional[datetime] = None
     ):
         """
         Build a filtered asset query.
@@ -47,6 +53,9 @@ class AssetService:
             status: Filter by status
             serial_number: Filter by serial number (partial match)
             name: Filter by name (partial match)
+            availability_mode: Filter by availability ('all', 'no_active', 'no_planned')
+            availability_start: Start of availability time range
+            availability_end: End of availability time range
             
         Returns:
             SQLAlchemy query object
@@ -72,8 +81,80 @@ class AssetService:
         if asset_type_id:
             query = query.join(Asset.make_model).filter(Asset.make_model.has(asset_type_id=asset_type_id))
         
+        # Availability filtering
+        if availability_mode and availability_start and availability_end:
+            query = AssetService._apply_availability_filter(
+                query, availability_mode, availability_start, availability_end
+            )
+        
         # Order by creation date (newest first)
         query = query.order_by(Asset.created_at.desc())
+        
+        return query
+    
+    @staticmethod
+    def _apply_availability_filter(query, mode: str, start: datetime, end: datetime):
+        """
+        Apply availability filtering to exclude assets with conflicting dispatches.
+        
+        Args:
+            query: Base SQLAlchemy query
+            mode: 'all' (no filter), 'no_active' (exclude active dispatches), 
+                  'no_planned' (exclude planned dispatches)
+            start: Start of desired time range
+            end: End of desired time range
+            
+        Returns:
+            Filtered query
+        """
+        from app.data.dispatching.outcomes.standard_dispatch import StandardDispatch
+        
+        if mode == 'all':
+            # No filtering
+            return query
+        
+        elif mode == 'no_active':
+            # Exclude assets with active dispatches (actual_start or actual_end is set)
+            # and overlaps with the time range
+            conflicting_dispatches = db.session.query(StandardDispatch.asset_dispatched_id).filter(
+                and_(
+                    StandardDispatch.asset_dispatched_id.isnot(None),
+                    or_(
+                        StandardDispatch.actual_start.isnot(None),
+                        StandardDispatch.actual_end.isnot(None)
+                    ),
+                    # Overlap condition: dispatch start < request end AND dispatch end > request start
+                    or_(
+                        and_(
+                            StandardDispatch.scheduled_start < end,
+                            StandardDispatch.scheduled_end > start
+                        ),
+                        and_(
+                            StandardDispatch.actual_start.isnot(None),
+                            StandardDispatch.actual_start < end
+                        ),
+                        and_(
+                            StandardDispatch.actual_end.isnot(None),
+                            StandardDispatch.actual_end > start
+                        )
+                    )
+                )
+            ).distinct()
+            
+            query = query.filter(~Asset.id.in_(conflicting_dispatches))
+            
+        elif mode == 'no_planned':
+            # Exclude assets with planned dispatches (scheduled_start/end overlaps)
+            conflicting_dispatches = db.session.query(StandardDispatch.asset_dispatched_id).filter(
+                and_(
+                    StandardDispatch.asset_dispatched_id.isnot(None),
+                    # Overlap condition: scheduled_start < request_end AND scheduled_end > request_start
+                    StandardDispatch.scheduled_start < end,
+                    StandardDispatch.scheduled_end > start
+                )
+            ).distinct()
+            
+            query = query.filter(~Asset.id.in_(conflicting_dispatches))
         
         return query
     

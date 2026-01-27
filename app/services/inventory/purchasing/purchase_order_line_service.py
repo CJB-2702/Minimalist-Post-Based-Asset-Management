@@ -9,9 +9,9 @@ from flask_sqlalchemy.pagination import Pagination
 from sqlalchemy import or_, and_, exists, select, func
 from sqlalchemy.orm import Query, joinedload
 from app import db
-from app.data.inventory.ordering.purchase_order_line import PurchaseOrderLine
-from app.data.inventory.ordering.purchase_order_header import PurchaseOrderHeader
-from app.data.inventory.ordering.part_demand_purchase_order_line import PartDemandPurchaseOrderLink
+from app.data.inventory.purchasing.purchase_order_line import PurchaseOrderLine
+from app.data.inventory.purchasing.purchase_order_header import PurchaseOrderHeader
+from app.data.inventory.purchasing.part_demand_link import PartDemandPurchaseOrderLink
 from app.data.maintenance.base.part_demands import PartDemand
 from app.data.maintenance.base.actions import Action
 from app.data.maintenance.base.maintenance_action_sets import MaintenanceActionSet
@@ -29,6 +29,7 @@ class PurchaseOrderLineService:
     def build_po_lines_query(
         # PO Line filters
         status: Optional[str] = None,
+        purchase_order_id: Optional[int] = None,
         part_number: Optional[str] = None,
         part_name: Optional[str] = None,
         
@@ -67,6 +68,10 @@ class PurchaseOrderLineService:
         # Status filter
         if status:
             query = query.filter(PurchaseOrderLine.status == status)
+        
+        # Purchase order filter (exact PO)
+        if purchase_order_id:
+            query = query.filter(PurchaseOrderLine.purchase_order_id == purchase_order_id)
         
         # ============================================================================
         # JOINED FILTERS - Require joins to related tables

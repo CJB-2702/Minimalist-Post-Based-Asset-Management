@@ -22,6 +22,7 @@
             </div>
             <div class="card-body">
                 <form method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <div class="mb-3">
                         <label for="make_model_id" class="form-label">Make/Model <span class="text-danger">*</span></label>
                         <select class="form-select" id="make_model_id" name="make_model_id" required>

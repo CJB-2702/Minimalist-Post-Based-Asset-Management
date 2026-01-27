@@ -2,8 +2,53 @@
 
 {% block title %}Initial Stocking Portal{% endblock %}
 
+{% block head %}
+<style>
+    .queue-section {
+        background: #f8f9fa;
+        border: 2px solid #dee2e6;
+        border-radius: 8px;
+        padding: 1rem;
+        min-height: 150px;
+    }
+    
+    .queue-item {
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        padding: 0.75rem;
+        margin-bottom: 0.5rem;
+        transition: all 0.2s ease;
+    }
+    
+    .queue-item:hover {
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .queue-empty {
+        text-align: center;
+        color: #6c757d;
+        padding: 2rem;
+    }
+    
+    .search-results-container {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    
+    .list-group-item {
+        transition: all 0.2s ease;
+    }
+    
+    .list-group-item:hover {
+        background-color: #f8f9fa;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid">
+    <!-- Header -->
     <div class="row mb-4">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center">
@@ -11,7 +56,7 @@
                     <h1 class="h3 mb-1">
                         <i class="bi bi-box-arrow-in-down text-primary"></i> Initial Stocking Portal
                     </h1>
-                    <p class="text-muted mb-0">Select a storeroom and choose unassigned inventory to stock</p>
+                    <p class="text-muted mb-0">Search for unassigned inventory, add to queue, then assign to locations</p>
                 </div>
                 <div>
                     <a href="{{ url_for('inventory.index') }}" class="btn btn-outline-secondary">
@@ -22,206 +67,529 @@
         </div>
     </div>
 
-    <!-- Storeroom Selection -->
+    <!-- Search Unassigned Inventory (Merged Card) -->
     <div class="row mb-4">
         <div class="col-12">
             <div class="card">
                 <div class="card-header">
-                    <h5 class="mb-0"><i class="bi bi-funnel"></i> Select Storeroom</h5>
+                    <h5 class="mb-0"><i class="bi bi-search"></i> Search Unassigned Inventory</h5>
                 </div>
                 <div class="card-body">
-                    <form method="GET" action="{{ url_for('inventory.initial_stocking') }}" class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Storeroom <span class="text-danger">*</span></label>
-                            <select class="form-select" name="storeroom_id" required onchange="this.form.submit()">
-                                <option value="">Select a storeroom</option>
-                                {% for s in storerooms %}
-                                <option value="{{ s.id }}" {% if selected_storeroom_id == s.id %}selected{% endif %}>
-                                    {{ s.room_name }} {% if s.major_location %}({{ s.major_location.name }}){% endif %}
-                                </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Unassigned Inventory List -->
-    {% if selected_storeroom_id %}
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="bi bi-box-seam"></i> Unassigned Inventory
-                        <span class="badge bg-secondary">{{ unassigned_inventory|length }} items</span>
-                    </h5>
-                </div>
-                <div class="card-body">
-                    {% if unassigned_inventory %}
-                    <form id="stockingForm" method="POST" action="#">
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle">
-                                <thead>
-                                    <tr>
-                                        <th style="width: 40px;">
-                                            <input type="checkbox" id="selectAll" title="Select All">
-                                        </th>
-                                        <th>Part</th>
-                                        <th>Major Location</th>
-                                        <th>Storeroom</th>
-                                        <th class="text-end">Qty On Hand</th>
-                                        <th class="text-end">Qty Allocated</th>
-                                        <th class="text-end">Available</th>
-                                        <th class="text-end">Avg Unit Cost</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for inv in unassigned_inventory %}
-                                    <tr>
-                                        <td>
-                                            <input type="checkbox" 
-                                                   class="form-check-input inventory-checkbox" 
-                                                   name="inventory_ids" 
-                                                   value="{{ inv.id }}"
-                                                   data-quantity="{{ inv.quantity_on_hand - inv.quantity_allocated }}">
-                                        </td>
-                                        <td>
-                                            {% if inv.part %}
-                                            <div><strong>{{ inv.part.part_number }}</strong></div>
-                                            <div class="text-muted small">{{ inv.part.part_name }}</div>
-                                            {% else %}
-                                            <div><strong>Part #{{ inv.part_id }}</strong></div>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            {% if inv.storeroom and inv.storeroom.major_location %}
-                                            {{ inv.storeroom.major_location.name }}
-                                            {% else %}
-                                            <span class="text-muted">N/A</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            {% if inv.storeroom %}
-                                            {{ inv.storeroom.room_name }}
-                                            {% else %}
-                                            <span class="text-muted">N/A</span>
-                                            {% endif %}
-                                        </td>
-                                        <td class="text-end">
-                                            <strong>{{ '%.2f'|format(inv.quantity_on_hand) }}</strong>
-                                        </td>
-                                        <td class="text-end">{{ '%.2f'|format(inv.quantity_allocated) }}</td>
-                                        <td class="text-end">
-                                            <strong>{{ '%.2f'|format(inv.quantity_on_hand - inv.quantity_allocated) }}</strong>
-                                        </td>
-                                        <td class="text-end">
-                                            {% if inv.unit_cost_avg %}
-                                            ${{ '%.2f'|format(inv.unit_cost_avg) }}
-                                            {% else %}
-                                            <span class="text-muted">—</span>
-                                            {% endif %}
-                                        </td>
-                                    </tr>
+                    <!-- Search Filters -->
+                    <form id="searchForm">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label">Major Location</label>
+                                <select class="form-select" 
+                                        name="major_location_id" 
+                                        id="majorLocationSelect"
+                                        hx-get="{{ url_for('inventory.initial_stocking_storerooms') }}"
+                                        hx-trigger="change"
+                                        hx-target="#storeroomSelectContainer"
+                                        hx-include="[name='major_location_id']"
+                                        hx-swap="innerHTML">
+                                    <option value="">All Locations</option>
+                                    {% for loc in major_locations %}
+                                    <option value="{{ loc.id }}" {% if selected_major_location_id == loc.id %}selected{% endif %}>
+                                        {{ loc.name }}
+                                    </option>
                                     {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                        
-                        <div class="mt-4 d-flex justify-content-between align-items-center">
-                            <div>
-                                <span id="selectedCount" class="text-muted">0 items selected</span>
+                                </select>
                             </div>
-                            <div>
-                                <button type="button" class="btn btn-primary" id="useStockingGuiBtn" disabled>
-                                    <i class="bi bi-box-arrow-in-right"></i> Use Inventory Stocking GUI
+                            <div class="col-md-3">
+                                <label class="form-label">Storeroom <span class="text-danger">*</span></label>
+                                <div id="storeroomSelectContainer">
+                                    <select class="form-select" 
+                                            name="storeroom_id" 
+                                            id="storeroomSelect" 
+                                            required>
+                                        <option value="">Select a storeroom</option>
+                                        {% for s in storerooms %}
+                                        <option value="{{ s.id }}" {% if selected_storeroom_id == s.id %}selected{% endif %}>
+                                            {{ s.room_name }} {% if s.major_location %}({{ s.major_location.name }}){% endif %}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Part Number or Description</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       name="part_search" 
+                                       id="partSearchInput"
+                                       value="{{ part_search or '' }}" 
+                                       placeholder="Search by part number or name">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">&nbsp;</label>
+                                <button type="submit" 
+                                        class="btn btn-primary w-100"
+                                        hx-get="{{ url_for('inventory.initial_stocking_unassigned_search') }}"
+                                        hx-target="#searchResultsContainer"
+                                        hx-include="[name='storeroom_id'],[name='part_search']"
+                                        hx-swap="innerHTML">
+                                    <i class="bi bi-search"></i> Search
                                 </button>
                             </div>
                         </div>
                     </form>
-                    {% else %}
-                    <div class="alert alert-info mb-0">
-                        <i class="bi bi-info-circle"></i> No unassigned inventory found for this storeroom.
+                    
+                    <!-- Search Results -->
+                    <hr class="my-4">
+                    <h6 class="mb-3"><i class="bi bi-list-ul"></i> Results</h6>
+                    <div class="search-results-container" id="searchResultsContainer">
+                        {% if selected_storeroom_id %}
+                            {% include 'inventory/inventory/initial_stocking_partials/search_results.html' %}
+                        {% else %}
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> Please select a storeroom and click Search.
+                        </div>
+                        {% endif %}
                     </div>
-                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
-    {% else %}
-    <div class="row">
+
+    <!-- Stocking Queue -->
+    <div class="row mb-4">
         <div class="col-12">
-            <div class="alert alert-info">
-                <i class="bi bi-info-circle"></i> Please select a storeroom to view unassigned inventory.
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-cart3"></i> Stocking Queue
+                        <span class="badge bg-light text-dark ms-2" id="queueCount">0</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="queue-section" id="queueContainer">
+                        <div class="queue-empty">
+                            <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+                            <p class="mt-2">No items in queue. Add items from search results above.</p>
+                        </div>
+                    </div>
+                    <div class="mt-3 text-end">
+                        <button type="button" class="btn btn-outline-danger" id="clearQueueBtn" disabled>
+                            <i class="bi bi-trash"></i> Clear Queue
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-    {% endif %}
+
+    <!-- Classic Stocking Form -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-list-check"></i> Classic Stocking
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small mb-3">
+                        <i class="bi bi-info-circle"></i> Assign all queued items to a single location at once.
+                    </p>
+                    <form id="classicStockingForm">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label">Major Location</label>
+                                <select class="form-select" 
+                                        name="classic_major_location_id" 
+                                        id="classicMajorLocationSelect"
+                                        hx-get="{{ url_for('inventory.initial_stocking_storerooms') }}?use_classic=true"
+                                        hx-trigger="change"
+                                        hx-target="#classicStoreroomSelectContainer"
+                                        hx-include="[name='classic_major_location_id']"
+                                        hx-swap="innerHTML">
+                                    <option value="">All Locations</option>
+                                    {% for loc in major_locations %}
+                                    <option value="{{ loc.id }}">{{ loc.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Storeroom <span class="text-danger">*</span></label>
+                                <div id="classicStoreroomSelectContainer">
+                                    <select class="form-select" 
+                                            name="classic_storeroom_id" 
+                                            id="classicStoreroomSelect" 
+                                            required
+                                            hx-get="{{ url_for('inventory.initial_stocking_locations') }}"
+                                            hx-trigger="change"
+                                            hx-target="#classicLocationSelectContainer"
+                                            hx-include="[name='classic_storeroom_id']"
+                                            hx-swap="innerHTML">
+                                        <option value="">Select a storeroom</option>
+                                        {% for s in storerooms %}
+                                        <option value="{{ s.id }}">
+                                            {{ s.room_name }} {% if s.major_location %}({{ s.major_location.name }}){% endif %}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Location <span class="text-danger">*</span></label>
+                                <div id="classicLocationSelectContainer">
+                                    <select class="form-select" 
+                                            name="classic_location_id" 
+                                            id="classicLocationSelect"
+                                            required
+                                            hx-get="{{ url_for('inventory.initial_stocking_bins') }}"
+                                            hx-trigger="change"
+                                            hx-target="#classicBinSelectContainer"
+                                            hx-include="[name='classic_location_id']"
+                                            hx-swap="innerHTML">
+                                        <option value="">Select a location</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Bin</label>
+                                <div id="classicBinSelectContainer">
+                                    <select class="form-select" 
+                                            name="classic_bin_id" 
+                                            id="classicBinSelect">
+                                        <option value="">Select a bin (optional)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-12 d-flex justify-content-between align-items-center">
+                                <span class="text-muted" id="classicStockingStatus">
+                                    Select location and add items to queue
+                                </span>
+                                <button type="button" 
+                                        class="btn btn-primary" 
+                                        id="classicStockingSubmitBtn">
+                                    <i class="bi bi-check-circle"></i> Assign All Queued Items
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- OR Stocking GUI -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-map"></i> Visual Stocking
+                    </h5>
+                </div>
+                <div class="card-body text-center">
+                    <p class="text-muted">
+                        Use the interactive stocking GUI to assign items to locations using a visual layout.
+                    </p>
+                    <button type="button" 
+                            class="btn btn-success btn-lg" 
+                            id="useStockingGuiBtn">
+                        <i class="bi bi-box-arrow-in-right"></i> Use Stocking GUI with Queue
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
+<script src="{{ url_for('static', filename='inventory/utils/alerts.js') }}"></script>
+<script src="{{ url_for('static', filename='js/stocking_queue_manager.js') }}"></script>
 <script>
+// Initialize queue manager
+let queueManager;
+
 document.addEventListener('DOMContentLoaded', function() {
-    const selectAllCheckbox = document.getElementById('selectAll');
-    const inventoryCheckboxes = document.querySelectorAll('.inventory-checkbox');
-    const useStockingGuiBtn = document.getElementById('useStockingGuiBtn');
-    const selectedCountSpan = document.getElementById('selectedCount');
+    queueManager = new StockingQueueManager();
     
-    // Select all functionality
-    if (selectAllCheckbox) {
-        selectAllCheckbox.addEventListener('change', function() {
-            inventoryCheckboxes.forEach(checkbox => {
-                checkbox.checked = this.checked;
-            });
-            updateSelectedCount();
-        });
-    }
+    // Listen for queue changes
+    window.addEventListener('stockingQueueChanged', handleQueueChanged);
     
-    // Update selected count and button state
-    function updateSelectedCount() {
-        const checked = document.querySelectorAll('.inventory-checkbox:checked');
-        const count = checked.length;
-        
-        selectedCountSpan.textContent = count + ' item' + (count !== 1 ? 's' : '') + ' selected';
-        
-        if (selectAllCheckbox) {
-            selectAllCheckbox.checked = count === inventoryCheckboxes.length && inventoryCheckboxes.length > 0;
-            selectAllCheckbox.indeterminate = count > 0 && count < inventoryCheckboxes.length;
-        }
-        
-        useStockingGuiBtn.disabled = count === 0;
-    }
+    // Initial render
+    renderQueue();
+    updateButtonStates();
     
-    // Update on individual checkbox change
-    inventoryCheckboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', updateSelectedCount);
+    // Search form submit handler (prevent default, let HTMX handle it)
+    document.getElementById('searchForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        // HTMX on button will handle the actual submission
     });
     
-    // Handle "Use Inventory Stocking GUI" button click
-    if (useStockingGuiBtn) {
-        useStockingGuiBtn.addEventListener('click', function() {
-            const checkedBoxes = document.querySelectorAll('.inventory-checkbox:checked');
-            const inventoryIds = Array.from(checkedBoxes).map(cb => cb.value);
-            
-            if (inventoryIds.length === 0) {
-                alert('Please select at least one item to stock.');
-                return;
-            }
-            
-            // Redirect to stocking GUI with selected inventory IDs
-            const storeroomId = new URLSearchParams(window.location.search).get('storeroom_id');
-            if (!storeroomId) {
-                alert('Storeroom ID is required.');
-                return;
-            }
-            window.location.href = '/inventory/stocking-gui?storeroom_id=' + storeroomId + '&inventory_ids=' + inventoryIds.join(',');
-        });
+    // Clear queue button
+    document.getElementById('clearQueueBtn').addEventListener('click', function() {
+        if (confirm('Are you sure you want to clear the entire queue?')) {
+            queueManager.clearQueue();
+        }
+    });
+    
+    // Classic stocking submit
+    document.getElementById('classicStockingSubmitBtn').addEventListener('click', handleClassicStockingSubmit);
+    
+    // Stocking GUI button
+    document.getElementById('useStockingGuiBtn').addEventListener('click', handleStockingGuiClick);
+    
+    // Listen for form changes
+    document.getElementById('classicLocationSelect').addEventListener('change', updateButtonStates);
+    document.getElementById('classicStoreroomSelect').addEventListener('change', updateButtonStates);
+});
+
+// Handle HTMX afterSwap to reattach event listeners to new search results
+document.body.addEventListener('htmx:afterSwap', function(event) {
+    if (event.detail.target.id === 'searchResultsContainer') {
+        // Search results updated, no need to do anything special
+        // Event handlers are attached via onclick in the template
     }
     
-    // Initial count update
-    updateSelectedCount();
+    if (event.detail.target.id === 'storeroomSelectContainer') {
+        // Storeroom dropdown was updated by major location change
+        // Don't auto-trigger search, let user click the button
+    }
+    
+    if (event.detail.target.id === 'classicLocationSelectContainer' || 
+        event.detail.target.id === 'classicStoreroomSelectContainer') {
+        setTimeout(updateButtonStates, 100);
+    }
 });
+
+// Handle add to queue button clicks (called from template onclick)
+function handleAddToQueue(button) {
+    const inventoryId = parseInt(button.dataset.inventoryId);
+    const partNumber = button.dataset.partNumber;
+    const partName = button.dataset.partName;
+    const availableQty = parseFloat(button.dataset.availableQty);
+    const storeroomId = parseInt(button.dataset.storeroomId);
+    const storeroomName = button.dataset.storeroomName;
+    const partId = parseInt(button.dataset.partId);
+    
+    const success = queueManager.addItem({
+        inventoryId,
+        partNumber,
+        partName,
+        availableQty,
+        storeroomId,
+        storeroomName,
+        partId
+    });
+    
+    if (success) {
+        // Disable the button temporarily
+        button.disabled = true;
+        button.innerHTML = '<i class="bi bi-check"></i> Added';
+        setTimeout(() => {
+            button.innerHTML = '<i class="bi bi-check-circle"></i> In Queue';
+        }, 1000);
+    }
+}
+
+// Handle queue changes
+function handleQueueChanged(event) {
+    renderQueue();
+    updateButtonStates();
+}
+
+// Render queue to DOM
+function renderQueue() {
+    const queue = queueManager.getQueue();
+    const container = document.getElementById('queueContainer');
+    const countBadge = document.getElementById('queueCount');
+    const clearBtn = document.getElementById('clearQueueBtn');
+    
+    // Update count
+    countBadge.textContent = queue.length;
+    clearBtn.disabled = queue.length === 0;
+    
+    if (queue.length === 0) {
+        container.innerHTML = `
+            <div class="queue-empty">
+                <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+                <p class="mt-2">No items in queue. Add items from search results above.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Render items
+    let html = '';
+    queue.forEach(item => {
+        html += `
+            <div class="queue-item">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <strong>${item.partNumber}</strong><br>
+                        <small class="text-muted">${item.partName || ''}</small><br>
+                        <small class="text-muted">
+                            <i class="bi bi-building"></i> ${item.storeroomName}
+                        </small>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text">Qty to Move</span>
+                            <input type="number" 
+                                   class="form-control queue-qty-input" 
+                                   data-inventory-id="${item.inventoryId}"
+                                   min="0.01" 
+                                   max="${item.availableQty}" 
+                                   step="0.01" 
+                                   value="${item.quantityToMove.toFixed(2)}">
+                        </div>
+                        <small class="text-muted">Available: ${item.availableQty.toFixed(2)}</small>
+                    </div>
+                    <div class="col-md-2 text-end">
+                        <button type="button" 
+                                class="btn btn-sm btn-danger queue-remove-btn" 
+                                data-inventory-id="${item.inventoryId}">
+                            <i class="bi bi-trash"></i> Remove
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+    
+    // Attach event listeners
+    document.querySelectorAll('.queue-remove-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const inventoryId = parseInt(this.dataset.inventoryId);
+            queueManager.removeItem(inventoryId);
+        });
+    });
+    
+    document.querySelectorAll('.queue-qty-input').forEach(input => {
+        input.addEventListener('change', function() {
+            const inventoryId = parseInt(this.dataset.inventoryId);
+            const newQty = parseFloat(this.value);
+            
+            if (!queueManager.updateQuantity(inventoryId, newQty)) {
+                // Reset to current value on error
+                const item = queueManager.findItem(inventoryId);
+                if (item) {
+                    this.value = item.quantityToMove.toFixed(2);
+                }
+            }
+        });
+    });
+}
+
+// Update button states
+function updateButtonStates() {
+    const queue = queueManager.getQueue();
+    const hasItems = queue.length > 0;
+    
+    const locationSelect = document.getElementById('classicLocationSelect');
+    const storeroomSelect = document.getElementById('classicStoreroomSelect');
+    const statusSpan = document.getElementById('classicStockingStatus');
+    
+    const hasLocation = locationSelect && locationSelect.value;
+    const hasStoreroom = storeroomSelect && storeroomSelect.value;
+    
+    // Update status text only (buttons always enabled)
+    if (!hasStoreroom) {
+        statusSpan.textContent = 'Select storeroom to continue';
+    } else if (!hasLocation) {
+        statusSpan.textContent = 'Select location to continue';
+    } else if (!hasItems) {
+        statusSpan.textContent = 'Add items to queue to continue';
+    } else {
+        statusSpan.textContent = `Ready to assign ${queue.length} item${queue.length !== 1 ? 's' : ''}`;
+    }
+}
+
+// Handle classic stocking submission
+function handleClassicStockingSubmit(e) {
+    e.preventDefault();
+    
+    const queue = queueManager.getQueue();
+    const locationId = document.getElementById('classicLocationSelect').value;
+    const binId = document.getElementById('classicBinSelect').value || null;
+    
+    // Basic client-side validation
+    if (queue.length === 0) {
+        showToast('No items in queue. Add items before submitting.', 'warning');
+        return;
+    }
+    
+    if (!locationId) {
+        showToast('Please select a location', 'warning');
+        return;
+    }
+    
+    // Get inventory IDs from queue
+    const inventoryIds = queue.map(item => item.inventoryId);
+    
+    // Disable button and show loading state
+    const submitBtn = document.getElementById('classicStockingSubmitBtn');
+    const originalHtml = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Submitting...';
+    
+    // Submit to backend
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    fetch('{{ url_for("inventory.submit_stocking_movement") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({
+            inventory_ids: inventoryIds,
+            location_id: parseInt(locationId),
+            bin_id: binId ? parseInt(binId) : null
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(data => {
+                throw new Error(data.error || `HTTP ${response.status}`);
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            showToast(data.message || 'Successfully assigned items', 'success');
+            queueManager.clearQueue();
+            // Reload page after short delay to show success message
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            showToast(data.error || 'Unknown error occurred', 'error');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalHtml;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast(error.message || 'An error occurred while submitting', 'error');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalHtml;
+    });
+}
+
+// Handle stocking GUI button click
+function handleStockingGuiClick() {
+    const queue = queueManager.getQueue();
+    
+    if (queue.length === 0) {
+        showToast('No items in queue. Add items before using the stocking GUI.', 'warning');
+        return;
+    }
+    
+    // Get storeroom from first item (assuming all are same storeroom)
+    const storeroomId = queue[0].storeroomId;
+    const inventoryIds = queue.map(item => item.inventoryId).join(',');
+    
+    // Navigate to stocking GUI
+    window.location.href = `/inventory/stocking-gui?storeroom_id=${storeroomId}&inventory_ids=${inventoryIds}`;
+}
 </script>
 {% endblock %}
-

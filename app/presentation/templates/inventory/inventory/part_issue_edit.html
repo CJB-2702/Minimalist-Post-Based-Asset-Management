@@ -30,6 +30,7 @@
                 </div>
                 <div class="card-body">
                     <form method="POST" action="{{ url_for('inventory.part_issue_edit', id=issue.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                         <div class="alert alert-info">
                             <i class="bi bi-info-circle"></i> <strong>Note:</strong> Only certain fields can be edited. Core issue data (part, quantity, cost) cannot be changed.
                         </div>

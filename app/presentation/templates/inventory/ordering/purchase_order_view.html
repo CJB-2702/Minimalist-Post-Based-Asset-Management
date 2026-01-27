@@ -15,6 +15,10 @@
                     <p class="text-muted mb-0">{{ po_context.header.vendor_name }}</p>
                 </div>
                 <div>
+                    <a href="{{ url_for('inventory.create_arrival', po_id=po_context.purchase_order_id, reset=1) }}"
+                       class="btn btn-outline-success me-2">
+                        <i class="bi bi-box-arrow-in-down"></i> Receive parts
+                    </a>
                     <a href="{{ url_for('inventory.po_linkage_portal', po_id=po_context.purchase_order_id) }}" 
                        class="btn btn-success me-2">
                         <i class="bi bi-link-45deg"></i> Link Demands
@@ -119,7 +123,7 @@
                     <table class="table table-borderless">
                         <tr>
                             <th>Subtotal:</th>
-                            <td class="text-end">${{ "%.2f"|format((po_context.header.total_cost or 0) - (po_context.header.shipping_cost or 0) - (po_context.header.tax_amount or 0)) }}</td>
+                            <td class="text-end">${{ "%.2f"|format(po_context.subtotal) }}</td>
                         </tr>
                         <tr>
                             <th>Shipping:</th>
@@ -128,6 +132,10 @@
                         <tr>
                             <th>Tax:</th>
                             <td class="text-end">${{ "%.2f"|format(po_context.header.tax_amount or 0) }}</td>
+                        </tr>
+                        <tr>
+                            <th>Other:</th>
+                            <td class="text-end">${{ "%.2f"|format(po_context.header.other_amount or 0) }}</td>
                         </tr>
                         <tr class="border-top">
                             <th><strong>Total:</strong></th>
@@ -139,6 +147,7 @@
                     <div class="d-grid gap-2 mt-3">
                         <form method="POST" action="{{ url_for('inventory.purchase_order_submit', po_id=po_context.purchase_order_id) }}" 
                               onsubmit="return confirm('Submit this purchase order?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                             <button type="submit" class="btn btn-success w-100">
                                 <i class="bi bi-check-circle"></i> Submit Order
                             </button>
@@ -251,6 +260,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form method="POST" action="{{ url_for('inventory.purchase_order_cancel', po_id=po_context.purchase_order_id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 <div class="modal-body">
                     <div class="mb-3">
                         <label for="reason" class="form-label">Cancellation Reason</label>

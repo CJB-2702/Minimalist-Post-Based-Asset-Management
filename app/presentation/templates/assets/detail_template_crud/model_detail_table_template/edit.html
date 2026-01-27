@@ -22,6 +22,7 @@
             </div>
             <div class="card-body">
                 <form method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <div class="mb-3">
                         <label for="asset_type_id" class="form-label">Asset Type</label>
                         <select class="form-select" id="asset_type_id" name="asset_type_id">

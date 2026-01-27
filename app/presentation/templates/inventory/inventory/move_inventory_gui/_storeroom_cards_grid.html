@@ -1,0 +1,11 @@
+<div class="storeroom-cards-grid" data-storeroom-cards-container>
+    {% for storeroom in storerooms %}
+        {% include 'inventory/inventory/move_inventory_gui/_storeroom_card.html' %}
+    {% endfor %}
+</div>
+{% if not storerooms %}
+<div class="text-center text-muted py-5" data-empty-message>
+    <p>No storerooms found for this major location.</p>
+</div>
+{% endif %}
+

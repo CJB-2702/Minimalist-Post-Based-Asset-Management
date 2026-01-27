@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+{% block title %}{% if item %}Edit Request #{{ item.id }}{% else %}New Dispatch Request{% endif %}{% endblock %}
+{% block content %}
+<div class="container mt-3">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>{% if item %}Edit Request #{{ item.id }}{% else %}New Dispatch Request{% endif %}</h2>
+    <a href="{% if item %}{{ url_for('dispatching.requests_detail', item_id=item.id) }}{% else %}{{ url_for('dispatching.requests_list') }}{% endif %}" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left"></i> Back
+    </a>
+  </div>
+  
+  {% if has_active_outcome %}
+  <div class="alert alert-warning" role="alert">
+    <h5 class="alert-heading"><i class="bi bi-lock"></i> Core Request Fields Are Locked</h5>
+    <p class="mb-0">
+      An outcome has been assigned to this request, so core fields (dates, asset type, location) are locked.
+      This ensures that dispatchers can work on the request without the core requirements changing.
+      You can still edit: dispatch scope, estimated meter usage, activity location, number of people, names, and notes.
+    </p>
+  </div>
+  {% endif %}
+  
+  <div class="card">
+    <div class="card-body">
+      <form method="post">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <div class="row g-3">
+          <!-- Requested By Field (Read-only, shows current user) -->
+          <div class="col-md-6">
+            <label class="form-label">Requested By</label>
+            <input class="form-control" type="text" 
+                   value="{{ current_user.first_name }} {{ current_user.last_name }} ({{ current_user.username }})" 
+                   disabled>
+            <input type="hidden" name="requested_by" value="{{ current_user.id }}">
+            <div class="form-text">Automatically set to the current logged-in user</div>
+          </div>
+          
+          <!-- Requested For Field (HTMX User Search) - ALWAYS LOCKED IN EDIT MODE -->
+          <div class="col-md-6">
+            <label class="form-label">Requested For <span class="text-danger">*</span> {% if item %}<i class="bi bi-lock-fill text-warning" title="Locked"></i>{% endif %}</label>
+            {% if item %}
+            <!-- In edit mode, show locked field -->
+            <input class="form-control" 
+                   type="text" 
+                   value="{{ item.requested_for_user.first_name }} {{ item.requested_for_user.last_name }} ({{ item.requested_for_user.username }})" 
+                   disabled>
+            <input type="hidden" name="requested_for_id" value="{{ item.requested_for }}">
+            <div class="form-text">This field cannot be changed after request creation</div>
+            {% else %}
+            <!-- In new mode, allow search -->
+            <input class="form-control" 
+                   type="text" 
+                   id="requested_for_search" 
+                   placeholder="Search for user..."
+                   autocomplete="off"
+                   hx-get="{{ url_for('dispatching.search_bars_users') }}"
+                   hx-trigger="keyup changed delay:300ms"
+                   hx-target="#requested_for_results"
+                   hx-include="[name='requested_for_id']"
+                   name="search">
+            <input type="hidden" name="requested_for_id" id="requested_for_id" value="" required>
+            <div id="requested_for_results" class="mt-2" style="max-height: 300px; overflow-y: auto;">
+              <div class="text-muted small">Start typing to search for users...</div>
+            </div>
+            <div class="form-text">Select the user this request is for (required)</div>
+            {% endif %}
+          </div>
+          
+          <div class="col-md-6">
+            <label class="form-label">Desired Start <span class="text-danger">*</span> {% if has_active_outcome %}<i class="bi bi-lock-fill text-warning" title="Locked"></i>{% endif %}</label>
+            <input class="form-control" type="datetime-local" name="desired_start" 
+                   value="{% if item and item.desired_start %}{{ item.desired_start.strftime('%Y-%m-%dT%H:%M') }}{% endif %}" 
+                   {% if has_active_outcome %}disabled{% else %}required{% endif %}>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Desired End <span class="text-danger">*</span> {% if has_active_outcome %}<i class="bi bi-lock-fill text-warning" title="Locked"></i>{% endif %}</label>
+            <input class="form-control" type="datetime-local" name="desired_end" 
+                   value="{% if item and item.desired_end %}{{ item.desired_end.strftime('%Y-%m-%dT%H:%M') }}{% endif %}" 
+                   {% if has_active_outcome %}disabled{% else %}required{% endif %}>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Asset Type <span class="text-danger">*</span> {% if has_active_outcome %}<i class="bi bi-lock-fill text-warning" title="Locked"></i>{% endif %}</label>
+            <select class="form-select" name="asset_type_id" {% if has_active_outcome %}disabled{% else %}required{% endif %}>
+              <option value="">-- Select Asset Type --</option>
+              {% for t in asset_types %}
+              <option value="{{ t.id }}" {% if item and item.asset_type_id == t.id %}selected{% endif %}>{{ t.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Asset Subclass Text {% if has_active_outcome %}<i class="bi bi-lock-fill text-warning" title="Locked"></i>{% endif %}</label>
+            <input class="form-control" name="asset_subclass_text" 
+                   value="{% if item %}{{ item.asset_subclass_text or '' }}{% endif %}"
+                   {% if has_active_outcome %}disabled{% endif %}>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Dispatch Scope</label>
+            <select class="form-select" name="dispatch_scope">
+              <option {% if item and item.dispatch_scope == 'Onsite' %}selected{% endif %}>Onsite</option>
+              <option {% if (item and item.dispatch_scope == 'Local') or not item %}selected{% endif %}>Local</option>
+              <option {% if item and item.dispatch_scope == 'Regional' %}selected{% endif %}>Regional</option>
+              <option {% if item and item.dispatch_scope == 'Interstate' %}selected{% endif %}>Interstate</option>
+              <option {% if item and item.dispatch_scope == 'Continental' %}selected{% endif %}>Continental</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Major Location <span class="text-danger">*</span> {% if has_active_outcome %}<i class="bi bi-lock-fill text-warning" title="Locked"></i>{% endif %}</label>
+            <select class="form-select" name="major_location_id" {% if has_active_outcome %}disabled{% else %}required{% endif %}>
+              <option value="">-- Select Location --</option>
+              {% for l in locations %}
+              <option value="{{ l.id }}" {% if item and item.major_location_id == l.id %}selected{% endif %}>{{ l.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Activity Location</label>
+            <input class="form-control" name="activity_location" 
+                   value="{% if item %}{{ item.activity_location or '' }}{% endif %}" 
+                   placeholder="Specific location for activity">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Estimated Meter Usage</label>
+            <input class="form-control" name="estimated_meter_usage" type="number" step="0.01" 
+                   value="{% if item and item.estimated_meter_usage %}{{ item.estimated_meter_usage }}{% endif %}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Number of People</label>
+            <input class="form-control" name="num_people" type="number" 
+                   value="{% if item and item.num_people %}{{ item.num_people }}{% endif %}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Names (Freeform)</label>
+            <input class="form-control" name="names_freeform" 
+                   value="{% if item %}{{ item.names_freeform or '' }}{% endif %}" 
+                   placeholder="Names of people involved">
+          </div>
+          <div class="col-12">
+            <label class="form-label">Notes</label>
+            <textarea class="form-control" name="notes" rows="3">{% if item %}{{ item.notes or '' }}{% endif %}</textarea>
+          </div>
+        </div>
+        <div class="mt-3">
+          <button class="btn btn-primary" type="submit">
+            <i class="bi bi-check-circle"></i> {% if item %}Update Request{% else %}Create Request{% endif %}
+          </button>
+          <a class="btn btn-secondary" href="{% if item %}{{ url_for('dispatching.requests_detail', item_id=item.id) }}{% else %}{{ url_for('dispatching.requests_list') }}{% endif %}">
+            <i class="bi bi-x-circle"></i> Cancel
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+// JavaScript function to handle user selection from HTMX results
+function selectUser(userId, username, fullname) {
+    // Set the hidden field value
+    document.getElementById('requested_for_id').value = userId;
+    
+    // Update the search input to show selected user
+    document.getElementById('requested_for_search').value = fullname + ' (' + username + ')';
+    
+    // Update results area to show selection
+    document.getElementById('requested_for_results').innerHTML = 
+        '<div class="alert alert-success"><i class="bi bi-person-check"></i> Selected: ' + 
+        fullname + ' (' + username + ')</div>';
+}
+</script>
+{% endblock %}
+
+
+
+
